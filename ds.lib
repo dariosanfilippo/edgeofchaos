@@ -1,0 +1,61 @@
+// information processing library in Faust with low and high-level time-domain
+// (heuristic) algorithms.
+
+an = library("analyzers.lib");
+ba = library("basics.lib");
+co = library("compressors.lib");
+de = library("delays.lib");
+dm = library("demos.lib");
+dx = library("dx7.lib");
+en = library("envelopes.lib");
+fi = library("filters.lib");
+ho = library("hoa.lib");
+ma = library("maths.lib");
+ef = library("misceffects.lib");
+os = library("oscillators.lib");
+no = library("noises.lib");
+pf = library("phaflangers.lib");
+pm = library("physmodels.lib");
+re = library("reverbs.lib");
+ro = library("routes.lib");
+sp = library("spats.lib");
+si = library("signals.lib");
+so = library("soundfiles.lib");
+sy = library("synths.lib");
+ve = library("vaeffects.lib");
+sf = library("all.lib");
+ds = library("ds.lib");
+
+// STABILITY PROCESSING
+
+clip(in, lower, upper) = in : max(lower) : min(upper);
+norm_fact_rms(ref, target, window) = (ref , window : rms) , (target ,
+window : rms) : /; // reference power-input power ratio (with
+responsiveness parameter)
+dyn_norm_rms(ref, target, window) = ref , target , window :
+norm_fact_rms , target : *; // dynamical normalisation
+
+// FILTERS
+
+clip_int(in, lower, upper) = (_ , in : + : clip(_, lower, upper)) ~ _;
+crossover(in, cf) = (in : fi.lowpass(2, cf)) , (in : fi.highpass(2,
+cf));
+
+// INFORMATION PROCESSING
+
+peakenv(in, release) = abs(in) : max(_, _) ~ *(release : rt60);
+rms(in, window) = in <: * : fi.lowpass(2, window) : sqrt;
+spec_bal(in, cf, window) = in , cf : crossover <: (_ , window : rms :
+-(0)) , (_ , window : rms) : +;
+spec_ten(in, window) = ((in , _,  window : spec_bal) , (in, window :
+rms) : / : /(ma.SR) : *(window) : clip_int(_, 0, 1) : *(ds.ny)) ~ _;
+
+// MATH
+
+ny = ma.SR/2;
+speriod = 1/ma.SR;
+rt60(x) = .001 , (1/ma.SR , max(x, .001) : /) : pow;
+prime_base_pow(n) = ba.take(n + 1, primes) , _ : pow;
+line = _ / ma.SR : + ~ _; // in signal sets growth rate in Hz
+
+
