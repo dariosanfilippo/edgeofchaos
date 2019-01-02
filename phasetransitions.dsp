@@ -18,4 +18,6 @@ as_delay(n) = is1 : *(7.25) : ds.prime_base_pow(n);
 
 // MAIN
 
-process(x) = (par(i, order, +(dirac)) : ro.hadamard(order) : par(i, order, ma.tanh)) ~ (par(i, order, _ , (x : as_delay(i)) : var_del) : (par(i, order, *(feedback)))) :> _ , _ : / (order/2) , / (order/2);
+process(x) = (par(i, order, +(dirac)) : ro.hadamard(order) : par(i, order, 
+ma.tanh)) ~ (par(i, order, _ , (x : as_delay(i)) : var_del) : (par(i, order, 
+*(feedback)))) :> _ , _ : / (order/2) , / (order/2);
