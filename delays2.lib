@@ -1,0 +1,26 @@
+// SR-INDEPENDENT DELAYS
+
+de = library("delays.lib");
+d2 = library("delays2.lib");
+ma = library("maths.lib");
+
+// integer delay
+del_int(in, del, size) = in : de.delay(size*ma.SR, del*ma.SR);
+
+// linear interpolation
+del_lin(in, del, size, itime) = in : de.sdelay(s, it, d)
+with {
+      s = size*ma.SR : ma.log2 : ceil : 2 ,
+                                        _ : pow;
+      it = itime*ma.SR : ma.log2 : ceil :  2 ,
+                                           _ : pow;
+      d = del*ma.SR;
+};
+
+// polynomial interpolationi
+del_pol(in, del, size) = de.fdelayltv(6, s, d, in)
+with {
+      s = size*ma.SR : ma.log2 : rint :    2 ,
+                                           _ : pow;
+      d = del*ma.SR : max((6-1)/2, _);
+};

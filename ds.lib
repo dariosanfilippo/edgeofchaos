@@ -1,71 +1,7 @@
-// Recursive and adaptive signal processing library in Faust.
-
-an = library("analyzers.lib");
-ba = library("basics.lib");
-co = library("compressors.lib");
-de = library("delays.lib");
-dm = library("demos.lib");
-dx = library("dx7.lib");
-en = library("envelopes.lib");
-fi = library("filters.lib");
-ho = library("hoa.lib");
-ma = library("maths.lib");
-ef = library("misceffects.lib");
-os = library("oscillators.lib");
-no = library("noises.lib");
-pf = library("phaflangers.lib");
-pm = library("physmodels.lib");
-re = library("reverbs.lib");
-ro = library("routes.lib");
-sp = library("spats.lib");
-si = library("signals.lib");
-so = library("soundfiles.lib");
-sy = library("synths.lib");
-ve = library("vaeffects.lib");
-sf = library("all.lib");
-ds = library("ds.lib");
-
-// STABILITY PROCESSING
-
-clip(in, lower, upper) = in : max(lower) : min(upper); // hard clipping
-norm_fact_rms(ref, target, window) = (ref , window : rms) , (target ,
-window : rms) : /; /* reference power-input power ratio (with
-responsiveness parameter) */
-dyn_norm_rms(ref, target, window) = ref , target , window :
-norm_fact_rms , target : *; // dynamical normalisation
-
-// FILTERS
-
-clip_int(in, lower, upper) = (_ , in : + : clip(_, lower, upper)) ~ _;
-// bounded integrator
-crossover(in, cf) = (in : fi.lowpass(2, cf)) , (in : fi.highpass(2, cf)); 
-// split spectrum
-
-// INFORMATION PROCESSING
-
-peakenv(in, release) = abs(in) : max(_, _) ~ *(release : rt60); 
-// infinitely fast attack and adjustable release
-rms(in, window) = in <: * : fi.lowpass(2, window) : sqrt; 
-// root mean square approximation using lowpasses
-spec_bal(in, cf, window) = in , cf : crossover <: (_ , window : rms : *(-1)) , 
-(_ , window : rms) : +;
-// spectral weight difference with regard to a balancing point
-spec_ten(in, window) = ((in , _ , window : spec_bal) , (in, window : rms) : / 
-: /(ma.SR) : *(window) : clip_int(_, 0, 1) : *(ny)) ~ _;
-// spectral tendency (equal-weight balancing point)
-
-// MATH
-
-primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 
-67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 
-151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 
-239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311);
-ny = ma.SR/2;
-speriod = 1/ma.SR;
-rt60(x) = .001 , (speriod , max(x, .001) : /) : pow; 
-// 60-dB decay in a desired time
-prime_base_pow(n) = ba.take(n+1, primes) , _ : pow;
-line = _ , ma.SR : / : + ~ _; // in signal sets x/y ratio
-delta(in, t) = in , de.fdelay5(2^21, t*ma.SR, in) : -; // rate of change
-
-
+au = library("auxiliary.lib");
+d2 = library("delays2.lib");
+f2 = library("filters2.lib");
+ip = library("information.lib");
+m2 = library("maths2.lib");
+eq = library("equilibrium.lib");
+ds = library("allds.lib");

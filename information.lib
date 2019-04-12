@@ -1,0 +1,35 @@
+// INFORMATION PROCESSING
+
+ba = library("basics.lib");
+f2 = library("filters2.lib");
+ip = library("information.lib");
+ma = library("maths.lib");
+m2 = library("maths2.lib");
+
+// infinitely fast attack and adjustable release
+peak_env(in, release) = abs(in) :   max(_, _)
+                                    ~ *(release : m2.rt60);
+
+// hold peak for a time specified in seconds
+peak_hold(in, release) = in : ba.peakholder(release*ma.SR);
+
+// envelope following
+env_fol(in, window) = in : abs : lp1p(_, window);
+
+// root mean square measurement using lowpasses
+rms(in, window) = in <: * : f2.lp1p(_, window) : sqrt;
+
+// spectral energy difference (RMS) at a splitting point (Hz)
+spec_bal(in, cf, window) =  in ,
+                            cf : f2.crossover <:   (   _ ,
+                                                       window : rms : *(-1)) ,
+                                                   (   _ ,
+                                                       window : rms) : +;
+
+// spectral tendency (weighted median)
+spec_ten(in, window) =  (   (   in ,
+                                _ ,
+                                window : spec_bal) ,
+                            (   in ,
+                                window : rms) :  m2.div : *(window) : /(ma.SR) : f2.clip_int(_, 0, 1)) 
+                        ~ (pow(4) : *(m2.ny));

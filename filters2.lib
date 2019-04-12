@@ -1,0 +1,86 @@
+fi = library("filters.lib");
+f2 = library("filters2.lib");
+ma = library("maths.lib");
+m2 = library("maths2.lib");
+eq = library("equilibrium.lib");
+
+// FILTERS
+
+
+
+// bounded integrator
+clip_int(in, lower, upper) =    (_ ,
+                                in : + : eq.clip(_, lower, upper)
+                                ) ~ _;
+
+// classic 1-pole lowpass
+lp1p(in, cf) = in*a0 : + ~ *(b1)
+with {
+      a0 = 1-abs(b1);
+      b1 = exp(m2.w(cf)*(-1));
+};
+
+// classic 1-pole highpass
+hp1p(in, cf) = in*a0 : + ~ *(b1)
+with {
+      a0 = 1-abs(b1);
+      b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
+};
+
+
+// 1-pole lowpass based on naive integration
+lp1pint(in, cf) =   (in ,
+                    _ : + : *(m2.w(cf) : eq.clip(_, 0, 2)) : fi.pole(1)
+                    ) ~ *(-1);
+
+// 1-pole highpass based on naive integration
+hp1pint(in, cf) = in-lp1pint(in, cf);
+
+// 1-pole-1-zero lowpass
+lp1p1z(in, cf) =    in*a0 ,
+                    in'*a0*a1 : + : +
+                                    ~ *(b1)
+with {
+    a0 = (1-b1)/2;
+    a1 = 1;
+    b1 =    (1-sin(m2.w(cf))) ,
+            cos(m2.w(cf)) : m2.div;
+};
+
+// 1-pole-1-zero highpass
+hp1p1z(in, cf) =    in*a0 ,
+                    in'*a0*a1 : + : +
+                                    ~ *(b1)
+with {
+    a0 = (1+b1)/2;
+    a1 = -1;
+    b1 =    (1-sin(m2.w(cf))) ,
+            cos(m2.w(cf)) : m2.div;
+};
+
+// 1p1z lowpass BLTI
+lpblti(in, cf) =   state 
+                   ~ _ :   ! , 
+                           _
+with {
+      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
+      state(s) = y + v, y
+      with { 
+           v = (in - s) * g;
+           y = (v + s);
+      };
+};
+
+// 1p1z highpass BLTI
+hpblti(in, cf) =   in ,
+                   (   in ,
+                       cf : lpblti) : -;
+
+// 1p1z allpass BLTI
+apblti(in, cf) = ( in ,
+                   cf) <:  lpblti ,
+                           hpblti : -;
+
+// spectrum splitter
+crossover(in, cf) = lp1p1z(in, cf) ,
+                    hp1p1z(in, cf);

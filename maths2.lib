@@ -1,0 +1,62 @@
+// MORE MATH
+
+ba = library("basics.lib");
+de = library("delays.lib");
+ma = library("maths.lib");
+m2 = library("maths2.lib");
+
+primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
+67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149,
+151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233,
+239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311);
+ny = ma.SR/2;
+speriod = 1/ma.SR;
+
+// NAN-safe divider
+div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
+                                        x2 : /));
+
+// angular frequency
+w(x) = x*2*ma.PI/ma.SR;
+
+// 60-dB decay in a desired time
+rt60(x) =   .001 ,
+            (   speriod ,
+                max(x, .001) : /) : pow;
+prime_base_pow(n) = ba.take(n, primes) ,
+                    _ : pow;
+
+// line: in signal sets x/y ratio
+line =  _ ,
+        ma.SR : / : +
+                    ~ _;
+
+// first derivative
+delta(in, t) =  in ,
+                d2.del_int(in, t, 14) : -;
+
+// second derivative
+delta2(in, t) = delta(in, t) : delta(in, t);
+
+// linear mapping
+lin_map(x, lower, upper) = x*(upper-lower)+lower;
+
+// power mapping; t is the exponent or tension parameter
+pow_map(x, t, lower, upper) = x : pow(t) : lin_mapping(_, lower, upper);
+
+// logarithmic mapping; t is the base acting as a tension parameter
+log_map(x, t, lower, upper) = log(x*(t-1)+1)/log(t) : lin_map(_,
+lower, upper);
+
+// parabolic mapping; t (must be an even int) is a tension parameter
+par_map(x, t, lower, upper) = x*2-1 : pow(t_1) : lin_map(_,
+lower, upper)
+with {
+      t_1 = 2*t : int;
+};
+
+// piece-wise mapping (two segments)
+pcw_map(x, split, exp1, exp2, l1, u1, l2, u2) = ba.if(x : <=(split),
+pow_map(x, exp1, l1, u1), pow_map(x, exp2, l2, u2));
+
+

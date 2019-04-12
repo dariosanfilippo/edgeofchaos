@@ -1,0 +1,14 @@
+au = library("auxiliary.lib");
+
+// AUXILIARY FUNCTIONS
+
+// full-amp 1-sample impulse
+dirac = 1-1';
+
+// full-amp n-sample step function
+step(n) = 1 <:  _ ,
+                @(n) : -;
+
+// signal inspector
+inspect(i, lower, upper) = _ <: attach(_ , 
+                                       _ : vbargraph("sig_%i", lower, upper));
