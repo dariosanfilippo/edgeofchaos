@@ -42,7 +42,7 @@ delta2(in, t) = delta(in, t) : delta(in, t);
 lin_map(x, lower, upper) = x*(upper-lower)+lower;
 
 // power mapping; t is the exponent or tension parameter
-pow_map(x, t, lower, upper) = x : pow(t) : lin_mapping(_, lower, upper);
+pow_map(x, t, lower, upper) = x : pow(t) : lin_map(_, lower, upper);
 
 // logarithmic mapping; t is the base acting as a tension parameter
 log_map(x, t, lower, upper) = log(x*(t-1)+1)/log(t) : lin_map(_,
@@ -52,11 +52,12 @@ lower, upper);
 par_map(x, t, lower, upper) = x*2-1 : pow(t_1) : lin_map(_,
 lower, upper)
 with {
-      t_1 = 2*t : int;
+      t_1 = t : int : *(2);
 };
 
 // piece-wise mapping (two segments)
-pcw_map(x, split, exp1, exp2, l1, u1, l2, u2) = ba.if(x : <=(split),
-pow_map(x, exp1, l1, u1), pow_map(x, exp2, l2, u2));
+pcw_map(x, split, exp1, exp2, l1, u1, l2, u2) = ba.if( x : <=(split),
+                                                       pow_map(x, exp1, l1, u1),
+                                                       pow_map(x, exp2, l2, u2));
 
 
