@@ -17,7 +17,7 @@ with {
       d = del*ma.SR;
 };
 
-// polynomial interpolationi
+// polynomial interpolation
 del_pol(in, del, size) = de.fdelayltv(6, s, d, in)
 with {
       s = size*ma.SR : ma.log2 : rint :    2 ,

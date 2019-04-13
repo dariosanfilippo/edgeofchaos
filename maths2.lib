@@ -63,4 +63,5 @@ pcw_map(x, split, exp1, exp2, l1, u1, l2, u2) = ba.if( x : <=(split),
                                                        pow_map(x, exp1, l1, u1),
                                                        pow_map(x, exp2, l2, u2));
 
-
+// Hann function
+hann(x) = sin(ma.PI*x) <: *;
