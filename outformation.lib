@@ -1,9 +1,18 @@
 // AUDIO PROCESSING LIBRARY
 
 ba = library("basics.lib");
+d2 = library("delays2.lib");
 f2 = library("filters2.lib");
 ou = library("outformation.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
-// pitch shifter
+// real-time pitch-shifter with 6th-order pol. delay lines
+pitch_shift(x, buff_size, factor, window) =    del_pol(x, del*ph1, buff_size)*m2.hann(ph1), 
+                                               del_pol(x, del*ph2, buff_size)*m2.hann(ph2) :> _
+with {
+      del = (1-factor)*window;
+      rate = 1/window;
+      ph1 = m2.ph(rate, 0);
+      ph2 = ph1 : +(.5) : ma.decimal;
+};
