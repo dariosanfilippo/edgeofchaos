@@ -3,6 +3,7 @@
 de = library("delays.lib");
 d2 = library("delays2.lib");
 ma = library("maths.lib");
+m2 = library("maths2.lib");
 
 // integer delay
 del_int(in, del, size) = in : de.delay(size*ma.SR, del*ma.SR);
@@ -20,7 +21,6 @@ with {
 // polynomial interpolation
 del_pol(in, del, size) = de.fdelayltv(6, s, d, in)
 with {
-      s = size*ma.SR : ma.log2 : rint :    2 ,
-                                           _ : pow;
+      s = size*ma.SR : m2.round_pow2;
       d = del*ma.SR : max((6-1)/2, _);
 };

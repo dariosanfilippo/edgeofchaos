@@ -20,6 +20,9 @@ speriod = 1/ma.SR;
 div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
                                         x2 : /));
 
+// closest power of 2
+round_pow2(x) = 2^(ma.log2(x) : rint);
+
 // wrap around a range
 wrap(x, lower, upper) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) : +(lower);
 
