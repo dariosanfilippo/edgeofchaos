@@ -27,3 +27,20 @@ with {
       del1 = shift*ph1+offset : m2.wrap(_, 0, limit);
       del2 = shift*ph2+offset : m2.wrap(_, 0, limit); 
 };
+
+// real-time time-stretcher with 6th-order pol. delay lines
+time_stretch(x, buff_size, factor, frame) =    d2.del_pol(x, del1, buff_size)*w1, 
+                                               d2.del_pol(x, del2, buff_size)*w2 :> _
+with {
+      buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
+      position = m2.ph((1-factor)/buff, 0)*buff;
+      frame_1 = frame : abs;
+      rate =   1,
+               frame_1 : m2.div;
+      ph1 = m2.ph(rate, 0);
+      ph2 = ph1 : +(.5) : ma.decimal;
+      w1 = m2.window_hann(ph1);
+      w2 = m2.window_hann(ph2);
+      del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
+      del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
+};
