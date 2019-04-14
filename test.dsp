@@ -1,5 +1,5 @@
 import("stdfaust.lib");
 import("ds.lib");
 
-process(x) = op.pitch_shift(x, 5, nentry("factor", 0, -16, 16, .01), nentry("frame", 0, -5, 5, .01));
+process = op.pitch_shift(os.oscsin(1000), 5, nentry("factor", 1, -16, 16, .01), nentry("frame", 1, -5, 5, .01)) : au.inspect(0, -1, 1);
 

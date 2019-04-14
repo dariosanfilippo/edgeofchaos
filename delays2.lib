@@ -8,13 +8,11 @@ m2 = library("maths2.lib");
 // integer delay
 del_int(in, del, size) = in : de.delay(size*ma.SR, del*ma.SR);
 
-// linear interpolation
+// linear interpolation between two delay lines
 del_lin(in, del, size, itime) = in : de.sdelay(s, it, d)
 with {
-      s = size*ma.SR : ma.log2 : ceil : 2 ,
-                                        _ : pow;
-      it = itime*ma.SR : ma.log2 : ceil :  2 ,
-                                           _ : pow;
+      s = size*ma.SR : m2.round_pow2;
+      it = itime*ma.SR;
       d = del*ma.SR;
 };
 
