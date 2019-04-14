@@ -11,4 +11,4 @@ step(n) = 1 <:  _ ,
 
 // signal inspector
 inspect(i, lower, upper) = _ <: attach(_ , 
-                                       _ : vbargraph("sig_%i", lower, upper));
+                                       _ : vbargraph("sig_%i [style:numerical]", lower, upper));

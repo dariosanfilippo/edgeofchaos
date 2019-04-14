@@ -3,21 +3,23 @@
 ba = library("basics.lib");
 d2 = library("delays2.lib");
 f2 = library("filters2.lib");
-ou = library("outformation.lib");
+op = library("outformation.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
 // real-time pitch-shifter with 6th-order pol. delay lines
-pitch_shift(x, buff_size, factor, window) =    del_pol(x, del1, buff_size)*m2.window_hann(ph1), 
-                                               del_pol(x, del2, buff_size)*m2.window_hann(ph2) :> _
+pitch_shift(x, buff_size, factor, frame) = d2.del_pol(x, del1, buff_size)*w1, 
+                                           d2.del_pol(x, del2, buff_size)*w2 :> _
 with {
-      del1 = shift*ph1+offset : wrap(_, 0, buff_size);
-      del2 = shift*ph2+offset : wrap(_, 0, buff_size);
-      shift = (1-factor)*window;
+      rate = 1/frame;
+      shift = (1-factor)*frame;
       offset = ba.if(  shift < 0,
                        -shift,
                        0);
-      rate = 1/window;
       ph1 = m2.ph(rate, 0);
       ph2 = ph1 : +(.5) : ma.decimal;
+      w1 = m2.window_hann(ph1);
+      w2 = m2.window_hann(ph2);
+      del1 = shift*ph1+offset : m2.wrap(_, 0, buff_size);
+      del2 = shift*ph2+offset : m2.wrap(_, 0, buff_size);
 };
