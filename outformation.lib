@@ -47,10 +47,10 @@ with {
 };
 
 // ZC granulator, i.e., discontinuities are handled through ZC detection
-grains_zc(x, position, g_size, buff_size) =    grains
+grains_zc(x, position, g_size) =    grains
                                                ~ _
 with {
-    s = 960000;
+    s = 768000;
     l = g_size*ma.SR;
     p = position*ma.SR;
     input = x;
