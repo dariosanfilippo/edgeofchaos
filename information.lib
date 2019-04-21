@@ -6,6 +6,12 @@ ip = library("information.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
+// zero-crossing detection
+zc(x) = x*x' : <(0);
+
+// zero-crossing rate
+zcr(x, window) = zc(x) : f2.lp1p(_, window);
+
 // infinitely fast attack and adjustable release
 peak_env(in, release) = abs(in) :   max(_, _)
                                     ~ *(release : m2.rt60);
@@ -16,10 +22,10 @@ peak_hold(in, release) = in : ba.peakholder(release*ma.SR);
 // envelope following
 env_fol(in, window) = in : abs : lp1p(_, window);
 
-// root mean square measurement using lowpasses
+// root mean square measurement using lowpass
 rms(in, window) = in <: * : f2.lp1p(_, window) : sqrt;
 
-// spectral energy difference (RMS) at a splitting point (Hz)
+// spectral energy (RMS) difference at a splitting point (Hz)
 spec_bal(in, cf, window) =  in ,
                             cf : f2.crossover <:   (   _ ,
                                                        window : rms : *(-1)) ,
