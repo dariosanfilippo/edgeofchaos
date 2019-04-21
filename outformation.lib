@@ -4,12 +4,13 @@ au = library("auxiliary.lib");
 ba = library("basics.lib");
 d2 = library("delays2.lib");
 f2 = library("filters2.lib");
+ip = library("information.lib");
 op = library("outformation.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
 // real-time pitch-shifter with 6th-order pol. delay lines
-pitch_shift(x, buff_size, factor, frame) = d2.del_pol(x, del1, buff_size)*w1, 
+pitch_shift(x, factor, frame, buff_size) = d2.del_pol(x, del1, buff_size)*w1, 
                                            d2.del_pol(x, del2, buff_size)*w2 :> _
 with {
       frame_1 = frame : abs;
@@ -29,7 +30,7 @@ with {
 };
 
 // real-time time-stretcher with 6th-order pol. delay lines
-time_stretch(x, buff_size, factor, frame) =    d2.del_pol(x, del1, buff_size)*w1, 
+time_stretch(x, factor, frame, buff_size) =    d2.del_pol(x, del1, buff_size)*w1, 
                                                d2.del_pol(x, del2, buff_size)*w2 :> _
 with {
       buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
@@ -44,3 +45,59 @@ with {
       del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
       del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
 };
+
+// ZC granulator, i.e., discontinuities are handled through ZC detection
+grains_zc(x, position, g_size, buff_size) =    grains
+                                               ~ _
+with {
+    s = 960000;
+    l = g_size*ma.SR;
+    p = position*ma.SR;
+    input = x;
+    rec_index = %(s) ~ +(1);
+    grains(fb) =    int(s),
+                    0.0,
+                    int(rec_index),
+                    input,
+                    int(read_frame(fb) : %(s)) : rwtable
+    with {
+        sel_zc(x) = ba.if(  (m2.diff(x) : >(0)),
+                            zc_up_index,
+                            zc_down_index);
+        frame(start) =  %(dur) ~ +(1)
+        with {
+            dur = zc_index(start+l)-start : max(2);
+        };
+        read_frame(out) = (frame <: _,
+                                    (==(0),
+                                    sel_zc(out) : ba.sAndH)) ~ (!, _) : +;
+                                    
+        zc_up =     (ip.zc(input),
+                    (m2.diff(input) : >(0)) : &);
+        zc_down =   (ip.zc(input),
+                    (m2.diff(input) : <(0)) : &);
+        zc_index(x) =   int(s),
+                        0.0,
+                        int(rec_index),
+                        (   ip.zc(input),
+                            rec_index : ba.sAndH),
+                        int(x : %(s)) : rwtable;
+        zc_up_index =   int(s),
+                        0.0,
+                        int(rec_index),
+                        (   zc_up,
+                            rec_index : ba.sAndH),
+                        int(p : %(s)) : rwtable;
+        zc_down_index = int(s),
+                        0.0,
+                        int(rec_index),
+                        (   zc_down,
+                            rec_index : ba.sAndH),
+                        int(p : %(s)) : rwtable;
+    };
+};
+
+
+
+
+
