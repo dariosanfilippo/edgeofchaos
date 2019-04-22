@@ -2,6 +2,7 @@
 
 ba = library("basics.lib");
 de = library("delays.lib");
+d2 = library("delays2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
@@ -56,7 +57,7 @@ diff(x) = x-x';
 
 // first derivative
 delta(in, t) =  in ,
-                d2.del_int(in, t, 16) : -;
+                d2.del_lin(in, t, 16) : -;
 
 // second derivative
 delta2(in, t) = delta(in, t) : delta(in, t);
