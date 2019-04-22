@@ -4,5 +4,6 @@ f2 = library("filters2.lib");
 ip = library("information.lib");
 m2 = library("maths2.lib");
 eq = library("equilibrium.lib");
+o2 = library("oscillators2.lib");
 op = library("outformation.lib");
 ds = library("allds.lib");

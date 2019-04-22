@@ -1,0 +1,15 @@
+// MORE OSCILLATORS
+
+ba = library("basics.lib");
+ma = library("maths.lib");
+m2 = library("maths2.lib");
+o2 = library("oscillators2.lib");
+
+// phasor with phase reset
+ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ _ : *(1-(reset : !=(0)));
+
+blit(f, h) = ba.if(phase ==(0), 1, sinc)
+with {
+      sinc = (sin(phase*h)/sin(phase))/h;
+      phase = ph(f, 0)*ma.PI;
+};

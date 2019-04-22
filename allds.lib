@@ -4,4 +4,5 @@ import("filters2.lib");
 import("information.lib");
 import("maths2.lib");
 import("equilibrium.lib");
+import("oscillators2.lib");
 import("outformation.lib");
