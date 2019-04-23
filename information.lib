@@ -25,6 +25,10 @@ env_fol(in, window) = in : abs : lp1p(_, window);
 // root mean square measurement using lowpass
 rms(in, window) = in <: * : f2.lp1p(_, window) : sqrt;
 
+// RMS with fourth-order LP
+rms4(in, window) = in <: * : seq(i, 4, _,
+                                       window : f2.lp1p) : sqrt;
+
 // spectral energy (RMS) difference at a splitting point (Hz)
 spec_bal(in, cf, window) =  in ,
                             cf : f2.crossover <:   (   _ ,
@@ -32,10 +36,24 @@ spec_bal(in, cf, window) =  in ,
                                                    (   _ ,
                                                        window : rms) : +;
 
-// spectral tendency (weighted median)
+// spectral tendency (weighted mean)
 spec_ten(in, window) =  (   (   in ,
                                 _ ,
                                 window : spec_bal) ,
                             (   in ,
                                 window : rms) :  m2.div : *(window) : /(ma.SR) : f2.clip_int(_, 0, 1)) 
                         ~ (pow(4) : *(m2.ny));
+
+// noisiness
+noisiness(in, window) = spec_ten(in, window) <: (  in, 
+                                                   _ : zcr : logscale),
+                                                (_ : ma.inv) : m2.delta : abs : f2.lp1p(_, window)
+with {
+      logscale(x) = log(x*(10-1)+1)/log(10);
+};
+
+// roughness
+roughness(in, window) = in <:  (   (   rms4(_, 100),
+                                       .01 : m2.delta : abs),
+                                   window : f2.lp1p),
+                               rms(_, window) : m2.div;
