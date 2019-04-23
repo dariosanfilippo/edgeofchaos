@@ -50,7 +50,7 @@ line_reset(rate, reset) =  rate ,
                                        ~ *(1-(reset : !=(0)));
 
 // phasor with phase reset
-ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ _ : *(1-(reset : !=(0)));
+ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ *(1-(reset : !=(0)));
 
 // differentiator
 diff(x) = x-x';
