@@ -58,6 +58,83 @@ with {
             cos(m2.w(cf)) : m2.div;
 };
 
+// biquad section
+biquad(x, a0, a1, a2, b1, b2) = fir : + ~ iir
+with {
+      fir = a0*x+a1*x'+a2*x'';
+      iir(fb) = -b1*fb-b2*fb';
+};
+
+// biquad lowpass
+lpbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
+with {
+      cf1 = eq.clip(cf, 5, m2.ny-5);
+      q1 = .707;
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = ((1-cos(m2.w(cf1)))/2)/norm;
+      a1 = 1-cos(m2.w(cf1))/norm;
+      a2 = ((1-cos(m2.w(cf1)))/2)/norm;
+      b1 = cos(m2.w(cf1))*-2/norm;
+      b2 = (1-alpha)/norm;
+};
+
+// biquad highpass
+hpbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
+with {
+      cf1 = eq.clip(cf, 5, m2.ny-5);
+      q1 = .707;
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = ((1+cos(m2.w(cf1)))/2)/norm;
+      a1 = -1*(1+cos(m2.w(cf1)))/norm;
+      a2 = ((1+cos(m2.w(cf1)))/2)/norm;
+      b1 = cos(m2.w(cf1))*-2/norm;
+      b2 = (1-alpha)/norm;
+};
+
+// biquad bandpass
+bpbi(in, cf, q) = biquad(in, a0, a1, a2, b1, b2)
+with {
+      cf1 = eq.clip(cf, 5, m2.ny-5);
+      q1 = max(q, .001);
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = alpha/norm;
+      a1 = 0;
+      a2 = -alpha/norm;
+      b1 = cos(m2.w(cf1))*-2/norm;
+      b2 = (1-alpha)/norm;
+};
+
+// biquad bandstop
+bsbi(in, cf, q) = biquad(in, a0, a1, a2, b1, b2)
+with {
+      cf1 = eq.clip(cf, 5, m2.ny-5);
+      q1 = max(q, .001);
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = 1/norm;
+      a1 = -1*cos(m2.w(cf1))*2/norm;
+      a2 = 1/norm;
+      b1 = -1*cos(m2.w(cf1))*2/norm;
+      b2 = (1-alpha)/norm;
+};
+
+// biquad allpass
+apbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
+with {
+      cf1 = eq.clip(cf, 5, m2.ny-5);
+      q1 = .707;
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = (1-alpha)/norm;
+      a1 = -1*cos(m2.w(cf1))*2/norm;
+      a2 = (1+alpha)/norm;
+      b1 = -1*cos(m2.w(cf1))*2/norm;
+      b2 = (1-alpha)/norm;
+};
+
 // 1p1z lowpass BLTI
 lpblti(in, cf) =   state 
                    ~ _ :   ! , 
