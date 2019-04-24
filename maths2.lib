@@ -30,7 +30,7 @@ wrap(x, lower, upper) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) : 
 // angular frequency
 w(x) = x*2*ma.PI/ma.SR;
 
-// 60-dB decay in a desired time
+// 1-pole coeff. for 60-dB decay in a desired time
 rt60(x) =   .001 ,
             (   speriod ,
                 max(x, .001) : /) : pow;
