@@ -1,0 +1,5 @@
+# set title '<title>'
+set ylabel '<linear amplitude>'
+set xlabel '<samples>'
+set grid
+plot 'out.csv' lt rgb "#000000" with lines
