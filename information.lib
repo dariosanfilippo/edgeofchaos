@@ -57,3 +57,12 @@ roughness(in, window) = in <:  (   (   rms4(_, 100),
                                        .01 : m2.delta : abs),
                                    window : f2.lp1p),
                                rms(_, window) : m2.div;
+
+// spectral spread
+spec_spr(in, window) = (   (in,
+                           spec_ten(in, window)) : (   _, 
+                                                   _, 
+                                                   10) : f2.bpbi : (_, 
+                                                                   window) : ip.rms),
+                       (in,
+                       window : ip.rms) : m2.div : m2.com;
