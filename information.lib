@@ -5,10 +5,21 @@ f2 = library("filters2.lib");
 ip = library("information.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
+ro = library("routes.lib");
+si = library("signals.lib");
 
 // zero-crossing detection
 zc(x) = x*x' : <(0);
 
+// detects and integrates occurrences of signals within a specified range; with exponential decay in s
+recurrence(lower, upper, t) = _ <: (   >(lower),
+                                       <=(upper)) : fi.pole(m2.rt60(t));
+
+// normalised average absolute deviation around the mean
+aad(n) = si.bus(n) <:  (si.bus(n),
+                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
+                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
+                       
 // zero-crossing rate
 zcr(x, window) = zc(x) : f2.lp1p(_, window);
 
@@ -66,3 +77,16 @@ spec_spr(in, window) = (   (in,
                                                                    window) : ip.rms),
                        (in,
                        window : ip.rms) : m2.div : m2.com;
+
+// dynamicity
+dynamicity(in, window) =  (   (rms(in, 15) : logscale),
+                       (spec_ten(in, 15) : logscale),
+                       noisiness(in, 15)) : par(i, 3,  (_,
+                                                       1/15) : m2.delta : abs : (  _,
+                                                                                   window) : f2.lp1p) :> ma.tanh
+with {
+      logscale(x) = log(x*(10-1)+1)/log(10);
+};
+
+// complexity
+//complexity(in, window) = 
