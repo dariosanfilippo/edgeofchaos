@@ -58,6 +58,33 @@ with {
             cos(m2.w(cf)) : m2.div;
 };
 
+// 1p1z lowpass BLTI
+lpblti(in, cf) =   state 
+                   ~ _ :   ! , 
+                           _
+with {
+      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
+      state(s) = y + v, y
+      with { 
+           v = (in - s) * g;
+           y = (v + s);
+      };
+};
+
+// 1p1z highpass BLTI
+hpblti(in, cf) =   in ,
+                   (   in ,
+                       cf : lpblti) : -;
+
+// 1p1z allpass BLTI
+apblti(in, cf) = ( in ,
+                   cf) <:  lpblti ,
+                           hpblti : -;
+
+// spectrum splitter
+crossover(in, cf) = lp1p1z(in, cf) ,
+                    hp1p1z(in, cf);
+
 // biquad section
 biquad(x, a0, a1, a2, b1, b2) = fir : + ~ iir
 with {
@@ -134,30 +161,3 @@ with {
       b1 = -1*cos(m2.w(cf1))*2/norm;
       b2 = (1-alpha)/norm;
 };
-
-// 1p1z lowpass BLTI
-lpblti(in, cf) =   state 
-                   ~ _ :   ! , 
-                           _
-with {
-      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      state(s) = y + v, y
-      with { 
-           v = (in - s) * g;
-           y = (v + s);
-      };
-};
-
-// 1p1z highpass BLTI
-hpblti(in, cf) =   in ,
-                   (   in ,
-                       cf : lpblti) : -;
-
-// 1p1z allpass BLTI
-apblti(in, cf) = ( in ,
-                   cf) <:  lpblti ,
-                           hpblti : -;
-
-// spectrum splitter
-crossover(in, cf) = lp1p1z(in, cf) ,
-                    hp1p1z(in, cf);
