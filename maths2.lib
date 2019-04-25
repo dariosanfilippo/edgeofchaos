@@ -53,7 +53,7 @@ line_reset(rate, reset) =  rate ,
 ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ *(1-(reset : !=(0)));
 
 // complement
-com(x) = 1-x;
+complement(x) = 1-x;
 
 // differentiator
 diff(x) = x-x';
