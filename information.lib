@@ -22,6 +22,26 @@ peak_env(in, release) = abs(in) :   max(_, _)
 // hold peak for a time specified in seconds
 peak_hold(in, release) = in : ba.peakholder(release*ma.SR);
 
+// detects lower and upper peaks and holds them for a time (in s) specified by "release"
+peaks(in, release) =   (   check_low 
+                           ~ _),
+                       (   check_high
+                           ~ _)
+with {
+      check_low(s) =   (   in, 
+                           s : >= <:   _, 
+                                       (   release,
+                                           _ : m2.ph : m2.diff : <(0)) : |),
+                       s,
+                       in : select2;
+      check_high(s) =  (   in, 
+                           s : <= <:   _, 
+                                       (   release,
+                                           _ : m2.ph : m2.diff : <(0)) : |),
+  		       s,
+                       in : select2;
+};
+
 // envelope following
 env_fol(in, window) = in : abs : lp1p(_, window);
 
