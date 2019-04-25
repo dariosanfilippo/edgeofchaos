@@ -1,6 +1,7 @@
 // INFORMATION PROCESSING
 
 ba = library("basics.lib");
+fi = library("filters.lib");
 f2 = library("filters2.lib");
 ip = library("information.lib");
 ma = library("maths.lib");
@@ -10,15 +11,6 @@ si = library("signals.lib");
 
 // zero-crossing detection
 zc(x) = x*x' : <(0);
-
-// detects and integrates occurrences of signals within a specified range; with exponential decay in s
-recurrence(lower, upper, t) = _ <: (   >(lower),
-                                       <=(upper)) : fi.pole(m2.rt60(t));
-
-// normalised average absolute deviation around the mean
-aad(n) = si.bus(n) <:  (si.bus(n),
-                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
-                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
                        
 // zero-crossing rate
 zcr(x, window) = zc(x) : f2.lp1p(_, window);
@@ -72,13 +64,13 @@ roughness(in, window) = in <:  (   (   rms4(_, 100),
 // spectral spread
 spec_spr(in, window) = (   (in,
                            spec_ten(in, window)) : (   _, 
-                                                   _, 
-                                                   10) : f2.bpbi : (_, 
-                                                                   window) : ip.rms),
+                                                       _, 
+                                                       10) : f2.bpbi : (   _, 
+                                                                           window) : ip.rms),
                        (in,
-                       window : ip.rms) : m2.div : m2.com;
+                       window : ip.rms) : m2.div : m2.complement;
 
-// dynamicity
+// dynamicity index based on RMS, spectral tendency and noisiness
 dynamicity(in, window) =  (   (rms(in, 15) : logscale),
                        (spec_ten(in, 15) : logscale),
                        noisiness(in, 15)) : par(i, 3,  (_,
@@ -87,6 +79,23 @@ dynamicity(in, window) =  (   (rms(in, 15) : logscale),
 with {
       logscale(x) = log(x*(10-1)+1)/log(10);
 };
+
+// detects and integrates occurrences of signals within a specified range; with exponential decay in s
+recurrence(in, lower, upper, t) = in <: (   >(lower),
+                                           <=(upper) : &) : fi.pole(m2.rt60(t));
+
+// normalised average absolute deviation around the mean
+aad(n) = si.bus(n) <:  (si.bus(n),
+                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
+                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
+
+// provides an index on how heterogeneous the state space of a signal is; n is the number of discrete states, upper and lower set the edges of the space, t is the release time
+heterogeneity(in, n, lower, upper, t) = in <: par(i, n, _, 
+                                                        lower+((upper-lower)/n)*i, 
+                                                        lower+((upper-lower)/n)*(i+1)) : par(i, n,  (  _, 
+                                                                                                       _,
+                                                                                                       _,
+                                                                                                       t : recurrence)) : aad(n);
 
 // complexity
 //complexity(in, window) = 
