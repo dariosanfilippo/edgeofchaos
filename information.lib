@@ -30,13 +30,13 @@ peaks(in, release) =   (   check_low
 with {
       check_low(s) =   (   in, 
                            s : >= <:   _, 
-                                       (   release,
+                                       (   1/release,
                                            _ : m2.ph : m2.diff : <(0)) : |),
                        s,
                        in : select2;
       check_high(s) =  (   in, 
                            s : <= <:   _, 
-                                       (   release,
+                                       (   1/release,
                                            _ : m2.ph : m2.diff : <(0)) : |),
   		       s,
                        in : select2;
@@ -91,11 +91,11 @@ spec_spr(in, window) = (   (in,
                        window : ip.rms) : m2.div : m2.complement;
 
 // dynamicity index based on RMS, spectral tendency and noisiness
-dynamicity(in, window) =  (   (rms(in, 15) : logscale),
-                       (spec_ten(in, 15) : logscale),
-                       noisiness(in, 15)) : par(i, 3,  (_,
-                                                       1/15) : m2.delta : abs : (  _,
-                                                                                   window) : f2.lp1p) :> ma.tanh
+dynamicity(in, window) =   ((rms(in, 15) : logscale),
+                           (spec_ten(in, 15) : logscale),
+                           noisiness(in, 15)) : par(i, 3,  (_,
+                                                           1/15) : m2.delta : abs : (  _,
+                                                                                       window) : f2.lp1p) :> ma.tanh
 with {
       logscale(x) = log(x*(10-1)+1)/log(10);
 };
@@ -109,13 +109,29 @@ aad(n) = si.bus(n) <:  (si.bus(n),
                        (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
                        (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
 
-// provides an index on how heterogeneous the state space of a signal is; n is the number of discrete states, upper and lower set the edges of the space, t is the release time
-heterogeneity(in, n, lower, upper, t) = in <: par(i, n, _, 
-                                                        lower+((upper-lower)/n)*i, 
-                                                        lower+((upper-lower)/n)*(i+1)) : par(i, n,  (  _, 
-                                                                                                       _,
-                                                                                                       _,
-                                                                                                       t : recurrence)) : aad(n);
+// provides an index on how heterogeneous the state space of a signal is; inputs are source signal, lower edge of the state space, upper edge of the state space, number of states considered 
+heterogeneity(n) = si.bus(4) <: par(i, n, (    _,
+                                               ((  _,
+                                                   _,
+                                                   n,
+                                                   i) : channel),
+                                               _) : recurrence) : aad(n)
+with {
+      channel(lower, upper, n, i) = lower+((upper-lower)/n)*i,
+                                    lower+((upper-lower)/n)*(i+1);
+};
 
-// complexity
-//complexity(in, window) = 
+// complexity index based on RMS, spectral tendency and noisiness
+complexity(in, window) =   (rms(in, 15) : logscale),
+                           (spec_ten(in, 15) : logscale),
+                           noisiness(in, 15) <: par(i, 3,  _,
+                                                           (   _,
+                                                               window : peaks : par(i, 2,  _,
+                                                                                           1/window : f2.lp1p))) //: par(i, 3,   (_,
+                                                                                                                 //              10,
+                                                                                                                 //              _,
+                                                                                                                 //              _,
+                                                                                                                 //              window : heterogeneity))
+with {
+      logscale(x) = log(x*(10-1)+1)/log(10);
+};
