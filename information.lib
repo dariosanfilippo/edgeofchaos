@@ -68,9 +68,9 @@ spec_ten(in, window) =  (   (   in ,
                         ~ (pow(4) : *(m2.ny));
 
 // noisiness
-noisiness(in, window) = spec_ten(in, window) <: (  in, 
-                                                   _ : zcr : logscale),
-                                                (_ : ma.inv) : m2.delta : abs : f2.lp1p(_, window)
+noisiness(in, window) = spec_ten(in, window) : *(m2.ny) <: (   in, 
+                                                               _ : zcr : logscale),
+                                                           (_ : ma.inv) : m2.delta : abs : f2.lp1p(_, window)
 with {
       logscale(x) = log(x*(10-1)+1)/log(10);
 };
@@ -109,29 +109,32 @@ aad(n) = si.bus(n) <:  (si.bus(n),
                        (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
                        (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
 
-// provides an index on how heterogeneous the state space of a signal is; inputs are source signal, lower edge of the state space, upper edge of the state space, number of states considered 
+// provides an index on how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, release time in s
 heterogeneity(n) = si.bus(4) <: par(i, n, (    _,
                                                ((  _,
                                                    _,
                                                    n,
-                                                   i) : channel),
+                                                   i) : region),
                                                _) : recurrence) : aad(n)
 with {
-      channel(lower, upper, n, i) = lower+((upper-lower)/n)*i,
-                                    lower+((upper-lower)/n)*(i+1);
+      region(lower, upper, n, i) = lower+((upper-lower)/n)*i,
+                                   lower+((upper-lower)/n)*(i+1);
 };
 
-// complexity index based on RMS, spectral tendency and noisiness
-complexity(in, window) =   (rms(in, 15) : logscale),
-                           (spec_ten(in, 15) : logscale),
-                           noisiness(in, 15) <: par(i, 3,  _,
-                                                           (   _,
-                                                               window : peaks : par(i, 2,  _,
-                                                                                           1/window : f2.lp1p))) //: par(i, 3,   (_,
-                                                                                                                 //              10,
-                                                                                                                 //              _,
-                                                                                                                 //              _,
-                                                                                                                 //              window : heterogeneity))
+// complexity index based on the edge of chaos of RMS, spectral tendency and noisiness
+complexity(in, window) =   ((rms(in, 15) : logscale <: _,
+                                                       _),
+                           (spec_ten(in, 15) : logscale <: _,
+                                                           _),
+                           (noisiness(in, 15) <:   _,
+                                                   _)) : par(i, 3, _,
+                                                                   (   _,
+                                                                       window : peaks : par(i, 2,  _,
+                                                                                                   1/window : f2.lp1p))) : par(i, 3, ( _,
+                                                                                                                                       _,
+                                                                                                                                       _,
+                                                                                                                                       window : heterogeneity(10))) : par(i, 3,    _,
+                                                                                                                                                                                   window : m2.delta : abs : sqrt) :> ma.tanh
 with {
       logscale(x) = log(x*(10-1)+1)/log(10);
 };
