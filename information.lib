@@ -91,14 +91,11 @@ spec_spr(in, window) = (   (in,
                        window : ip.rms) : m2.div : m2.complement;
 
 // dynamicity index based on RMS, spectral tendency and noisiness
-dynamicity(in, window) =   ((rms(in, 15) : logscale),
-                           (spec_ten(in, 15) : logscale),
+dynamicity(in, window) =   ((rms(in, 15) : m2.unit_log(_, 10)),
+                           (spec_ten(in, 15) : m2.unit_log(_, 10)),
                            noisiness(in, 15)) : par(i, 3,  (_,
                                                            1/15) : m2.delta : abs : (  _,
-                                                                                       window) : f2.lp1p) :> ma.tanh
-with {
-      logscale(x) = log(x*(10-1)+1)/log(10);
-};
+                                                                                       window) : f2.lp1p) :> ma.tanh;
 
 // detects and integrates occurrences of signals within a specified range; with exponential decay in s
 recurrence(in, lower, upper, t) = in <: (   >(lower),
@@ -122,19 +119,11 @@ with {
 };
 
 // complexity index based on the edge of chaos of RMS, spectral tendency and noisiness
-complexity(in, window) =   ((rms(in, 15) : logscale <: _,
-                                                       _),
-                           (spec_ten(in, 15) : logscale <: _,
-                                                           _),
-                           (noisiness(in, 15) <:   _,
-                                                   _)) : par(i, 3, _,
-                                                                   (   _,
-                                                                       window : peaks : par(i, 2,  _,
-                                                                                                   1/window : f2.lp1p))) : par(i, 3, ( _,
-                                                                                                                                       _,
-                                                                                                                                       _,
-                                                                                                                                       window : heterogeneity(10))) : par(i, 3,    _,
-                                                                                                                                                                                   window : m2.delta : abs : sqrt) :> ma.tanh
-with {
-      logscale(x) = log(x*(10-1)+1)/log(10);
-};
+complexity(in, window) =   (rms(in, 15) : m2.unit_log(_, 10)),
+                           (spec_ten(in, 15) : m2.unit_log(_, 10)),
+                           noisiness(in, 15) : par(i, 3,   _,
+                                                           0,
+                                                           1,
+                                                           window : heterogeneity(10)) : par(i, 3, _,
+                                                                                                   window : m2.delta : abs : sqrt) :> ma.tanh;
+
