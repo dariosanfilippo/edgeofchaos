@@ -29,13 +29,13 @@ peaks(in, release) =   (   check_low
                            ~ _)
 with {
       check_low(s) =   (   in, 
-                           s : >= <:   _, 
+                           s : <= <:   _, 
                                        (   1/release,
                                            _ : m2.ph : m2.diff : <(0)) : |),
                        s,
                        in : select2;
       check_high(s) =  (   in, 
-                           s : <= <:   _, 
+                           s : >= <:   _, 
                                        (   1/release,
                                            _ : m2.ph : m2.diff : <(0)) : |),
   		       s,
