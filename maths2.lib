@@ -19,7 +19,7 @@ speriod = 1/ma.SR;
 
 // NAN-safe divider
 div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
-                                        x2 : /));
+                                    x2 : /));
 
 // closest power of 2
 round_pow2(x) = 2^(ma.log2(x) : rint);
@@ -75,7 +75,9 @@ map_pow(x, t, lower, upper) = x : pow(t) : map_lin(_, lower, upper);
 map_log(x, t, lower, upper) = log(x*(t-1)+1)/log(t) : map_lin(_,
 lower, upper);
 
-// parabolic mapping; t (must be an even int) is a tension parameter
+unit_log(x, t) = log(x*(t-1)+1)/log(t);
+
+// parabolic mapping; t (must be an even int) is the tension parameter
 map_par(x, t, lower, upper) = x*2-1 : pow(t_1) : map_lin(_,
 lower, upper)
 with {
