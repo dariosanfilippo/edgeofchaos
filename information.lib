@@ -106,7 +106,7 @@ aad(n) = si.bus(n) <:  (si.bus(n),
                        (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
                        (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
 
-// provides an index on how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, release time in s
+// provides an index of how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, release time in s
 heterogeneity(n) = si.bus(4) <: par(i, n, (    _,
                                                ((  _,
                                                    _,
