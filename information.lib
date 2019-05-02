@@ -70,7 +70,7 @@ spec_ten(in, window) =  (   (   in ,
 // noisiness
 noisiness(in, window) = spec_ten(in, window) : *(m2.ny) <: (   in, 
                                                                _ : zcr : logscale),
-                                                           (_ : ma.inv) : m2.delta : abs : f2.lp1p(_, window)
+                                                           (_ : m2.inv) : m2.delta : abs : f2.lp1p(_, window)
 with {
       logscale(x) = log(x*(10-1)+1)/log(10);
 };
