@@ -21,6 +21,10 @@ speriod = 1/ma.SR;
 div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
                                     x2 : /));
 
+// NAN-safe inverse
+inv(x) =   1,
+           x : div;
+
 // closest power of 2
 round_pow2(x) = 2^(ma.log2(x) : rint);
 
