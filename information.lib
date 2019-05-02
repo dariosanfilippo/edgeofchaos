@@ -69,11 +69,8 @@ spec_ten(in, window) =  (   (   in ,
 
 // noisiness
 noisiness(in, window) = spec_ten(in, window) : *(m2.ny) <: (   in, 
-                                                               _ : zcr : logscale),
-                                                           (_ : m2.inv) : m2.delta : abs : f2.lp1p(_, window)
-with {
-      logscale(x) = log(x*(10-1)+1)/log(10);
-};
+                                                               _ : zcr : m2.unit_log(_, 10)),
+                                                           (_ : m2.inv) : m2.delta : abs : f2.lp1p(_, window);
 
 // roughness
 roughness(in, window) = in <:  (   (   rms4(_, 100),
@@ -124,6 +121,19 @@ complexity(in, window) =   (rms(in, 15) : m2.unit_log(_, 10)),
                            noisiness(in, 15) : par(i, 3,   _,
                                                            0,
                                                            1,
-                                                           window : heterogeneity(10)) : par(i, 3, _,
-                                                                                                   window : m2.delta : abs : sqrt) :> ma.tanh;
-
+                                                           window : heterogeneity(10)) : ( m2.unit_log(_, t1),
+                                                                                           m2.unit_log(_, t2),
+                                                                                           m2.unit_log(_, t3)) : par(i, 3, _,
+                                                                                                                           1/window : f2.lp1p) : par(i, 3, _,
+                                                                                                                           window : m2.delta : abs) :> ma.tanh
+with {
+      t1 = ((rms(in, 15) : m2.unit_log(_, 10)),
+           window : ip.peaks : ro.cross(2) : -) :    _,
+                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+      t2 = ((spec_ten(in, 15) : m2.unit_log(_, 10)),
+           window : ip.peaks : ro.cross(2) : -) :    _,
+                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+      t3 = (noisiness(in, 15),
+           window : ip.peaks : ro.cross(2) : -) :    _,
+                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+};
