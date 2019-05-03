@@ -103,13 +103,15 @@ aad(n) = si.bus(n) <:  (si.bus(n),
                        (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) : par(i, n, (- : abs)) :> _),
                        (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
 
-// provides an index of how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, release time in s
+// provides an index of how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, memory of the analysis in s
 heterogeneity(n) = si.bus(4) <: par(i, n, (    _,
                                                ((  _,
                                                    _,
                                                    n,
                                                    i) : region),
-                                               _) : recurrence) : aad(n)
+                                               (_ <: si.bus(3))) : ((recurrence,
+                                                                   _ : ip.peak_hold),
+                                                                       1/_ : f2.lp1p)) : aad(n)
 with {
       region(lower, upper, n, i) = lower+((upper-lower)/n)*i,
                                    lower+((upper-lower)/n)*(i+1);
@@ -121,19 +123,19 @@ complexity(in, window) =   (rms(in, 15) : m2.unit_log(_, 10)),
                            noisiness(in, 15) : par(i, 3,   _,
                                                            0,
                                                            1,
-                                                           window : heterogeneity(10)) : ( m2.unit_log(_, t1),
-                                                                                           m2.unit_log(_, t2),
-                                                                                           m2.unit_log(_, t3)) : par(i, 3, _,
-                                                                                                                           1/window : f2.lp1p) : par(i, 3, _,
-                                                                                                                           window : m2.delta : abs) :> ma.tanh
+                                                           window : heterogeneity(10)) : ( m2.div(_, t1),
+                                                                                           m2.div(_, t2),
+                                                                                           m2.div(_, t3)) : par(i, 3,  _,
+                                                                                                                       1/(window*2) : f2.lp1p) : par(i, 3, _,
+                                                                                                                                                           window*2 : m2.delta : abs) :> ma.tanh
 with {
       t1 = ((rms(in, 15) : m2.unit_log(_, 10)),
-           window : ip.peaks : ro.cross(2) : -) :    _,
-                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+           window : ip.peaks : ro.cross(2) : -) :  _,
+                                                   1/window : f2.lp1p : m2.map_lin(_, .2, 1);
       t2 = ((spec_ten(in, 15) : m2.unit_log(_, 10)),
-           window : ip.peaks : ro.cross(2) : -) :    _,
-                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+           window : ip.peaks : ro.cross(2) : -) :  _,
+                                                   1/window : f2.lp1p : m2.map_lin(_, .2, 1);
       t3 = (noisiness(in, 15),
-           window : ip.peaks : ro.cross(2) : -) :    _,
-                                               1/window : f2.lp1p : m2.map_lin(_, 10, 2);
+           window : ip.peaks : ro.cross(2) : -) :  _,
+                                                   1/window : f2.lp1p : m2.map_lin(_, .2, 1);
 };
