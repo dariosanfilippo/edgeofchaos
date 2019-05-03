@@ -64,8 +64,8 @@ spec_ten(in, window) =  (   (   in ,
                                 _ ,
                                 window : spec_bal) ,
                             (   in ,
-                                window : rms) :  m2.div : *(window) : /(ma.SR) : f2.clip_int(_, 0, 1)) 
-                        ~ (pow(4) : *(m2.ny));
+                                window : rms) :  m2.div : *(window) : /(ma.SR) : f2.clip_int(_, 0, 1) : pow(4)) 
+                        ~ *(m2.ny);
 
 // noisiness
 noisiness(in, window) = spec_ten(in, window) : *(m2.ny) <: (   in, 
