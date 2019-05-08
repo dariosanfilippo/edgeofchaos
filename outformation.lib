@@ -2,6 +2,7 @@
 
 au = library("auxiliary.lib");
 ba = library("basics.lib");
+de = library("delays.lib");
 d2 = library("delays2.lib");
 f2 = library("filters2.lib");
 ip = library("information.lib");
@@ -46,7 +47,7 @@ with {
       del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
 };
 
-// ZC granulator, i.e., discontinuities are handled through ZC detection
+// table-based ZC granulator, i.e., discontinuities are handled through ZC detection
 grains_zc(x, position, g_size) =    grains
                                                ~ _
 with {
@@ -71,7 +72,6 @@ with {
         read_frame(out) = (frame <: _,
                                     (==(0),
                                     sel_zc(out) : ba.sAndH)) ~ (!, _) : +;
-                                    
         zc_up =     (ip.zc(input),
                     (m2.diff(input) : >(0)) : &);
         zc_down =   (ip.zc(input),
@@ -97,7 +97,51 @@ with {
     };
 };
 
-
-
-
+// DL-based ZC granulator
+zc_granulator(n, size) = par(i, n, grain) :> /(n)
+with {
+    grain(input, pitch, rate, pos) =    (input,
+                                        (   input,
+                                            _,
+                                            pitch,
+                                            rate,
+                                            pos : read_grain) : dl_pol)
+                                        ~ _;
+    read_grain(input, fb, pitch, rate, pos) =   (   trigger,
+                                                    index : ba.sAndH),
+                                                (   trigger,
+                                                    (   input,
+                                                        pos,
+                                                        fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(_, 0, size)
+    with {
+        zc_index(input, position, direction) = ba.if(   (m2.diff(direction) : >=(0)),
+                                                        (   input,
+                                                            p : zc_index_up),
+                                                        (   input,
+                                                            p : zc_index_down)) : +(1)
+        with {
+           p = position : m2.wrap(_, 0, size);
+        };
+        trigger =   check
+                    ~ _
+        with {
+            check(ready) =  (fb : ip.zc),
+                            (m2.line_reset(rate, ready) : >=(1)) : &;
+        };
+        shift = (1,
+                (   trigger,
+                    pitch : ba.sAndH) : -)*(1/rate)*ma.SR*m2.line_reset(rate, trigger);
+    };
+    zc_index_up(input, pos) =   (   (input : ip.zc),
+                                    (m2.diff(input) : >=(0)) : &),
+                                index : ba.sAndH,
+                                        pos : dl_lin;
+    zc_index_down(input, pos) = (   (input : ip.zc),
+                                    (m2.diff(input) : <(0)) : &),
+                                index : ba.sAndH,
+                                        pos : dl_lin;
+    index = ba.period(size);
+    dl_pol(in, del) = de.fdelayltv(6, size, del, in);
+    dl_lin(in, del) = in : de.fdelay(size, del);
+};
 
