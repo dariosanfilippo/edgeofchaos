@@ -130,7 +130,10 @@ with {
         };
         shift = (1,
                 (   trigger,
-                    pitch : ba.sAndH) : -)*(1/rate)*ma.SR*m2.line_reset(rate, trigger);
+                    pitch : ba.sAndH) : -)*(   1,
+                                               (trigger,
+                                               rate : ba.sAndH) : m2.div)*ma.SR*m2.line_reset( (trigger,
+                                                                                               rate : ba.sAndH), trigger);
     };
     zc_index_up(input, pos) =   (   (input : ip.zc),
                                     (m2.diff(input) : >=(0)) : &),
