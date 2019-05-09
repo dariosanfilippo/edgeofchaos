@@ -98,13 +98,13 @@ with {
 };
 
 // DL-based ZC granulator
-zc_granulator(n, size) = par(i, n, grain) :> /(n)
+grains_dl_zc(n, size) = par(i, n, grain) :> /(n)
 with {
     grain(input, pitch, rate, pos) =    (input,
                                         (   input,
                                             _,
                                             pitch,
-                                            rate,
+                                            (rate : abs),
                                             pos : read_grain) : dl_pol)
                                         ~ _;
     read_grain(input, fb, pitch, rate, pos) =   (   trigger,
