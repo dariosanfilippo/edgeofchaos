@@ -6,7 +6,7 @@ ma = library("maths.lib");
 m2 = library("maths2.lib");
 
 // integer delay
-del_int(in, del, size) = in : de.delay(s, del*ma.SR)
+del(in, del, size) = in : de.delay(s, del*ma.SR)
 with {
       s = size*ma.SR : m2.round_pow2;
 };
