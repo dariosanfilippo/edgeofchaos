@@ -98,53 +98,54 @@ with {
 };
 
 // DL-based ZC granulator
-grains_dl_zc(n, size) = par(i, n, grain) :> /(n)
+grains_dl_zc(n, s) = par(i, n, grain) :> /(n)
 with {
-    grain(input, pitch, rate, pos) =    (input,
-                                        (   input,
-                                            _,
+      size = s*ma.SR : m2.round_pow2;
+      index = ba.period(size);
+      grain(input, pitch, rate, pos) = (input,
+                                       (   input,
+                                               _,
                                             pitch,
                                             (rate : abs),
                                             pos : read_grain) : dl_pol)
-                                        ~ _;
-    read_grain(input, fb, pitch, rate, pos) =   (   trigger,
-                                                    index : ba.sAndH),
-                                                (   trigger,
-                                                    (   input,
-                                                        pos,
-                                                        fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(_, 0, size)
-    with {
-        zc_index(input, position, direction) = ba.if(   (m2.diff(direction) : >=(0)),
-                                                        (   input,
-                                                            p : zc_index_up),
-                                                        (   input,
-                                                            p : zc_index_down)) : +(1)
-        with {
-           p = position : m2.wrap(_, 0, size);
-        };
-        trigger =   check
-                    ~ _
-        with {
-            check(ready) =  (fb : ip.zc),
-                            (m2.line_reset(rate, ready) : >=(1)) : &;
-        };
-        shift = (1,
-                (   trigger,
-                    pitch : ba.sAndH) : -)*(   1,
+                                       ~ _;
+      read_grain(input, fb, pitch, rate, pos) = (  trigger,
+                                                   index : ba.sAndH),
+                                                (  trigger,
+                                                   (   input,
+                                                       pos,
+                                                       fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(_, 0, size)
+      with {
+       zc_index(input, position, direction) = ba.if((m2.diff(direction) : >=(0)),
+                                                    (  input,
+                                                       p : zc_index_up),
+                                                    (  input,
+                                                       p : zc_index_down)) : +(1)
+       with {
+           p = position*ma.SR : m2.wrap(_, 0, size);
+       };
+       trigger =   check
+                   ~ _
+       with {
+           check(ready) =  (fb : ip.zc),
+                           (m2.line_reset(rate, ready) : >=(1)) : &;
+       };
+      shift =  (1,
+               (   trigger,
+                   pitch : ba.sAndH) : -)*(    1,
                                                (trigger,
                                                rate : ba.sAndH) : m2.div)*ma.SR*m2.line_reset( (trigger,
                                                                                                rate : ba.sAndH), trigger);
-    };
-    zc_index_up(input, pos) =   (   (input : ip.zc),
-                                    (m2.diff(input) : >=(0)) : &),
+      };
+      zc_index_up(input, pos) = (  (input : ip.zc),
+                                   (m2.diff(input) : >(0)) : &),
                                 index : ba.sAndH,
-                                        pos : dl_lin;
-    zc_index_down(input, pos) = (   (input : ip.zc),
-                                    (m2.diff(input) : <(0)) : &),
-                                index : ba.sAndH,
-                                        pos : dl_lin;
-    index = ba.period(size);
-    dl_pol(in, del) = de.fdelayltv(6, size, del, in);
-    dl_lin(in, del) = in : de.fdelay(size, del);
+                                pos : dl;
+      zc_index_down(input, pos) =  (   (input : ip.zc),
+                                       (m2.diff(input) : <(0)) : &),
+                                   index : ba.sAndH,
+                                   pos : dl;
+      dl_pol(in, del) = de.fdelayltv(6, size, del, in);
+      dl(in, del) = in : de.delay(size, del);
 };
 
