@@ -1,0 +1,68 @@
+// STABILITY PROCESSING
+
+ba = library("basics.lib");
+d2 = library("delays2.lib");
+f2 = library("filters2.lib");
+ip = library("information.lib");
+ma = library("maths.lib");
+m2 = library("maths2.lib");
+st = library("stability.lib");
+
+// hard clipping
+clip(in, lower, upper) = in : max(lower) : min(upper);
+
+// look-ahead limiting
+limiter(in, lim) = d2.del(in, .002, .002) ,
+                   (   lim ,
+                       (in ,
+                       .1 :    ip.peak_hold ,
+                               500 :   f2.lp1p ,
+                                       .1 : ip.peak_env) : m2.div : min(1)) : *;
+
+// reference_power-input_power ratio (with responsiveness parameter)
+norm_fact_rms(ref, target, window) =   (   ref ,
+                                           window : ip.rms) ,
+                                       (   target ,
+                                           window : ip.rms) : m2.div;
+
+// reference_peak-input_peak ratio (with release parameter)
+norm_fact_peak(ref, target, release) = (   ref ,
+                                           release : ip.peak_env) ,
+                                       (   target ,
+                                           release : ip.peak_env) : m2.div;
+
+// dynamical normalisation based on RMS
+dyn_norm_rms(ref, target, window) = (ref ,
+                                    target ,
+                                    window) :   norm_fact_rms ,
+                                                target : *;
+
+// dynamical normalisation based on peak
+dyn_norm_peak(ref, target, release) = (ref ,
+                                       target ,
+                                       release) :  norm_fact_peak ,
+                                                   target : *;
+
+// dynamical compression based on RMS
+dyn_comp_rms(in, curve, window) =  in ,
+                                   (   1 ,   
+                                       (   in ,
+                                           window : ip.rms :   clip(_, 0, 1) ,
+                                                               curve : pow) : -) : *;
+
+
+// STABILITY PROCESSING/NLTF (bounded saturators)
+
+tanh(x) = (exp(2*x)-1)/(exp(2*x)+1);
+cubic(x) = select3( cond,   -2/3,
+                            x-(x*x*x/3),
+                            2/3)
+with {
+    cond =  (   (x : >(-1)) ,
+                (x : <(1)) : &) ,
+            (x : >=(1))*2 :> _;
+};
+sinatan(x) = x/sqrt(1+x*x);
+parabolic(x) = ba.if(abs(x) : >=(2),    ma.signum(x),
+                                        x*(1-abs(x/4)));
+hyperbolic(x) = x/(1+abs(x));
