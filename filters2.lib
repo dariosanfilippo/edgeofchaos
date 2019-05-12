@@ -11,6 +11,11 @@ st = library("stability.lib");
 sah_dc(in, t) =    m2.delta(in, t) : ==(0),
                    in : ba.sAndH;
 
+// sample-and-hold signals that have changed in direction
+sah_inv(in) = m2.diff(in) : >(0) <:    (_,
+                                        _' : !=),
+                                       in : ba.sAndH;
+
 // bounded integrator
 int_clip(in, lower, upper) =    (_ ,
                                 in : + : st.clip(_, lower, upper)) 
