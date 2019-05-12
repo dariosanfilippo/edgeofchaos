@@ -52,6 +52,15 @@ rms(in, window) = in <: * : f2.lp1p(_, window) : sqrt;
 rms4(in, window) = in <: * : seq(i, 4, _,
                                        window : f2.lp1p) : sqrt;
 
+// function for equal-loudness contour
+a_weighting(f) = (12194^2*f^4)/((f^2+20.6^2)*sqrt((f^2+107.7^2)*(f^2+737.9^2))*(f^2+12194^2));
+
+loudness(in, window) = in <:   (   _,
+                                   1/window : peak_env),
+                               (   _,
+                                   window : spec_ten*m2.ny : a_weighting) : *;
+                               
+
 // spectral energy (RMS) difference at a splitting point (Hz)
 spec_bal(in, cf, window) =  in ,
                             cf : f2.crossover <:   (   _ ,
