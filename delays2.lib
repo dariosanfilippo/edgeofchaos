@@ -24,7 +24,7 @@ with {
 // linear interpolation between two delay lines
 del_smo(in, del, size, itime) = in : de.sdelay(s, it, d)
 with {
-      s = size*ma.SR : m2.round_pow2;
+      s = size*ma.SR;
       it = itime*ma.SR;
       d = del*ma.SR;
 };
