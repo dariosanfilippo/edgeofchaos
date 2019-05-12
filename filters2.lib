@@ -1,3 +1,4 @@
+ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
 ma = library("maths.lib");
@@ -6,12 +7,14 @@ st = library("stability.lib");
 
 // FILTERS
 
-
+// sample-and-hold signals that have remained constant for t seconds
+sah_dc(in, t) =    m2.delta(in, t) : ==(0),
+                   in : ba.sAndH;
 
 // bounded integrator
-clip_int(in, lower, upper) =    (_ ,
-                                in : + : st.clip(_, lower, upper)
-                                ) ~ _;
+int_clip(in, lower, upper) =    (_ ,
+                                in : + : st.clip(_, lower, upper)) 
+                                ~ _;
 
 // classic 1-pole lowpass
 lp1p(in, cf) = in*a0 : + ~ *(b1)
