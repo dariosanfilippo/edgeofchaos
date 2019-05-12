@@ -2,7 +2,7 @@ fi = library("filters.lib");
 f2 = library("filters2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
-eq = library("equilibrium.lib");
+st = library("stability.lib");
 
 // FILTERS
 
@@ -10,7 +10,7 @@ eq = library("equilibrium.lib");
 
 // bounded integrator
 clip_int(in, lower, upper) =    (_ ,
-                                in : + : eq.clip(_, lower, upper)
+                                in : + : st.clip(_, lower, upper)
                                 ) ~ _;
 
 // classic 1-pole lowpass
@@ -30,7 +30,7 @@ with {
 
 // 1-pole lowpass based on naive integration
 lp1pint(in, cf) =   (in ,
-                    _ : + : *(m2.w(cf) : eq.clip(_, 0, 2)) : fi.pole(1)
+                    _ : + : *(m2.w(cf) : st.clip(_, 0, 2)) : fi.pole(1)
                     ) ~ *(-1);
 
 // 1-pole highpass based on naive integration
@@ -95,7 +95,7 @@ with {
 // biquad lowpass
 lpbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
 with {
-      cf1 = eq.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(cf, 5, m2.ny-5);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -109,7 +109,7 @@ with {
 // biquad highpass
 hpbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
 with {
-      cf1 = eq.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(cf, 5, m2.ny-5);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -123,7 +123,7 @@ with {
 // biquad bandpass
 bpbi(in, cf, q) = biquad(in, a0, a1, a2, b1, b2)
 with {
-      cf1 = eq.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(cf, 5, m2.ny-5);
       q1 = max(q, .001);
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -137,7 +137,7 @@ with {
 // biquad bandstop
 bsbi(in, cf, q) = biquad(in, a0, a1, a2, b1, b2)
 with {
-      cf1 = eq.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(cf, 5, m2.ny-5);
       q1 = max(q, .001);
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -151,7 +151,7 @@ with {
 // biquad allpass
 apbi(in, cf) = biquad(in, a0, a1, a2, b1, b2)
 with {
-      cf1 = eq.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(cf, 5, m2.ny-5);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
