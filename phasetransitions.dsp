@@ -14,7 +14,7 @@ prime_leap = 1;
 // feedback growth (unity) rate in seconds
 rate = 3600;
 // order of the network, i.e., number of delay lines
-order = 8; 
+order = 16; 
 
 // MATH
 
@@ -171,7 +171,7 @@ spec_ten(in, window) =  (   (   in ,
                                 _ , 
                                 window : spec_bal) , 
                             (   in , 
-                                window : rms) : divider : /(ma.SR) : *(window) : clip_int(_, 0, 1) : *(ny)
+                                window : rms) : divider : /(ma.SR) : *(window) : clip_int(_, 0, 1) <: * : *(ny)
                         ) ~ _;
 
 // TIME-VARIANCE AND ADAPTIVITY
