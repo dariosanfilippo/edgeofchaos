@@ -9,6 +9,9 @@ ip = library("information.lib");
 op = library("outformation.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
+ro = library("routes.lib");
+si = library("signals.lib");
+st = library("stability.lib");
 
 // real-time pitch-shifter with 6th-order pol. delay lines
 pitch_shift(x, factor, frame, buff_size) = d2.del_pol(x, del1, buff_size)*w1, 
@@ -149,3 +152,37 @@ with {
       dl(in, del) = in : de.delay(size, del);
 };
 
+// Feedback delay network reverb with non-transposing variable DL
+rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = (summing : delays :filters : matrix : fb : limiters) 
+                                                       ~ si.bus(n) :> /(n)
+with {
+      summing = par(i, n, +(in));
+      delays = par(i, n,   (_ <:   _,
+                                   (size : m2.prime_base_pow(i+1)))) : par(i, n,   _, 
+                                                                                   _, 
+                                                                                   max_size, 
+                                                                                   it) : par(i, n, d2.del_smo);
+      filters = par(i, n,  _,
+                           cf : f2.lp1p);
+      matrix = ro.hadamard(n);
+      fb = par(i, n, *(fb_coeff));
+      limiters = par(i, n, _,
+                           1 : st.limiter);
+};
+
+// Feedback delay network reverb with variable DL
+rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = (summing : delays :filters : matrix : fb : limiters) 
+                                                   ~ si.bus(n) :> /(n)
+with {
+      summing = par(i, n, +(in));
+      delays = par(i, n,   (_ <:   _,
+                                   (size : m2.prime_base_pow(i+1)))) : par(i, n,   _, 
+                                                                                   _, 
+                                                                                   max_size) : par(i, n, d2.del_pol);
+      filters = par(i, n,  _,
+                           cf : f2.lp1p);
+      matrix = ro.hadamard(n);
+      fb = par(i, n, *(fb_coeff));
+      limiters = par(i, n, _,
+                           1 : st.limiter);
+};
