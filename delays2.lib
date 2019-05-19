@@ -8,17 +8,17 @@ m2 = library("maths2.lib");
 // integer delay
 del(in, del, size) = in : de.delay(s, del*ma.SR)
 with {
-      s = size*ma.SR : m2.round_pow2;
+      s = size*ma.SR;
 };
 
 // linear interpolation between samples
 del_lin(in, del, size) = in : de.fdelay(size*ma.SR, del*ma.SR);
 
 // polynomial interpolation
-del_pol(in, del, size) = de.fdelayltv(6, s, d, in)
+del_pol(in, del, size) = de.fdelayltv(4, s, d, in)
 with {
       s = size*ma.SR : m2.round_pow2;
-      d = del*ma.SR : max((6-1)/2, _);
+      d = del*ma.SR : max((4-1)/2, _);
 };
 
 // linear interpolation between two delay lines
