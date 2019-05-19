@@ -12,12 +12,12 @@ st = library("stability.lib");
 clip(in, lower, upper) = in : max(lower) : min(upper);
 
 // look-ahead limiting
-limiter(in, lim) = d2.del(in, .002, .002) ,
+limiter(in, lim) = d2.del(in, .002, .002),
                    (   lim ,
                        (in ,
                        .1 :    ip.peak_hold ,
                                500 :   f2.lp1p ,
-                                       .1 : ip.peak_env) : m2.div : min(1)) : *;
+                                       1 : ip.peak_env) : m2.div : min(1)) : *;
 
 // reference_power-input_power ratio (with responsiveness parameter)
 norm_fact_rms(ref, target, window) =   (   ref ,
