@@ -148,7 +148,7 @@ with {
                                        (m2.diff(input) : <(0)) : &),
                                    index : ba.sAndH,
                                    pos : dl;
-      dl_pol(in, del) = de.fdelayltv(6, size, del, in);
+      dl_pol(in, del) = de.fdelayltv(4, size, del, in);
       dl(in, del) = in : de.delay(size, del);
 };
 
