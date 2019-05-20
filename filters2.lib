@@ -8,7 +8,7 @@ st = library("stability.lib");
 // FILTERS
 
 // sample-and-hold signals that have remained constant for t seconds
-sah_dc(t, in) =    m2.delta(in, t) : ==(0),
+sah_dc(t, in) =    m2.delta(t, in) : ==(0),
                    in : ba.sAndH;
 
 // sample-and-hold signals that have changed in direction
@@ -17,8 +17,7 @@ sah_inv(in) = m2.diff(in) : >(0) <:    (_,
                                        in : ba.sAndH;
 
 // bounded integrator
-int_clip(lower, upper, in) =    (_ ,
-                                in : + : st.clip(_, lower, upper)) 
+int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
                                 ~ _;
 
 // classic 1-pole lowpass
@@ -38,11 +37,11 @@ with {
 
 // 1-pole lowpass based on naive integration
 lp1pint(cf, in) =   (in ,
-                    _ : + : *(m2.w(cf) : st.clip(_, 0, 2)) : fi.pole(1)
+                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)
                     ) ~ *(-1);
 
 // 1-pole highpass based on naive integration
-hp1pint(cf, in) = in-lp1pint(in, cf);
+hp1pint(cf, in) = in-lp1pint(cf, in);
 
 // 1-pole-1-zero lowpass
 lp1p1z(cf, in) =    in*a0 ,
@@ -80,30 +79,30 @@ with {
 };
 
 // 1p1z highpass BLTI
-hpblti(cf, in) =   in ,
-                   (   in ,
-                       cf : lpblti) : -;
+hpblti(cf, in) =   in,
+                   (   cf,
+                       in : lpblti) : -;
 
 // 1p1z allpass BLTI
-apblti(cf, in) = ( in ,
-                   cf) <:  lpblti ,
+apblti(cf, in) = ( cf,
+                   in) <:  lpblti,
                            hpblti : -;
 
 // spectrum splitter
-crossover(cf, in) = lp1p1z(in, cf) ,
-                    hp1p1z(in, cf);
+crossover(cf, in) = lp1p1z(cf, in) ,
+                    hp1p1z(cf, in);
 
 // biquad section
-biquad(x, a0, a1, a2, b1, b2) = fir : + ~ iir
+biquad(a0, a1, a2, b1, b2, x) = fir : + ~ iir
 with {
       fir = a0*x+a1*x'+a2*x'';
       iir(fb) = -b1*fb-b2*fb';
 };
 
 // biquad lowpass
-lpbi(cf, in) = biquad(in, a0, a1, a2, b1, b2)
+lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(5, m2.ny-5, cf);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -115,9 +114,9 @@ with {
 };
 
 // biquad highpass
-hpbi(cf, in) = biquad(in, a0, a1, a2, b1, b2)
+hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(5, m2.ny-5, cf);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -129,9 +128,9 @@ with {
 };
 
 // biquad bandpass
-bpbi(cf, q, in) = biquad(in, a0, a1, a2, b1, b2)
+bpbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(5, m2.ny-5, cf);
       q1 = max(q, .001);
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -143,9 +142,9 @@ with {
 };
 
 // biquad bandstop
-bsbi(cf, q, in) = biquad(in, a0, a1, a2, b1, b2)
+bsbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(5, m2.ny-5, cf);
       q1 = max(q, .001);
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
@@ -157,9 +156,9 @@ with {
 };
 
 // biquad allpass
-apbi(cf, in) = biquad(in, a0, a1, a2, b1, b2)
+apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(cf, 5, m2.ny-5);
+      cf1 = st.clip(5, m2.ny-5, cf);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
