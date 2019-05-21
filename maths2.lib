@@ -29,7 +29,7 @@ inv(x) =   1,
 round_pow2(x) = 2^(ma.log2(x) : rint);
 
 // wrap around a range
-wrap(x, lower, upper) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) : +(lower);
+wrap(lower, upper, x) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) : +(lower);
 
 // angular frequency
 w(x) = x*2*ma.PI/ma.SR;
@@ -63,33 +63,33 @@ complement(x) = 1-x;
 diff(x) = x-x';
 
 // first derivative
-delta(in, t) =  in ,
+delta(t, in) =  in ,
                 d2.del_lin(in, t, 16) : -;
 
 // second derivative
-delta2(in, t) = delta(in, t) : delta(in, t);
+delta2(t, in) = delta(in, t) : delta(in, t);
 
 // linear mapping
-map_lin(x, lower, upper) = x*(upper-lower)+lower;
+map_lin(lower, upper, x) = x*(upper-lower)+lower;
 
 // power mapping; t is the exponent or tension parameter
-map_pow(x, t, lower, upper) = x : pow(t) : map_lin(_, lower, upper);
+map_pow(t, lower, upper, x) = x : pow(t) : map_lin(_, lower, upper);
 
 // logarithmic mapping; t is the base acting as a tension parameter
-map_log(x, t, lower, upper) = log(x*(t-1)+1)/log(t) : map_lin(_,
+map_log(t, lower, upper, x) = log(x*(t-1)+1)/log(t) : map_lin(_,
 lower, upper);
 
-unit_log(x, t) = log(x*(t-1)+1)/log(t);
+unit_log(t, x) = log(x*(t-1)+1)/log(t);
 
 // parabolic mapping; t (must be an even int) is the tension parameter
-map_par(x, t, lower, upper) = x*2-1 : pow(t_1) : map_lin(_,
+map_par(t, lower, upper, x) = x*2-1 : pow(t_1) : map_lin(_,
 lower, upper)
 with {
       t_1 = t : int : *(2);
 };
 
 // piece-wise mapping (two segments)
-map_pcw(x, split, exp1, exp2, l1, u1, l2, u2) = ba.if( x : <=(split),
+map_pcw(split, exp1, exp2, l1, u1, l2, u2, x) = ba.if( x : <=(split),
                                                        map_pow(x, exp1, l1, u1),
                                                        map_pow(x, exp2, l2, u2));
 

@@ -14,8 +14,8 @@ si = library("signals.lib");
 st = library("stability.lib");
 
 // real-time pitch-shifter with 6th-order pol. delay lines
-pitch_shift(x, factor, frame, buff_size) = d2.del_pol(x, del1, buff_size)*w1, 
-                                           d2.del_pol(x, del2, buff_size)*w2 :> _
+pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
+                                           d2.del_pol(del2, buff_size, x)*w2 :> _
 with {
       frame_1 = frame : abs;
       rate =   1,
@@ -29,13 +29,13 @@ with {
       ph2 = ph1 : +(.5) : ma.decimal;
       w1 = m2.window_hann(ph1); 
       w2 = m2.window_hann(ph2);
-      del1 = shift*ph1+offset : m2.wrap(_, 0, limit);
-      del2 = shift*ph2+offset : m2.wrap(_, 0, limit); 
+      del1 = shift*ph1+offset : m2.wrap(0, limit);
+      del2 = shift*ph2+offset : m2.wrap(0, limit); 
 };
 
 // real-time time-stretcher with 6th-order pol. delay lines
-time_stretch(x, factor, frame, buff_size) =    d2.del_pol(x, del1, buff_size)*w1, 
-                                               d2.del_pol(x, del2, buff_size)*w2 :> _
+time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
+                                               d2.del_pol(del2, buff_size, x)*w2 :> _
 with {
       buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
       position = m2.ph((1-factor)/buff, 0)*buff;
@@ -51,8 +51,8 @@ with {
 };
 
 // table-based ZC granulator, i.e., discontinuities are handled through ZC detection
-grains_zc(x, position, g_size) =    grains
-                                               ~ _
+grains_zc(position, g_size, x) =    grains
+                                    ~ _
 with {
     s = 768000;
     l = g_size*ma.SR;
@@ -125,7 +125,7 @@ with {
                                                     (  input,
                                                        p : zc_index_down)) : +(1)
        with {
-           p = position*ma.SR : m2.wrap(_, 0, size);
+           p = position*ma.SR : m2.wrap(0, size);
        };
        trigger =   check
                    ~ _

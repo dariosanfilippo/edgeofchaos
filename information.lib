@@ -13,17 +13,17 @@ si = library("signals.lib");
 zc(x) = x*x' : <(0);
                        
 // zero-crossing rate
-zcr(x, window) = zc(x) : f2.lp1p(_, window);
+zcr(window, x) = zc(x) : f2.lp1p(window);
 
 // infinitely fast attack and adjustable release
-peak_env(in, release) = abs(in) :   max(_, _)
+peak_env(release, in) = abs(in) :   max
                                     ~ *(release : m2.rt60);
 
 // hold peak for a time specified in seconds
-peak_hold(in, release) = in : ba.peakholder(release*ma.SR);
+peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
 
 // detects lower and upper peaks and holds them for a time (in s) specified by "release"
-peaks(in, release) =   (   check_low 
+peaks(release, in) =   (   check_low 
                            ~ _),
                        (   check_high
                            ~ _)
@@ -43,68 +43,59 @@ with {
 };
 
 // envelope following
-env_fol(in, window) = in : abs : lp1p(_, window);
+env_fol(window, in) = in : abs : lp1p(window);
 
 // root mean square measurement using lowpass
-rms(in, window) = in <: * : f2.lp1p(_, window) : sqrt;
+rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 
 // RMS with fourth-order LP
-rms4(in, window) = in <: * : seq(i, 4, _,
-                                       window : f2.lp1p) : sqrt;
+rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 
 // function for equal-loudness contour
 a_weighting(f) = (12194^2*f^4)/((f^2+20.6^2)*sqrt((f^2+107.7^2)*(f^2+737.9^2))*(f^2+12194^2));
 
-loudness(in, window) = in <:   (   _,
-                                   1/window : peak_env),
-                               (   _,
-                                   window : spec_ten*m2.ny : a_weighting) : *;
+loudness(window, in) = in <:   peak_env(1/window),
+                               (spec_ten(window)*m2.ny : a_weighting) : *;
                                
 
 // spectral energy (RMS) difference at a splitting point (Hz)
-spec_bal(in, cf, window) =  in ,
-                            cf : f2.crossover <:   (   _ ,
-                                                       window : rms : *(-1)) ,
-                                                   (   _ ,
-                                                       window : rms) : +;
+spec_bal(cf, window, in) =  cf,
+                            in : f2.crossover <:   rms(window)*(-1),
+                                                   rms(window) : +;
 
 // spectral tendency (weighted mean)
-spec_ten(in, window) =  (   (   in ,
-                                _ ,
-                                window : spec_bal) ,
-                            (   in ,
-                                window : rms) :  m2.div : *(window) : /(ma.SR) : f2.int_clip(_, 0, 1) : pow(4)) 
+spec_ten(window, in) =  (   (   _ ,
+                                window ,
+                                in : spec_bal) ,
+                            (   window ,
+                                in : rms) : m2.div : *(window) : /(ma.SR) : f2.int_clip(0, 1) : pow(4)) 
                         ~ *(m2.ny);
 
 // noisiness
-noisiness(in, window) = spec_ten(in, window) : *(m2.ny) <: (   in, 
-                                                               _ : zcr : m2.unit_log(_, 10)),
-                                                           (_ : m2.inv) : m2.delta : abs : f2.lp1p(_, window);
+noisiness(window, in) = spec_ten(window, in) : *(m2.ny) <: m2.inv,
+                                                           (   _, 
+                                                               in : zcr : m2.unit_log(10)) : m2.delta : abs : f2.lp1p(window);
 
 // roughness
-roughness(in, window) = in <:  (   (   rms4(_, 100),
-                                       .01 : m2.delta : abs),
-                                   window : f2.lp1p),
-                               rms(_, window) : m2.div;
+roughness(window, in) = in <:  (   (   .01,
+                                       rms4(100) : m2.delta : abs) : f2.lp1p(window)),
+                               rms(window) : m2.div;
 
 // spectral spread
-spec_spr(in, window) = (   (in,
-                           spec_ten(in, window)) : (   _, 
-                                                       _, 
-                                                       10) : f2.bpbi : (   _, 
-                                                                           window) : ip.rms),
-                       (in,
-                       window : ip.rms) : m2.div : m2.complement;
+spec_spr(window, in) = (   (in,
+                           spec_ten(window, in)) : (   _, 
+                                                       10, 
+                                                       _) : f2.bpbi : ip.rms(window)),
+                       (window,
+                       in : ip.rms) : m2.div : m2.complement;
 
 // dynamicity index based on RMS, spectral tendency and noisiness
-dynamicity(in, window) =   ((rms(in, 15) : m2.unit_log(_, 10)),
-                           (spec_ten(in, 15) : m2.unit_log(_, 10)),
-                           (noisiness(in, 15) : m2.unit_log(_, 10))) : par(i, 3,  (_,
-                                                                                   1/15) : m2.delta : abs : (  _,
-                                                                                                               window) : f2.lp1p) :> m2.unit_log(_, 10) : ma.tanh;
+dynamicity(in, window) =   ((rms(15, in) : m2.unit_log(10)),
+                           (spec_ten(15, in) : m2.unit_log(10)),
+                           (noisiness(15, in) : m2.unit_log(10))) : par(i, 3,  m2.delta(1/15) : abs : f2.lp1p(window)) :> m2.unit_log(10) : ma.tanh;
 
 // detects and integrates occurrences of signals within a specified range; with exponential decay in s
-recurrence(in, lower, upper, t) = in <: (   >(lower),
+recurrence(lower, upper, t, in) = in <: (  >(lower),
                                            <=(upper) : &) : fi.pole(m2.rt60(t));
 
 // normalised average absolute deviation around the mean
@@ -113,39 +104,22 @@ aad(n) = si.bus(n) <:  (si.bus(n),
                        (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
 
 // provides an index of how heterogeneous the state space of a signal is; inputs are n for number of states (must be provided as an argument), source signal, lower edge of the state space, upper edge of the state space, memory of the analysis in s
-heterogeneity(n) = si.bus(4) <: par(i, n, (    _,
-                                               ((  _,
-                                                   _,
-                                                   n,
-                                                   i) : region),
-                                               (_ <: si.bus(3))) : ((   recurrence,
-                                                                        _ : ip.peak_hold),
-                                                                    1/_ : f2.lp1p)) : aad(n)
+heterogeneity(n, l, h, t, in) = par(i, n,  region(l, h, n, i),
+                                           t,
+                                           in : recurrence : ip.peak_hold(t) : f2.lp1p(1/t)) : aad(n)
 with {
       region(lower, upper, n, i) = lower+((upper-lower)/n)*i,
                                    lower+((upper-lower)/n)*(i+1);
 };
 
 // complexity index based on the edge of chaos of RMS, spectral tendency and noisiness
-complexity(in, window) =   (rms(in, 15) : m2.unit_log(_, 10)),
-                           (spec_ten(in, 15) : m2.unit_log(_, 10)),
-                           (noisiness(in, 15) : m2.unit_log(_, 10)) : par(i, 3,    _,
-                                                                                   0,
-                                                                                   1,
-                                                                                   window : heterogeneity(10)) : ( m2.div(_, t1),
+complexity(window, in) =   (rms(15, in) : m2.unit_log(10)),
+                           (spec_ten(15, in) : m2.unit_log(10)),
+                           (noisiness(15, in) : m2.unit_log(10)) : par(i, 3, heterogeneity(10, 0, 1, window)) : (  m2.div(_, t1),
                                                                                                                    m2.div(_, t2),
-                                                                                                                   m2.div(_, t3)) : par(i, 3,  _,
-                                                                                                                                               1/(window*2) : f2.lp1p) : par(i, 3, _,
-                                                                                                                                                                                   window*2 : m2.delta : abs) :>   _, 
-                                                                                                                                                                                                                   1/(window*2) : f2.lp1p : ma.tanh
+                                                                                                                   m2.div(_, t3)) : par(i, 3, f2.lp1p(1/(window*2))) : par(i, 3, m2.delta(window*2) : abs) :> f2.lp1p(1/(window*2)) : ma.tanh
 with {
-      t1 = ((rms(in, 15) : m2.unit_log(_, 10)),
-           window : ip.peaks : ro.cross(2) : -) :  _,
-                                                   1/window : f2.lp1p : m2.map_lin(_, .25, 1);
-      t2 = ((spec_ten(in, 15) : m2.unit_log(_, 10)),
-           window : ip.peaks : ro.cross(2) : -) :  _,
-                                                   1/window : f2.lp1p : m2.map_lin(_, .25, 1);
-      t3 = ((noisiness(in, 15) : m2.unit_log(_, 10)),
-           window : ip.peaks : ro.cross(2) : -) :  _,
-                                                   1/window : f2.lp1p : m2.map_lin(_, .25, 1);
+      t1 = ((rms(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : : f2.lp1p(1/window) : m2.map_lin(.25, 1);
+      t2 = ((spec_ten(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
+      t3 = ((noisiness(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
 };
