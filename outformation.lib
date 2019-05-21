@@ -117,7 +117,7 @@ with {
                                                 (  trigger,
                                                    (   input,
                                                        pos,
-                                                       fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(_, 0, size)
+                                                       fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(0, size)
       with {
        zc_index(input, position, direction) = ba.if((m2.diff(direction) : >=(0)),
                                                     (  input,
@@ -157,17 +157,14 @@ rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = (summing : delays :filter
                                                        ~ si.bus(n) :> /(n)
 with {
       summing = par(i, n, +(in));
-      delays = par(i, n,   (_ <:   _,
-                                   (size : m2.prime_base_pow(i+1)))) : par(i, n,   _, 
-                                                                                   _, 
-                                                                                   max_size, 
-                                                                                   it) : par(i, n, d2.del_smo);
-      filters = par(i, n,  _,
-                           cf : f2.lp1p);
+      delays = par(i, n,   max_size, 
+                           it,
+                           (size : m2.prime_base_pow(i+1)),
+                           _) : par(i, n, d2.del_smo);
+      filters = par(i, n, f2.lp1p(cf));
       matrix = ro.hadamard(n);
       fb = par(i, n, *(fb_coeff));
-      limiters = par(i, n, _,
-                           1 : st.limiter);
+      limiters = par(i, n, st.limiter(1));
 };
 
 // Feedback delay network reverb with variable DL
@@ -177,12 +174,10 @@ with {
       summing = par(i, n, +(in));
       delays = par(i, n,   (_ <:   _,
                                    (size : m2.prime_base_pow(i+1)))) : par(i, n,   _, 
-                                                                                   _, 
-                                                                                   max_size) : par(i, n, d2.del_pol);
-      filters = par(i, n,  _,
-                           cf : f2.lp1p);
+                                                                                   max_size,
+                                                                                   _) : par(i, n, d2.del_pol);
+      filters = par(i, n, f2.lp1p(cf));
       matrix = ro.hadamard(n);
       fb = par(i, n, *(fb_coeff));
-      limiters = par(i, n, _,
-                           1 : st.limiter);
+      limiters = par(i, n, st.limiter(1));
 };

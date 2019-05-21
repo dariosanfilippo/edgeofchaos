@@ -74,11 +74,11 @@ spec_ten(window, in) =  (   (   _ ,
 // noisiness
 noisiness(window, in) = spec_ten(window, in) : *(m2.ny) <: m2.inv,
                                                            (   _, 
-                                                               in : zcr : m2.unit_log(10)) : m2.delta : abs : f2.lp1p(window);
+                                                               in : zcr : m2.unit_log(10)) : m2.delta(1) : abs : f2.lp1p(window);
 
 // roughness
 roughness(window, in) = in <:  (   (   .01,
-                                       rms4(100) : m2.delta : abs) : f2.lp1p(window)),
+                                       rms4(100) : m2.delta(.01) : abs) : f2.lp1p(window)),
                                rms(window) : m2.div;
 
 // spectral spread
@@ -92,7 +92,7 @@ spec_spr(window, in) = (   (in,
 // dynamicity index based on RMS, spectral tendency and noisiness
 dynamicity(in, window) =   ((rms(15, in) : m2.unit_log(10)),
                            (spec_ten(15, in) : m2.unit_log(10)),
-                           (noisiness(15, in) : m2.unit_log(10))) : par(i, 3,  m2.delta(1/15) : abs : f2.lp1p(window)) :> m2.unit_log(10) : ma.tanh;
+                           (noisiness(15, in) : m2.unit_log(10))) : par(i, 3, m2.delta(1/15, 1/15) : abs : f2.lp1p(window)) :> m2.unit_log(10) : ma.tanh;
 
 // detects and integrates occurrences of signals within a specified range; with exponential decay in s
 recurrence(lower, upper, t, in) = in <: (  >(lower),
@@ -117,9 +117,9 @@ complexity(window, in) =   (rms(15, in) : m2.unit_log(10)),
                            (spec_ten(15, in) : m2.unit_log(10)),
                            (noisiness(15, in) : m2.unit_log(10)) : par(i, 3, heterogeneity(10, 0, 1, window)) : (  m2.div(_, t1),
                                                                                                                    m2.div(_, t2),
-                                                                                                                   m2.div(_, t3)) : par(i, 3, f2.lp1p(1/(window*2))) : par(i, 3, m2.delta(window*2) : abs) :> f2.lp1p(1/(window*2)) : ma.tanh
+                                                                                                                   m2.div(_, t3)) : par(i, 3, f2.lp1p(1/(window*2))) : par(i, 3, m2.delta(16, window*2) : abs) :> f2.lp1p(1/(window*2)) : ma.tanh
 with {
-      t1 = ((rms(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : : f2.lp1p(1/window) : m2.map_lin(.25, 1);
+      t1 = ((rms(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
       t2 = ((spec_ten(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
       t3 = ((noisiness(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
 };

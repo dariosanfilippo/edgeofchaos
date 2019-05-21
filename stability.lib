@@ -17,16 +17,16 @@ limiter(lim, in) = d2.del(.002, .002, in),
                        (in : ip.peak_hold(.1) : f2.lp1p(500) : ip.peak_env(1)) : m2.div : min(1)) : *;
 
 // reference_power-input_power ratio (with responsiveness parameter)
-norm_fact_rms(ref,  window, target) =  (   ref ,
-                                           window : ip.rms) ,
-                                       (   target ,
-                                           window : ip.rms) : m2.div;
+norm_fact_rms(ref, window, target) =  (   window,
+                                           ref : ip.rms) ,
+                                       (   window,
+                                           target : ip.rms) : m2.div;
 
 // reference_peak-input_peak ratio (with release parameter)
-norm_fact_peak(ref, release, target) = (   ref ,
-                                           release : ip.peak_env) ,
-                                       (   target ,
-                                           release : ip.peak_env) : m2.div;
+norm_fact_peak(ref, release, target) = (   release,
+                                           ref : ip.peak_env) ,
+                                       (   release ,
+                                           target : ip.peak_env) : m2.div;
 
 // dynamical normalisation based on RMS
 dyn_norm_rms(ref, window, target) = (ref ,
@@ -43,14 +43,14 @@ dyn_norm_peak(ref, release, target) = (ref ,
 // dynamical compression based on RMS
 dyn_comp_rms(curve, window, in) =  in ,
                                    (   1 ,   
-                                       (   in ,
-                                           window : ip.rms :   clip(_, 0, 1) ,
+                                       (ip.rms(window, in) :   clip(0, 1) ,
                                                                curve : pow) : -) : *;
 
 
 // STABILITY PROCESSING/NLTF (bounded saturators)
 
 tanh(x) = (exp(2*x)-1)/(exp(2*x)+1);
+
 cubic(x) = select3( cond,   -2/3,
                             x-(x*x*x/3),
                             2/3)
@@ -59,7 +59,10 @@ with {
                 (x : <(1)) : &) ,
             (x : >=(1))*2 :> _;
 };
+
 sinatan(x) = x/sqrt(1+x*x);
+
 parabolic(x) = ba.if(abs(x) : >=(2),    ma.signum(x),
                                         x*(1-abs(x/4)));
+
 hyperbolic(x) = x/(1+abs(x));

@@ -63,11 +63,11 @@ complement(x) = 1-x;
 diff(x) = x-x';
 
 // first derivative
-delta(t, in) =  in ,
-                d2.del_lin(in, t, 16) : -;
+delta(s, t, in) =  in ,
+                d2.del_lin(s, t, in) : -;
 
 // second derivative
-delta2(t, in) = delta(in, t) : delta(in, t);
+delta2(s, t, in) = delta(s, t, in) : delta(s, t);
 
 // linear mapping
 map_lin(lower, upper, x) = x*(upper-lower)+lower;

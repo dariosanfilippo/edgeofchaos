@@ -27,13 +27,13 @@ with {
 };
 
 // bipolar BLIT
-blit_bp(f, h, d) = m2.delta(blit_up(f, h), d_1)
+blit_bp(f, h, d) = m2.delta(d1, blit_up(f, h))
 with {
-      d_1 = d*(1/f);
+      d1 = d*(1/f);
 };
 
 saw(f, h) = blit_up(f, h) <:   _,
-                               f2.lp1p(_, 1) : - : fi.pole(.9999) : *(scale)
+                               f2.lp1p(1) : - : fi.pole(.9999) : *(scale)
 with {
       lim = m2.ny/f;
       scale = lim/(h : min(lim));
