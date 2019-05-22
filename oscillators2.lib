@@ -16,7 +16,7 @@ blit_up(f, h) = ba.if(phase : ==(0), 1, sinc)
 with {
       sinc =   sin(phase*h_1),
                sin(phase) : m2.div, 
-                               h_1 : m2.div;
+                            h_1 : m2.div;
       phase = ph(f_1, 0)*2*ma.PI;
       f_1 = f/2;
       h_1 = m2.diff(phase) : <(0),
@@ -27,7 +27,7 @@ with {
 };
 
 // bipolar BLIT
-blit_bp(f, h, d) = m2.delta(d1, blit_up(f, h))
+blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, h))
 with {
       d1 = d*(1/f);
 };
