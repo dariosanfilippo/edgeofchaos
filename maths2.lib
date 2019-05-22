@@ -5,6 +5,8 @@ de = library("delays.lib");
 d2 = library("delays2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
+ro = library("routes.lib");
+si = library("signals.lib");
 
 primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149,
@@ -58,6 +60,16 @@ ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ *(1-(reset : !=(0)));
 
 // complement
 complement(x) = 1-x;
+
+// linear interpolation between m blocks of n signals
+interpolate(m, n, index) = spat(m, index, 1) , ro.interleave(n, m) : ro.interleave(m, n+1) : par(i, m, (_ <: si.bus(n)) , si.bus(n) : ro.interleave(n, 2) : par(i, n, *)) :> si.bus(n)
+with {
+      spat(n,a,d) = 1 <: par(i, n, *(scaler(i, n, a, d) ))
+      with {
+       scaler(i,n,a,d) = (d/2.0+0.5)*max(0.0, 1.0 - abs(fmod(a+0.5+float(n-i)/n, 1.0) - 0.5) * n * d);
+      };
+};
+
 
 // differentiator
 diff(x) = x-x';
