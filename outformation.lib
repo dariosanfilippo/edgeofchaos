@@ -7,6 +7,7 @@ d2 = library("delays2.lib");
 f2 = library("filters2.lib");
 ip = library("information.lib");
 op = library("outformation.lib");
+o2 = library("oscillators2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 ro = library("routes.lib");
@@ -48,6 +49,33 @@ with {
       w2 = m2.window_hann(ph2);
       del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
       del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
+};
+
+// granulator based on DL with overlap-add to 1 but non-homogeneous windowing
+
+grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1+head2
+with {
+      s = size*ma.SR : m2.round_pow2 : /(ma.SR);
+      sah(t, in) = (m2.diff(t) : <(0)),
+                   in : ba.sAndH;
+      ph0 = o2.ph(rate, 0);
+      ph1 = ph0+.05 : ma.decimal;
+      ph2 = ph0 : pow(exponent);
+      ph3 = ph2+.05 : ma.decimal;
+      head1 = d2.del_pol(size, del1, x)*w1
+      with {
+       w1 = ph2 : m2.window_hann;
+       del1 = sah(ph0, position)+shift1 : m2.wrap(0, s);
+       shift1 = (1-sah(ph0, pitch))*(  1,
+                                       sah(ph0, rate): m2.div)*ph0;
+      };
+      head2 = d2.del_pol(size, del2, x)*w2
+      with {
+       w2 = ph3: m2.window_hann;
+       del2 = sah(ph1, position)+shift2 : m2.wrap(0, s);
+       shift2 = (1-sah(ph1, pitch))*(  1,
+                                       sah(ph1, rate): m2.div)*ph1;
+      };
 };
 
 // table-based ZC granulator, i.e., discontinuities are handled through ZC detection
@@ -105,7 +133,7 @@ grains_dl_zc(n, s) = par(i, n, grain) :> /(n)
 with {
       size = s*ma.SR : m2.round_pow2;
       index = ba.period(size);
-      grain(input, pitch, rate, pos) = (input,
+      grain(pitch, rate, pos, input) = (input,
                                        (   input,
                                                _,
                                             pitch,
