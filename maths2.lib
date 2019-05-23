@@ -85,25 +85,23 @@ delta2(s, t, in) = delta(s, t, in) : delta(s, t);
 map_lin(lower, upper, x) = x*(upper-lower)+lower;
 
 // power mapping; t is the exponent or tension parameter
-map_pow(t, lower, upper, x) = x : pow(t) : map_lin(_, lower, upper);
+map_pow(t, lower, upper, x) = x : pow(t) : map_lin(lower, upper);
 
 // logarithmic mapping; t is the base acting as a tension parameter
-map_log(t, lower, upper, x) = log(x*(t-1)+1)/log(t) : map_lin(_,
-lower, upper);
+map_log(t, lower, upper, x) = log(x*(t-1)+1)/log(t) : map_lin(lower, upper);
 
 unit_log(t, x) = log(x*(t-1)+1)/log(t);
 
 // parabolic mapping; t (must be an even int) is the tension parameter
-map_par(t, lower, upper, x) = x*2-1 : pow(t_1) : map_lin(_,
-lower, upper)
+map_par(t, lower, upper, x) = x*2-1 : pow(t_1) : map_lin(lower, upper)
 with {
       t_1 = t : int : *(2);
 };
 
 // piece-wise mapping (two segments)
 map_pcw(split, exp1, exp2, l1, u1, l2, u2, x) = ba.if( x : <=(split),
-                                                       map_pow(x, exp1, l1, u1),
-                                                       map_pow(x, exp2, l2, u2));
+                                                       map_pow(exp1, l1, u1, x),
+                                                       map_pow(exp2, l2, u2, x));
 
 // Hann window
 window_hann(x) = sin(ma.PI*x) <: *;
