@@ -70,6 +70,8 @@ with {
       };
 };
 
+mtx(r, c) = (si.bus(r), ro.interleave(c, r)) : ro.interleave(r, c+1) : par(i, r, (_ <:    si.bus(c)), 
+                               si.bus(c) : ro.interleave(c, 2) : par(i, c, *)) :> si.bus(c);
 
 // differentiator
 diff(x) = x-x';
