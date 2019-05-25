@@ -51,30 +51,30 @@ with {
       del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
 };
 
-// granulator based on DL with overlap-add to 1 but non-homogeneous windowing
+// granulator based on DL with overlap-add to 1 but non-homogeneous windowing and transposition
 
-grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1+head2
+grains_dl_nhw(size, pitch, rate, position, exponent, x) =
+head1+head2 <: _,_
 with {
       s = size*ma.SR : m2.round_pow2 : /(ma.SR);
       sah(t, in) = (m2.diff(t) : <(0)),
                    in : ba.sAndH;
       ph0 = o2.ph(rate, 0);
-      ph1 = ph0+.05 : ma.decimal;
-      ph2 = ph0 : pow(exponent);
-      ph3 = ph2+.05 : ma.decimal;
+      ph1 = ph0 : pow(exponent) : ma.decimal;
+      ph2 = ph1+.5 : ma.decimal;
+      w1 = ph1 : m2.window_hann;
+      w2 = ph2 : m2.window_hann;
       head1 = d2.del_pol(size, del1, x)*w1
       with {
-       w1 = ph2 : m2.window_hann;
-       del1 = sah(ph0, position)+shift1 : m2.wrap(0, s);
-       shift1 = (1-sah(ph0, pitch))*(  1,
-                                       sah(ph0, rate): m2.div)*ph0;
+       del1 = sah(ph1, position)+shift1 : m2.wrap(0, s);
+       shift1 = (1-sah(ph1, pitch))*(  1,
+                                       sah(ph1, rate) : m2.div)*ph1;
       };
       head2 = d2.del_pol(size, del2, x)*w2
       with {
-       w2 = ph3: m2.window_hann;
-       del2 = sah(ph1, position)+shift2 : m2.wrap(0, s);
-       shift2 = (1-sah(ph1, pitch))*(  1,
-                                       sah(ph1, rate): m2.div)*ph1;
+       del2 = sah(ph2, position)+shift2 : m2.wrap(0, s);
+       shift2 = (1-sah(ph2, pitch))*(  1,
+                                       sah(ph2, rate) : m2.div)*ph2;
       };
 };
 
