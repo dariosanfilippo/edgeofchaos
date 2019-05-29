@@ -14,47 +14,8 @@ ro = library("routes.lib");
 si = library("signals.lib");
 st = library("stability.lib");
 
-// real-time pitch-shifter with 6th-order pol. delay lines
-pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
-                                           d2.del_pol(del2, buff_size, x)*w2 :> _
-with {
-      frame_1 = frame : abs;
-      rate =   1,
-               frame_1 : m2.div;
-      shift = (1-factor)*frame_1;
-      offset = ba.if(  shift < 0,
-                       -shift,
-                       0);
-      limit = buff_size*ma.SR : m2.round_pow2 : /(ma.SR); 
-      ph1 = m2.ph(rate, 0);
-      ph2 = ph1 : +(.5) : ma.decimal;
-      w1 = m2.window_hann(ph1); 
-      w2 = m2.window_hann(ph2);
-      del1 = shift*ph1+offset : m2.wrap(0, limit);
-      del2 = shift*ph2+offset : m2.wrap(0, limit); 
-};
-
-// real-time time-stretcher with 6th-order pol. delay lines
-time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
-                                               d2.del_pol(del2, buff_size, x)*w2 :> _
-with {
-      buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
-      position = m2.ph((1-factor)/buff, 0)*buff;
-      frame_1 = frame : abs;
-      rate =   1,
-               frame_1 : m2.div;
-      ph1 = m2.ph(rate, 0);
-      ph2 = ph1 : +(.5) : ma.decimal;
-      w1 = m2.window_hann(ph1);
-      w2 = m2.window_hann(ph2);
-      del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
-      del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
-};
-
 // granulator based on DL with overlap-add to 1 but non-homogeneous windowing and transposition
-
-grains_dl_nhw(size, pitch, rate, position, exponent, x) =
-head1+head2 <: _,_
+grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1+head2
 with {
       s = size*ma.SR : m2.round_pow2 : /(ma.SR);
       sah(t, in) = (m2.diff(t) : <(0)),
@@ -76,56 +37,6 @@ with {
        shift2 = (1-sah(ph2, pitch))*(  1,
                                        sah(ph2, rate) : m2.div)*ph2;
       };
-};
-
-// table-based ZC granulator, i.e., discontinuities are handled through ZC detection
-grains_zc(position, g_size, x) =    grains
-                                    ~ _
-with {
-    s = 768000;
-    l = g_size*ma.SR;
-    p = position*ma.SR;
-    input = x;
-    rec_index = %(s) ~ +(1);
-    grains(fb) =    int(s),
-                    0.0,
-                    int(rec_index),
-                    input,
-                    int(read_frame(fb) : %(s)) : rwtable
-    with {
-        sel_zc(x) = ba.if(  (m2.diff(x) : >(0)),
-                            zc_up_index,
-                            zc_down_index);
-        frame(start) =  %(dur) ~ +(1)
-        with {
-            dur = zc_index(start+l)-start : max(2);
-        };
-        read_frame(out) = (frame <: _,
-                                    (==(0),
-                                    sel_zc(out) : ba.sAndH)) ~ (!, _) : +;
-        zc_up =     (ip.zc(input),
-                    (m2.diff(input) : >(0)) : &);
-        zc_down =   (ip.zc(input),
-                    (m2.diff(input) : <(0)) : &);
-        zc_index(x) =   int(s),
-                        0.0,
-                        int(rec_index),
-                        (   ip.zc(input),
-                            rec_index : ba.sAndH),
-                        int(x : %(s)) : rwtable;
-        zc_up_index =   int(s),
-                        0.0,
-                        int(rec_index),
-                        (   zc_up,
-                            rec_index : ba.sAndH),
-                        int(p : %(s)) : rwtable;
-        zc_down_index = int(s),
-                        0.0,
-                        int(rec_index),
-                        (   zc_down,
-                            rec_index : ba.sAndH),
-                        int(p : %(s)) : rwtable;
-    };
 };
 
 // DL-based ZC granulator
@@ -180,6 +91,76 @@ with {
       dl(in, del) = in : de.delay(size, del);
 };
 
+// table-based ZC granulator, i.e., discontinuities are handled through ZC detection
+grains_zc(position, g_size, x) =    grains
+                                    ~ _
+with {
+    s = 768000;
+    l = g_size*ma.SR;
+    p = position*ma.SR;
+    input = x;
+    rec_index = %(s) ~ +(1);
+    grains(fb) =    int(s),
+                    0.0,
+                    int(rec_index),
+                    input,
+                    int(read_frame(fb) : %(s)) : rwtable
+    with {
+        sel_zc(x) = ba.if(  (m2.diff(x) : >(0)),
+                            zc_up_index,
+                            zc_down_index);
+        frame(start) =  %(dur) ~ +(1)
+        with {
+            dur = zc_index(start+l)-start : max(2);
+        };
+        read_frame(out) = (frame <: _,
+                                    (==(0),
+                                    sel_zc(out) : ba.sAndH)) ~ (!, _) : +;
+        zc_up =     (ip.zc(input),
+                    (m2.diff(input) : >(0)) : &);
+        zc_down =   (ip.zc(input),
+                    (m2.diff(input) : <(0)) : &);
+        zc_index(x) =   int(s),
+                        0.0,
+                        int(rec_index),
+                        (   ip.zc(input),
+                            rec_index : ba.sAndH),
+                        int(x : %(s)) : rwtable;
+        zc_up_index =   int(s),
+                        0.0,
+                        int(rec_index),
+                        (   zc_up,
+                            rec_index : ba.sAndH),
+                        int(p : %(s)) : rwtable;
+        zc_down_index = int(s),
+                        0.0,
+                        int(rec_index),
+                        (   zc_down,
+                            rec_index : ba.sAndH),
+                        int(p : %(s)) : rwtable;
+    };
+};
+
+// real-time pitch-shifter with 6th-order pol. delay lines
+pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
+                                           d2.del_pol(del2, buff_size, x)*w2 :> _
+with {
+      frame_1 = frame : abs;
+      rate =   1,
+               frame_1 : m2.div;
+      shift = (1-factor)*frame_1;
+      offset = ba.if(  shift < 0,
+                       -shift,
+                       0);
+      limit = buff_size*ma.SR : m2.round_pow2 : /(ma.SR); 
+      ph1 = m2.ph(rate, 0);
+      ph2 = ph1 : +(.5) : ma.decimal;
+      w1 = m2.window_hann(ph1); 
+      w2 = m2.window_hann(ph2);
+      del1 = shift*ph1+offset : m2.wrap(0, limit);
+      del2 = shift*ph2+offset : m2.wrap(0, limit); 
+};
+
 // Feedback delay network reverb with non-transposing variable DL
 rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = (summing : delays :filters : matrix : fb : limiters) 
                                                        ~ si.bus(n) :> /(n)
@@ -208,4 +189,21 @@ with {
       matrix = ro.hadamard(n);
       fb = par(i, n, *(fb_coeff));
       limiters = par(i, n, st.limiter(1));
+};
+
+// real-time time-stretcher with 6th-order pol. delay lines
+time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
+                                               d2.del_pol(del2, buff_size, x)*w2 :> _
+with {
+      buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
+      position = m2.ph((1-factor)/buff, 0)*buff;
+      frame_1 = frame : abs;
+      rate =   1,
+               frame_1 : m2.div;
+      ph1 = m2.ph(rate, 0);
+      ph2 = ph1 : +(.5) : ma.decimal;
+      w1 = m2.window_hann(ph1);
+      w2 = m2.window_hann(ph2);
+      del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
+      del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
 };

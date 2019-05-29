@@ -8,8 +8,11 @@ ma = library("maths.lib");
 m2 = library("maths2.lib");
 o2 = library("oscillators2.lib");
 
-// phasor with phase reset
-ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) ~ *(1-(reset : !=(0)));
+// bipolar BLIT
+blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, h))
+with {
+      d1 = d*(1/f);
+};
 
 // unipolar BLIT
 blit_up(f, h) = ba.if(phase : ==(0), 1, sinc)
@@ -26,12 +29,18 @@ with {
                    int(ma.SR/f));
 };
 
-// bipolar BLIT
-blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, h))
+// phasor with phase reset
+ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) 
+                               ~ *(1-(reset : !=(0)));
+
+// BLIT-based variable width pulse train
+pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(.9999) : *(scale) : +(d)
 with {
-      d1 = d*(1/f);
+      lim = m2.ny/f;
+      scale = lim/(h : min(lim));
 };
 
+// BLIT-based saw
 saw(f, h) = blit_up(f, h) <:   _,
                                f2.lp1p(1) : - : fi.pole(.9999) : *(scale)
 with {
@@ -39,13 +48,8 @@ with {
       scale = lim/(h : min(lim));
 };
 
+// BLIT-based square
 square(f, h) = blit_bp(f, h, .5) : fi.pole(.9999) : *(scale)
-with {
-      lim = m2.ny/f;
-      scale = lim/(h : min(lim));
-};
-
-pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(.9999) : *(scale) : +(d)
 with {
       lim = m2.ny/f;
       scale = lim/(h : min(lim));

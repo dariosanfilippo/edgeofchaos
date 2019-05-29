@@ -7,124 +7,30 @@ st = library("stability.lib");
 
 // FILTERS
 
-// sample-and-hold signals that have remained constant for t seconds
-sah_dc(t, in) =    m2.delta(t, in) : ==(0),
-                   in : ba.sAndH;
-
-// sample-and-hold signals that have changed in direction
-sah_inv(in) = m2.diff(in) : >(0) <:    (_,
-                                        _' : !=),
-                                       in : ba.sAndH;
-
-// bounded integrator
-int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
-                                ~ _;
-
-// classic 1-pole lowpass
-lp1p(cf, in) = in*a0 : + ~ *(b1)
+// biquad allpass
+apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      a0 = 1-abs(b1);
-      b1 = exp(m2.w(cf)*(-1));
+      cf1 = st.clip(5, m2.ny-5, cf);
+      q1 = .707;
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = (1-alpha)/norm;
+      a1 = -1*cos(m2.w(cf1))*2/norm;
+      a2 = (1+alpha)/norm;
+      b1 = -1*cos(m2.w(cf1))*2/norm;
+      b2 = (1-alpha)/norm;
 };
-
-// classic 1-pole highpass
-hp1p(cf, in) = in*a0 : + ~ *(b1)
-with {
-      a0 = 1-abs(b1);
-      b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
-};
-
-
-// 1-pole lowpass based on naive integration
-lp1pint(cf, in) =   (in ,
-                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)
-                    ) ~ *(-1);
-
-// 1-pole highpass based on naive integration
-hp1pint(cf, in) = in-lp1pint(cf, in);
-
-// 1-pole-1-zero lowpass
-lp1p1z(cf, in) =    in*a0 ,
-                    in'*a0*a1 : + : +
-                                    ~ *(b1)
-with {
-    a0 = (1-b1)/2;
-    a1 = 1;
-    b1 =    (1-sin(m2.w(cf))) ,
-            cos(m2.w(cf)) : m2.div;
-};
-
-// 1-pole-1-zero highpass
-hp1p1z(in, cf) =    in*a0 ,
-                    in'*a0*a1 : + : +
-                                    ~ *(b1)
-with {
-    a0 = (1+b1)/2;
-    a1 = -1;
-    b1 =    (1-sin(m2.w(cf))) ,
-            cos(m2.w(cf)) : m2.div;
-};
-
-// 1p1z lowpass BLTI
-lpblti(cf, in) =   state 
-                   ~ _ :   ! , 
-                           _
-with {
-      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      state(s) = y + v, y
-      with { 
-           v = (in - s) * g;
-           y = (v + s);
-      };
-};
-
-// 1p1z highpass BLTI
-hpblti(cf, in) =   in,
-                   (   cf,
-                       in : lpblti) : -;
 
 // 1p1z allpass BLTI
 apblti(cf, in) = ( cf,
                    in) <:  lpblti,
                            hpblti : -;
 
-// spectrum splitter
-crossover(cf, in) = lp1p1z(cf, in) ,
-                    hp1p1z(cf, in);
-
 // biquad section
 biquad(a0, a1, a2, b1, b2, x) = fir : + ~ iir
 with {
       fir = a0*x+a1*x'+a2*x'';
       iir(fb) = -b1*fb-b2*fb';
-};
-
-// biquad lowpass
-lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny-5, cf);
-      q1 = .707;
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = ((1-cos(m2.w(cf1)))/2)/norm;
-      a1 = 1-cos(m2.w(cf1))/norm;
-      a2 = ((1-cos(m2.w(cf1)))/2)/norm;
-      b1 = cos(m2.w(cf1))*-2/norm;
-      b2 = (1-alpha)/norm;
-};
-
-// biquad highpass
-hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny-5, cf);
-      q1 = .707;
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = ((1+cos(m2.w(cf1)))/2)/norm;
-      a1 = -1*(1+cos(m2.w(cf1)))/norm;
-      a2 = ((1+cos(m2.w(cf1)))/2)/norm;
-      b1 = cos(m2.w(cf1))*-2/norm;
-      b2 = (1-alpha)/norm;
 };
 
 // biquad bandpass
@@ -155,16 +61,109 @@ with {
       b2 = (1-alpha)/norm;
 };
 
-// biquad allpass
-apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
+// spectrum splitter
+crossover(cf, in) = lp1p1z(cf, in) ,
+                    hp1p1z(cf, in);
+
+// biquad highpass
+hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
       cf1 = st.clip(5, m2.ny-5, cf);
       q1 = .707;
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
-      a0 = (1-alpha)/norm;
-      a1 = -1*cos(m2.w(cf1))*2/norm;
-      a2 = (1+alpha)/norm;
-      b1 = -1*cos(m2.w(cf1))*2/norm;
+      a0 = ((1+cos(m2.w(cf1)))/2)/norm;
+      a1 = -1*(1+cos(m2.w(cf1)))/norm;
+      a2 = ((1+cos(m2.w(cf1)))/2)/norm;
+      b1 = cos(m2.w(cf1))*-2/norm;
       b2 = (1-alpha)/norm;
 };
+
+// 1p1z highpass BLTI
+hpblti(cf, in) =   in,
+                   (   cf,
+                       in : lpblti) : -;
+
+// classic 1-pole highpass
+hp1p(cf, in) = in*a0 : + ~ *(b1)
+with {
+      a0 = 1-abs(b1);
+      b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
+};
+
+// 1-pole highpass based on naive integration
+hp1pint(cf, in) = in-lp1pint(cf, in);
+
+// 1-pole-1-zero highpass
+hp1p1z(in, cf) =    in*a0 ,
+                    in'*a0*a1 : + : +
+                                    ~ *(b1)
+with {
+    a0 = (1+b1)/2;
+    a1 = -1;
+    b1 =    (1-sin(m2.w(cf))) ,
+            cos(m2.w(cf)) : m2.div;
+};
+
+// bounded integrator
+int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
+                                ~ _;
+
+// biquad lowpass
+lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
+with {
+      cf1 = st.clip(5, m2.ny-5, cf);
+      q1 = .707;
+      alpha = sin(m2.w(cf1))/(2*q1);
+      norm = 1+alpha;
+      a0 = ((1-cos(m2.w(cf1)))/2)/norm;
+      a1 = 1-cos(m2.w(cf1))/norm;
+      a2 = ((1-cos(m2.w(cf1)))/2)/norm;
+      b1 = cos(m2.w(cf1))*-2/norm;
+      b2 = (1-alpha)/norm;
+};
+
+// 1p1z lowpass BLTI
+lpblti(cf, in) =   state 
+                   ~ _ :   ! , 
+                           _
+with {
+      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
+      state(s) = y + v, y
+      with { 
+           v = (in - s) * g;
+           y = (v + s);
+      };
+};
+
+// classic 1-pole lowpass
+lp1p(cf, in) = in*a0 : + ~ *(b1)
+with {
+      a0 = 1-abs(b1);
+      b1 = exp(m2.w(cf)*(-1));
+};
+
+// 1-pole lowpass based on naive integration
+lp1pint(cf, in) =   (in ,
+                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)
+                    ) ~ *(-1);
+
+// 1-pole-1-zero lowpass
+lp1p1z(cf, in) =    in*a0 ,
+                    in'*a0*a1 : + : +
+                                    ~ *(b1)
+with {
+    a0 = (1-b1)/2;
+    a1 = 1;
+    b1 =    (1-sin(m2.w(cf))) ,
+            cos(m2.w(cf)) : m2.div;
+};
+
+// sample-and-hold signals that have remained constant for t seconds
+sah_dc(t, in) =    m2.delta(t, in) : ==(0),
+                   in : ba.sAndH;
+
+// sample-and-hold signals that have changed in direction
+sah_inv(in) = m2.diff(in) : >(0) <:    (_,
+                                        _' : !=),
+                                       in : ba.sAndH;
