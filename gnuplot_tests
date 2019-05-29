@@ -1,0 +1,20 @@
+set key autotitle columnhead
+# set title '<title>'
+#set ylabel '<linear amplitude>'
+#set xlabel '<samples>'
+#set grid
+plot 'out.csv' using 0:1 with lines, '' using 0:2 with lines
+
+#set multiplot                       # multiplot mode (prompt changes to 'multiplot')
+#set size 1, 0.5
+#
+#set origin 0.0,0.5
+#set xlabel 'samples'
+#set ylabel 'amplitude'
+#plot[0:2400] 'out.csv' using 0:1 with lines lt rgb "black" title '1k sine'
+#
+#set origin 0.0,0.0
+#set ylabel 'frequency'
+#plot[0:2400] 'out.csv' using 0:2 with lines lt rgb "black" title 'spectral tendency'
+#
+#unset multiplot                     # exit multiplot mode (prompt changes back to 'gnuplot')
