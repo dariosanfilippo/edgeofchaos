@@ -1,5 +1,7 @@
 // SR-INDEPENDENT DELAYS
 
+// by Dario Sanfilippo
+
 de = library("delays.lib");
 d2 = library("delays2.lib");
 ma = library("maths.lib");

@@ -1,5 +1,7 @@
 // INFORMATION PROCESSING
 
+// by Dario Sanfilippo
+
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");

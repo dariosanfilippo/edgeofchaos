@@ -1,5 +1,7 @@
 // STABILITY PROCESSING
 
+// by Dario Sanfilippo
+
 ba = library("basics.lib");
 d2 = library("delays2.lib");
 f2 = library("filters2.lib");

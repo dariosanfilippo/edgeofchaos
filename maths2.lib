@@ -1,5 +1,7 @@
 // MORE MATH
 
+// by Dario Sanfilippo
+
 ba = library("basics.lib");
 de = library("delays.lib");
 d2 = library("delays2.lib");

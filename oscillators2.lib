@@ -1,5 +1,7 @@
 // MORE OSCILLATORS
 
+// by Dario Sanfilippo
+
 au = library("auxiliary.lib");
 ba = library("basics.lib");
 fi = library("filters.lib");

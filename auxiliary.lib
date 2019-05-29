@@ -1,6 +1,8 @@
-au = library("auxiliary.lib");
+// AUXILIARY FUNCTIONS BY DARIO SANFILIPPO
 
-// AUXILIARY FUNCTIONS
+// by Dario Sanfilippo
+
+au = library("auxiliary.lib");
 
 // full-amp 1-sample impulse
 dirac = 1-1';

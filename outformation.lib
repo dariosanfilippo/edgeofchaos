@@ -1,5 +1,7 @@
 // AUDIO PROCESSING LIBRARY
 
+// by Dario Sanfilippo
+
 au = library("auxiliary.lib");
 ba = library("basics.lib");
 de = library("delays.lib");

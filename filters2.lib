@@ -1,3 +1,7 @@
+// FILTERS
+
+// by Dario Sanfilippo
+
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
@@ -5,7 +9,6 @@ ma = library("maths.lib");
 m2 = library("maths2.lib");
 st = library("stability.lib");
 
-// FILTERS
 
 // biquad allpass
 apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
