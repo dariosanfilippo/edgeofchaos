@@ -126,7 +126,7 @@ with {
       b2 = (1-alpha)/norm;
 };
 
-// 1p1z lowpass BLTI
+// 1p1z lowpass BLTI (Faust code by Oleg Nesterov)
 lpblti(cf, in) =   state 
                    ~ _ :   ! , 
                            _
