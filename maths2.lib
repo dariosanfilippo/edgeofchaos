@@ -1,6 +1,7 @@
-// MORE MATH
-
-// by Dario Sanfilippo
+/* More math functions including matrices, maps, windowing, interpolators.
+ *
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
 
 ba = library("basics.lib");
 de = library("delays.lib");

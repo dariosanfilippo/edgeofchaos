@@ -1,6 +1,7 @@
-// MORE OSCILLATORS
-
-// by Dario Sanfilippo
+/* Mainly band-limited impulse train oscillators.
+ *
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
 
 au = library("auxiliary.lib");
 ba = library("basics.lib");

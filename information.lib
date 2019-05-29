@@ -1,6 +1,7 @@
-// INFORMATION PROCESSING
-
-// by Dario Sanfilippo
+/* Information processing algorithms in the time domain for low-level and high-level features.
+ *
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
 
 ba = library("basics.lib");
 fi = library("filters.lib");

@@ -1,6 +1,7 @@
-// SR-INDEPENDENT DELAYS
-
-// by Dario Sanfilippo
+/* Samplerate-independent delays. 
+ * 
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved. 
+ */
 
 de = library("delays.lib");
 d2 = library("delays2.lib");

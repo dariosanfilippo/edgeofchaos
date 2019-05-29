@@ -1,3 +1,8 @@
+/* Access to all Edge of Chaos library from a single point.
+ * 
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
+
 import("auxiliary.lib");
 import("delays2.lib");
 import("filters2.lib");

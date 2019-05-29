@@ -1,6 +1,7 @@
-// FILTERS
-
-// by Dario Sanfilippo
+/* More filters including those with zero-delay feedback design.
+ *
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
 
 ba = library("basics.lib");
 fi = library("filters.lib");
@@ -8,7 +9,6 @@ f2 = library("filters2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 st = library("stability.lib");
-
 
 // biquad allpass
 apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
@@ -148,8 +148,8 @@ with {
 
 // 1-pole lowpass based on naive integration
 lp1pint(cf, in) =   (in ,
-                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)
-                    ) ~ *(-1);
+                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)) 
+                    ~ *(-1);
 
 // 1-pole-1-zero lowpass
 lp1p1z(cf, in) =    in*a0 ,

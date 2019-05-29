@@ -1,6 +1,8 @@
-// STABILITY PROCESSING
-
-// by Dario Sanfilippo
+/* Stability processing functions including standard dynamics processing as well as 
+ * self-regulating designs.
+ *
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ */
 
 ba = library("basics.lib");
 d2 = library("delays2.lib");
