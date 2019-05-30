@@ -30,7 +30,7 @@ diff(x) = x-x';
 div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
                                     x2 : /));
 
-// linear interpolation between m blocks of n signals)
+// linear interpolation between m blocks of n signals (spat by Romain Michon)
 interpolate_mn(m, n, index) = spat(m, index, 1) , ro.interleave(n, m) 
                                : ro.interleave(m, n+1) 
                                    : par(i, m, (_ <: si.bus(n)), 
