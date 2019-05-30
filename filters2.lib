@@ -122,7 +122,7 @@ with {
       alpha = sin(m2.w(cf1))/(2*q1);
       norm = 1+alpha;
       a0 = ((1-cos(m2.w(cf1)))/2)/norm;
-      a1 = 1-cos(m2.w(cf1))/norm;
+      a1 = (1-cos(m2.w(cf1)))/norm;
       a2 = ((1-cos(m2.w(cf1)))/2)/norm;
       b1 = cos(m2.w(cf1))*-2/norm;
       b2 = (1-alpha)/norm;
