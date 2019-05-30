@@ -129,12 +129,12 @@ with {
 };
 
 // 1p1z lowpass BLTI (Faust code by Oleg Nesterov)
-lpblti(cf, in) =   state 
+lpblti(cf, in) =   tick 
                    ~ _ :   ! , 
                            _
 with {
       g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      state(s) = y+v, y
+      tick(s) = y+v, y
       with { 
            v = (in-s)*g;
            y = v+s;
