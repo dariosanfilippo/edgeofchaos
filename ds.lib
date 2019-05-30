@@ -1,6 +1,8 @@
 /* Access to all Edge of Chaos libraries through a series of environments.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ *
+ * All rights reserved.
  */
 
 au = library("auxiliary.lib");

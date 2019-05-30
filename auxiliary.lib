@@ -1,6 +1,8 @@
 /* Auxiliary function for testing, inspection and debugging.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ *
+ * All rights reserved.
  */
 
 au = library("auxiliary.lib");
@@ -10,7 +12,9 @@ dirac = 1-1';
 
 // signal inspector
 inspect(i, lower, upper) = _ <: attach(_ , 
-                                       _ : vbargraph("sig_%i [style:numerical]", lower, upper));
+                                       _ : vbargraph("sig_%i [style:numerical]", 
+                                                       lower, 
+                                                       upper));
 
 // full-amp n-sample step function
 step(n) = 1 <:  _ ,
