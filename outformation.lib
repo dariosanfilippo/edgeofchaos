@@ -1,6 +1,8 @@
 /* Audio processing functions.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ *
+ * All rights reserved.
  */
 
 au = library("auxiliary.lib");
@@ -17,7 +19,8 @@ ro = library("routes.lib");
 si = library("signals.lib");
 st = library("stability.lib");
 
-// granulator based on DL with overlap-add to 1 but non-homogeneous windowing and transposition
+// granulator based on DL with overlap-add to 1 but non-homogeneous windowing 
+// and transposition
 grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1+head2
 with {
       s = size*ma.SR : m2.round_pow2 : /(ma.SR);
@@ -54,12 +57,13 @@ with {
                                             (rate : abs),
                                             pos : read_grain) : dl_pol)
                                        ~ _;
-      read_grain(input, fb, pitch, rate, pos) = (  trigger,
-                                                   index : ba.sAndH),
-                                                (  trigger,
-                                                   (   input,
-                                                       pos,
-                                                       fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(0, size)
+      read_grain(input, fb, pitch, rate, pos) = 
+        (  trigger,
+           index : ba.sAndH),
+        (  trigger,
+           (   input,
+               pos,
+               fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(0, size)
       with {
        zc_index(input, position, direction) = ba.if((m2.diff(direction) : >=(0)),
                                                     (  input,
@@ -77,10 +81,13 @@ with {
        };
       shift =  (1,
                (   trigger,
-                   pitch : ba.sAndH) : -)*(    1,
-                                               (trigger,
-                                               rate : ba.sAndH) : m2.div)*ma.SR*m2.line_reset( (trigger,
-                                                                                               rate : ba.sAndH), trigger);
+                   pitch : ba.sAndH) : -)
+                       *(  1,
+                           (   trigger,
+                               rate : ba.sAndH) : m2.div)
+                                   *ma.SR*m2.line_reset((trigger,
+                                                        rate : ba.sAndH), 
+                                                           trigger);
       };
       zc_index_up(input, pos) = (  (input : ip.zc),
                                    (m2.diff(input) : >(0)) : &),
@@ -94,7 +101,8 @@ with {
       dl(in, del) = in : de.delay(size, del);
 };
 
-// table-based ZC granulator, i.e., discontinuities are handled through ZC detection
+// table-based ZC granulator, i.e., discontinuities are handled through ZC 
+// detection
 grains_zc(position, g_size, x) =    grains
                                     ~ _
 with {
@@ -146,7 +154,8 @@ with {
 
 // real-time pitch-shifter with 6th-order pol. delay lines
 pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
-                                           d2.del_pol(del2, buff_size, x)*w2 :> _
+                                           d2.del_pol(del2, buff_size, x)*w2 
+                                               :> _
 with {
       frame_1 = frame : abs;
       rate =   1,
@@ -165,8 +174,9 @@ with {
 };
 
 // Feedback delay network reverb with non-transposing variable DL
-rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = (summing : delays :filters : matrix : fb : limiters) 
-                                                       ~ si.bus(n) :> /(n)
+rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = 
+      (summing : delays :filters : matrix : fb : limiters) 
+      ~ si.bus(n) :> /(n)
 with {
       summing = par(i, n, +(in));
       delays = par(i, n,   max_size, 
@@ -180,14 +190,16 @@ with {
 };
 
 // Feedback delay network reverb with variable DL
-rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = (summing : delays :filters : matrix : fb : limiters) 
-                                                   ~ si.bus(n) :> /(n)
+rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = 
+      (summing : delays :filters : matrix : fb : limiters) 
+      ~ si.bus(n) :> /(n)
 with {
       summing = par(i, n, +(in));
       delays = par(i, n,   (_ <:   _,
-                                   (size : m2.prime_base_pow(i+1)))) : par(i, n,   _, 
-                                                                                   max_size,
-                                                                                   _) : par(i, n, d2.del_pol);
+                                   (size : m2.prime_base_pow(i+1)))) 
+                                       : par(i, n,   _, 
+                                                     max_size,
+                                                     _) : par(i, n, d2.del_pol);
       filters = par(i, n, f2.lp1p(cf));
       matrix = ro.hadamard(n);
       fb = par(i, n, *(fb_coeff));
@@ -196,7 +208,8 @@ with {
 
 // real-time time-stretcher with 6th-order pol. delay lines
 time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
-                                               d2.del_pol(del2, buff_size, x)*w2 :> _
+                                               d2.del_pol(del2, buff_size, x)*w2 
+                                                   :> _
 with {
       buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
       position = m2.ph((1-factor)/buff, 0)*buff;

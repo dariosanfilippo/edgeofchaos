@@ -1,7 +1,9 @@
 /* Stability processing functions including standard dynamics processing as well as 
  * self-regulating designs.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> All rights reserved.
+ * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ *
+ * All rights reserved.
  */
 
 ba = library("basics.lib");
@@ -29,7 +31,8 @@ with {
 dyn_comp_rms(curve, window, in) =  in ,
                                    (   1 ,   
                                        (ip.rms(window, in) :   clip(0, 1) ,
-                                                               curve : pow) : -) : *;
+                                                               curve : pow) 
+                                                                   : -) : *;
 
 // dynamical normalisation based on peak
 dyn_norm_peak(ref, release, target) = (ref ,
@@ -49,7 +52,8 @@ hyperbolic(x) = x/(1+abs(x));
 // look-ahead limiting
 limiter(lim, in) = d2.del(.002, .002, in),
                    (   lim ,
-                       (in : ip.peak_hold(.1) : f2.lp1p(500) : ip.peak_env(1)) : m2.div : min(1)) : *;
+                       (in : ip.peak_hold(.1) : f2.lp1p(500) 
+                           : ip.peak_env(1)) : m2.div : min(1)) : *;
 
 // reference_peak-input_peak ratio (with release parameter)
 norm_fact_peak(ref, release, target) = (   release,
@@ -70,5 +74,6 @@ parabolic(x) = ba.if(abs(x) : >=(2),    ma.signum(x),
 // sin(arctan(x))
 sinatan(x) = x/sqrt(1+x*x);
 
-// hyperbolic tangent (I mainly needed this for a test on the web editor; you may want to use ma.tanh)
+// hyperbolic tangent (I mainly needed this for a test on the web editor; 
+// you may want to use ma.tanh)
 tanh(x) = (exp(2*x)-1)/(exp(2*x)+1);
