@@ -206,7 +206,7 @@ with {
       limiters = par(i, n, st.limiter(1));
 };
 
-// real-time time-stretcher with 6th-order pol. delay lines
+// real-time time-stretcher with delay lines
 time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
                                                d2.del_pol(del2, buff_size, x)*w2 
                                                    :> _

@@ -134,10 +134,10 @@ lpblti(cf, in) =   state
                            _
 with {
       g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      state(s) = y + v, y
+      state(s) = y+v, y
       with { 
-           v = (in - s) * g;
-           y = (v + s);
+           v = (in-s)*g;
+           y = v+s;
       };
 };
 
