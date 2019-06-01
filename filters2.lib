@@ -175,18 +175,18 @@ sah_inv(in) = m2.diff(in) : >(0) <:    (_,
 
 // state-variable filter with zero-delay feedback topology
 // outputs are LP, BP, HP. Not stable for all Qs
-svfblti(cf, q,  in) = (((hp <: si.bus(2)) : (bp
-                                            ~   _ ,
-                                                _))
-                        ~ _ : ( ! ,
-                                (_ <: si.bus(2)) ,
+svfblti(cf, q,  in) = (((hp <: si.bus(2)) : (  bp
+                                               ~ _,
+                                               _))
+                        ~ _ : ( !,
+                                (_ <: si.bus(2)),
                                 _) : (  lp
-                                        ~   _ ,
-                                            _ ,
-                                            _))
-                        ~ _ : ( ! ,
-                                _ ,
-                                _ ,
+                                        ~ _,
+                                        _,
+                                        _))
+                        ~ _ : ( !,
+                                _,
+                                _,
                                 _)
 with {
     r = 1/(2*q);
