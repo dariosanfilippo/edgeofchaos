@@ -172,3 +172,34 @@ sah_dc(t, in) =    m2.delta(t, in) : ==(0),
 sah_inv(in) = m2.diff(in) : >(0) <:    (_,
                                         _' : !=),
                                        in : ba.sAndH;
+
+// state-variable filter with zero-delay feedback topology
+svfblti(cf, q,  in) = (((hp <: si.bus(2)) : (bp
+                                            ~   _ ,
+                                                _))
+                        ~ _ : ( ! ,
+                                (_ <: si.bus(2)) ,
+                                _) : (  lp
+                                        ~   _ ,
+                                            _ ,
+                                            _))
+                        ~ _ : ( ! ,
+                                _ ,
+                                _ ,
+                                _)
+with {
+    r = 1/(2*q);
+    g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
+    hp(fb1, fb2) = (fb1*(-2*r+g)-fb2+in)*(1/(1+2*r*g+g*g));
+    bp(s1, in1) = v1+y1, y1
+    with {
+        v1 = in1*g;
+        y1 = v1+s1;
+    };
+    lp(s2, in2) = v2+y2, y2
+    with {
+        v2 = in2*g;
+        y2 = v2+s2;
+    };
+};
+
