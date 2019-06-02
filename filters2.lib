@@ -169,9 +169,10 @@ sah_dc(t, in) =    m2.delta(t, in) : ==(0),
                    in : ba.sAndH;
 
 // sample-and-hold signals that have changed in direction
-sah_inv(in) = m2.diff(in) : >(0) <:    (_,
-                                        _' : !=),
-                                       in : ba.sAndH;
+sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
+                                           _ : ba.sAndH <: (   _,
+                                                               _' : !=),
+                                                           in : ba.sAndH;
 
 // state-variable filter with zero-delay feedback topology
 // outputs are LP, BP, HP. Not stable for all Qs
