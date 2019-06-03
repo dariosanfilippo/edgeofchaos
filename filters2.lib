@@ -175,33 +175,52 @@ sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
                                                            in : ba.sAndH;
 
 // state-variable filter with zero-delay feedback topology
-// outputs are LP, BP, HP. Not stable for all Qs
-svfblti(cf, q,  in) = (((hp <: si.bus(2)) : (  bp
-                                               ~ _,
-                                               _))
-                        ~ _ : ( !,
-                                (_ <: si.bus(2)),
-                                _) : (  lp
-                                        ~ _,
+// inputs are cutoff, Q, shelving boost (linear amp.), input signal
+// outputs are LP, HP, BP, BP_normalised, LS, HS, BS, notch, peak AP
+svfblti(cf, q, k, in) =     tick
+                            ~ ( _, 
+                                _) : (  !, 
+                                        !,
                                         _,
-                                        _))
-                        ~ _ : ( !,
-                                _,
-                                _,
-                                _)
+                                        _,
+                                        _,
+                                        _,
+                                        _,
+                                        _,
+                                        _,
+                                        _,
+                                        _,
+                                        _)
 with {
-    r = 1/(2*q);
-    g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-    hp(fb1, fb2) = (fb1*(-2*r+g)-fb2+in)*(1/(1+2*r*g+g*g));
-    bp(s1, in1) = v1+y1, y1
+    r = 1/2*q;
+    g = m2.w(cf)/2;
+    tick(s1, s2) =  u1,
+                    u2,
+                    lp,
+                    hp,
+                    bp,
+                    bp_norm,
+                    ls,
+                    hs,
+                    b_shelf,
+                    notch,
+                    peak,
+                    ap
     with {
-        v1 = in1*g;
-        y1 = v1+s1;
-    };
-    lp(s2, in2) = v2+y2, y2
-    with {
-        v2 = in2*g;
-        y2 = v2+s2;
+        u1 = v1+bp;
+        u2 = v2+lp;
+        v1 = hp*g;
+        v2 = bp*g;
+        hp = (in-s1*(2*r+g)-s2)/(1+2*r+g*g);
+        bp = s1+v1;
+        lp = s2+v2;
+        bp_norm = bp*2*r;
+        b_shelf = in+k*bp_norm;
+        ls = in+k*lp;
+        hs = in+k*hp;
+        notch = in-bp_norm;
+        ap = in-4*r*bp;
+        peak = lp-hp;
     };
 };
 
