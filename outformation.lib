@@ -152,7 +152,7 @@ with {
     };
 };
 
-// real-time pitch-shifter with 6th-order pol. delay lines
+// real-time pitch-shifter with 4th-order pol. delay lines
 pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
                                            d2.del_pol(del2, buff_size, x)*w2 
                                                :> _
