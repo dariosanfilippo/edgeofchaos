@@ -9,9 +9,11 @@ au = library("auxiliary.lib");
 ba = library("basics.lib");
 de = library("delays.lib");
 d2 = library("delays2.lib");
+fi = library("filters.lib");
 f2 = library("filters2.lib");
 ip = library("information.lib");
 op = library("outformation.lib");
+os = library("oscillators.lib");
 o2 = library("oscillators2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
@@ -171,6 +173,15 @@ with {
       w2 = m2.window_hann(ph2);
       del1 = shift*ph1+offset : m2.wrap(0, limit);
       del2 = shift*ph2+offset : m2.wrap(0, limit); 
+};
+
+// pole modulation of normalised 1-pole systems 
+// with mod. shaper (0 for square wave, 1 for sine wave, inf for pulses)
+pole_mod(rate, shaping, x) = x*norm : fi.pole(mod)
+with {
+      norm = 1-abs(mod);
+      mod = os.oscsin(rate) <: ma.signum,
+                               (abs : pow(max(0, shaping))) : *;
 };
 
 // Feedback delay network reverb with non-transposing variable DL
