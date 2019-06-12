@@ -175,13 +175,17 @@ with {
       del2 = shift*ph2+offset : m2.wrap(0, limit); 
 };
 
-// pole modulation of normalised 1-pole systems 
-// with mod. shaper (0 for square wave, 1 for sine wave, inf for pulses)
+// pole modulation of normalised 1-pole systems, hence oscillating
+// between low-pass and high-pass. The modulator has a shaping parameter
+// going from -1 to 1 where the we have square at -1, sine at 0, pulses at 1
 pole_mod(rate, shaping, x) = x*norm : fi.pole(mod)
 with {
       norm = 1-abs(mod);
       mod = os.oscsin(rate) <: ma.signum,
-                               (abs : pow(max(0, shaping))) : *;
+                               (abs : pow(shaping1)) : *
+      with {
+       shaping1 = pow(1000, st.clip(-1, 1, shaping));
+      };
 };
 
 // Feedback delay network reverb with non-transposing variable DL
