@@ -142,7 +142,8 @@ with {
 };
 
 // classic 1-pole lowpass
-lp1p(cf, in) = in*a0 : + ~ *(b1)
+lp1p(cf, in) = in*a0 : + 
+                       ~ *(b1)
 with {
       a0 = 1-abs(b1);
       b1 = exp(m2.w(cf)*(-1));
