@@ -188,11 +188,13 @@ with {
       };
 };
 
-// Feedback delay network reverb with non-transposing variable DL
+// Feedback delay network reverb with non-transposing variable DL;
+// n must be a power of 2; FB coeffients are stable up to a magnitude of 1
 rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = 
-      (summing : delays :filters : matrix : fb : limiters) 
+      (summing : delays : filters : matrix : fb) 
       ~ si.bus(n) :> /(n)
 with {
+      st = 1/sqrt(n);
       summing = par(i, n, +(in));
       delays = par(i, n,   max_size, 
                            it,
@@ -200,25 +202,23 @@ with {
                            _) : par(i, n, d2.del_smo);
       filters = par(i, n, f2.lp1p(cf));
       matrix = ro.hadamard(n);
-      fb = par(i, n, *(fb_coeff));
-      limiters = par(i, n, st.limiter(1));
+      fb = par(i, n, *(fb_coeff*st));
 };
 
-// Feedback delay network reverb with variable DL
+// Feedback delay network reverb with variable DL;
+// n must be a power of 2; FB coeffients are stable up to a magnitude of 1
 rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = 
-      (summing : delays :filters : matrix : fb : limiters) 
+      (summing : delays : filters : matrix : fb) 
       ~ si.bus(n) :> /(n)
 with {
+      st = 1/sqrt(n);
       summing = par(i, n, +(in));
-      delays = par(i, n,   (_ <:   _,
-                                   (size : m2.prime_base_pow(i+1)))) 
-                                       : par(i, n,   _, 
-                                                     max_size,
-                                                     _) : par(i, n, d2.del_pol);
+      delays = par(i, n,   max_size,
+                           (size : m2.prime_base_pow(i+1)),
+                           _) : par(i, n, d2.del_pol);
       filters = par(i, n, f2.lp1p(cf));
       matrix = ro.hadamard(n);
-      fb = par(i, n, *(fb_coeff));
-      limiters = par(i, n, st.limiter(1));
+      fb = par(i, n, *(fb_coeff*st));
 };
 
 // real-time time-stretcher with delay lines
