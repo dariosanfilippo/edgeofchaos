@@ -74,6 +74,19 @@ with {
       high = in-low;
 };
 
+// 1-pole raw-coefficients spectrum splitter; unstable for coeff.
+// greater than |1|
+xover1praw(cf, in) =   low,
+                       high
+with {
+    low = in*a0 :  +
+                   ~ *(cf)
+    with {
+        a0 = 1-cf;
+    };
+    high = in-low;
+};
+
 // biquad highpass
 hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
