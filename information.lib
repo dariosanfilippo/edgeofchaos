@@ -130,7 +130,7 @@ roughness(window, in) = in <:  (   (   .01,
 
 // spectral energy (RMS) difference at a splitting point (Hz)
 spec_bal(cf, window, in) =  cf,
-                            in : f2.crossover <:   rms(window)*(-1),
+                            in : f2.xover1p1z <:   rms(window)*(-1),
                                                    rms(window) : +;
 // spectral spread
 spec_spr(window, in) = (   (in,
