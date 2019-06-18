@@ -66,9 +66,13 @@ with {
       b2 = (1-alpha)/norm;
 };
 
-// spectrum splitter
-crossover(cf, in) = lp1p1z(cf, in) ,
-                    hp1p1z(cf, in);
+// 1-pole-1-zero spectrum splitter
+xover1p1z(cf, in) =    low,
+                       high
+with {
+      low = f2.lp1p1z(cf, in);
+      high = in-low;
+};
 
 // biquad highpass
 hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
