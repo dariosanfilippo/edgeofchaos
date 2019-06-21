@@ -38,7 +38,7 @@ with {
                        f : m2.div)));
 };
 
-// Lorenz system
+// Lorenz system; ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf
 // arguments are: initial conditions for x, y, z; a, b, r, dt
 // coeffcients.
 // Try process = lorenz(1.2, 1.3, 1.6, 10, 8/3, 28, .005); for a strange
