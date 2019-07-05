@@ -12,6 +12,22 @@ ma = library("maths.lib");
 m2 = library("maths2.lib");
 st = library("stability.lib");
 
+// Analytic signal using a Hilbert transform approximation by Olli Niemitalo: 
+// https://dsp.stackexchange.com/questions/37411/iir-hilbert-transformer/59157#59157
+analytic(x) =   real,
+                imaginary
+with {
+    re_c = (0.47944111608296202665, 0.87624358989504858020, 
+            0.97660296916871658368, 0.99749940412203375040);
+    im_c = (0.16177741706363166219, 0.73306690130335572242, 
+            0.94536301966806279840, 0.99060051416704042460);
+    tf(c, y, x) = c*(x+y')-x'';
+    real = mem(x) : seq(i, 4,   tf(ba.take(i+1, re_c))
+                                ~ _);
+    imaginary = x : seq(i, 4,   tf(ba.take(i+1, im_c))
+                                ~ _);
+};
+
 // biquad allpass
 apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
