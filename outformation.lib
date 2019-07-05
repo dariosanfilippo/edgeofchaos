@@ -221,6 +221,10 @@ with {
       fb = par(i, n, *(fb_coeff*st));
 };
 
+// single-sideband modulation
+ssbm(shift, in) =  f2.analytic(in),
+                   o2.osc_quad(shift) : si.cmul;
+
 // real-time time-stretcher with delay lines
 time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
                                                d2.del_pol(del2, buff_size, x)*w2 
