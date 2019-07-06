@@ -30,6 +30,31 @@ diff(x) = x-x';
 div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
                                     x2 : /));
 
+// hyperbolic paraboloid AND
+hp_and(x, y) = x*y;
+
+// hyperbolic paraboloid IMPLIES
+hp_imp(x, y) = 1-x+x*y;
+
+// hyperbolic paraboloid NOT AND
+hp_nand(x, y) = 1-x*y;
+
+// hyperbolic paraboloid NOT IMPLIES
+hp_nimp(x, y) = x*(1-y);
+
+// hyperbolic paraboloid NOT OR
+hp_nor(x, y) = 1-x-y+x*y;
+
+// hyperbolic paraboloid NOT excluding OR
+hp_nxr(x, y) = 1-x-y+2*x*y;
+
+// hyperbolic paraboloid OR
+hp_or(x, y) = x+y-x*y;
+
+// hyperbolic paraboloid excluding OR
+hp_xor(x, y) = x+y-2*x*y;
+
+
 // linear interpolation between m blocks of n signals (spat by Romain Michon)
 interpolate_mn(m, n, index) = spat(m, index, 1) , ro.interleave(n, m) 
                                : ro.interleave(m, n+1) 
@@ -157,3 +182,33 @@ window_sine(x) = sin(ma.PI*x);
 // wrap around a range
 wrap(lower, upper, x) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) 
                            : +(lower);
+
+// Yager AND
+y_and(x, y) = 1-min(1, sqrt((1-x)^2+(1-y)^2));
+
+// Yager OR
+y_or(x, y) = min(1, (x^2+y^2)^2);
+
+// Zadeh AND
+z_and(x, y) = min(x, y);
+
+// Zadeh IMPLIES
+z_imp(x, y) = 1-min(x, 1-y);
+
+// Zadeh NOT AND
+z_nand(x, y) = 1-min(x, y);
+
+// Zadeh NOT IMPLIES
+z_nimp(x, y) = min(x, 1-y);
+
+// Zadeh NOT OR
+z_nor(x, y) = 1-max(x, y);
+
+// Zadeh NOT XOR
+z_nxr(x, y) = 1-x-y+2*min(x, y);
+
+// Zadeh OR
+z_or(x, y) = max(x, y);
+
+// Zadeh excluding OR
+z_xor(x, y) = x+Y-2*min(x, y);
