@@ -152,17 +152,19 @@ spec_ten(window, in) =  (   (   _ ,
 
 // lite spectral tendency algorithm: no responsiveness parameter; less
 // accurate (especially at low frequencies); 0-to-1 output.
-spec_ten_lite(in) =    ((_, in) : f2.xover1praw : ro.cross(2) 
-                           : balance : (_,
-                                       (in : rms) : m2.div) : integrator <: *)
-                       ~ _ : m2.complement
+spec_ten_lite(in) =    (   _,
+                           in : f2.xover1p1zraw : ro.cross(2)
+                               : balance : (_,
+                                           (in : rms) : m2.div)
+                                               : integrator <: *)
+                       ~ _
 with {
+      rms(in) = in <: * : *(.001) : +
+                                   ~ *(.999) : sqrt;
       balance =    rms,
                    rms : -;
-      rms = _ <: * : *(.001) : +
-                               ~ *(.999) : sqrt;
       integrator = _/ma.SR :  +
-                              ~ _;
+                              ~ _; 
 };
 
 // zero-crossing detection
