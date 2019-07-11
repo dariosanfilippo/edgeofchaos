@@ -111,6 +111,11 @@ with {
 // 1-pole highpass based on naive integration
 hp1pint(cf, in) = in-lp1pint(cf, in);
 
+// highpass 1-pole raw coeff; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
+hp1praw(cf, in) = (1-cf)*in :  +
+                               ~ *(-cf);
+
 // 1-pole-1-zero highpass
 hp1p1z(in, cf) =    in*a0 ,
                     in'*a0*a1 : + : +
@@ -121,6 +126,12 @@ with {
     b1 =    (1-sin(m2.w(cf))) ,
             cos(m2.w(cf)) : m2.div;
 };
+
+// highpass 1-pole-1-zero raw coeff; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
+hp1p1zraw(cf, in) = in*(1-cf) <: ( _,
+                                   _' : -) :   +
+                                               ~ *(cf*-2+1);
 
 // bounded integrator
 int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
@@ -166,6 +177,11 @@ lp1pint(cf, in) =   (in ,
                     _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)) 
                     ~ *(-1);
 
+// lowpass 1-pole raw coeff; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
+lp1praw(cf, in) = in*cf :  +
+                           ~ *(1-cf);
+
 // 1-pole-1-zero lowpass
 lp1p1z(cf, in) =    in*a0 ,
                     in'*a0*a1 : + : +
@@ -176,6 +192,12 @@ with {
     b1 =    (1-sin(m2.w(cf))) ,
             cos(m2.w(cf)) : m2.div;
 };
+
+// lowpass 1-pole-1-zero raw coeff; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
+lp1p1zraw(cf, in) = in*cf <: (  _,
+                                _' : +) :   +
+                                            ~ *(cf*-2+1);
 
 // sample-and-hold signals that have remained constant for t seconds
 sah_dc(t, in) =    m2.delta(t, in) : ==(0),
@@ -241,19 +263,25 @@ with {
 xover1p1z(cf, in) =    low,
                        high
 with {
-      low = f2.lp1p1z(cf, in);
+      low = lp1p1z(cf, in);
       high = in-low;
 };
 
-// 1-pole raw-coefficients spectrum splitter; unstable for coeff.
-// greater than |1|
+// 1-pole raw-coefficients spectrum splitter; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
 xover1praw(cf, in) =   low,
                        high
 with {
-    low = in*a0 :  +
-                   ~ *(cf)
-    with {
-        a0 = 1-cf;
-    };
+    low = lp1praw(cf, in);
     high = in-low;
 };
+
+// 1-pole-1-zero raw-coefficients spectrum splitter; coeff. should not exceed
+// the [0; 1] range (DC and Nyquist)
+xover1p1zraw(cf, in) = low,
+                       high
+with {
+    low = lp1p1zraw(cf, in);
+    high = in-low;
+};
+
