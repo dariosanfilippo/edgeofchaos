@@ -123,8 +123,8 @@ rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 
 // roughness
-roughness(window, in) = in <:  (   (   .01,
-                                       rms4(100) : m2.delta(.01) : abs) 
+roughness(window, in) = in <:  (   (   .005,
+                                       rms4(100) : m2.delta(.005) : abs) 
                                            :   f2.lp1p(window)) , 
                                                rms(window) : m2.div;
 
