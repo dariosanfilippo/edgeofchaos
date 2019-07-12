@@ -27,6 +27,13 @@ with {
             (x : >=(1))*2 :> _;
 };
 
+// dynamical compression based on peak
+dyn_comp_peak(curve, release, in) =  in ,
+                                   (   1 ,
+                                       (ip.peak_env(release, in) : clip(0, 1) ,
+                                                                   curve : pow)
+                                                                       : -) : *;
+
 // dynamical compression based on RMS
 dyn_comp_rms(curve, window, in) =  in ,
                                    (   1 ,   
@@ -62,7 +69,7 @@ norm_fact_peak(ref, release, target) = (   release,
                                            target : ip.peak_env) : m2.div;
 
 // reference_power-input_power ratio (with responsiveness parameter)
-norm_fact_rms(ref, window, target) =  (   window,
+norm_fact_rms(ref, window, target) =  (    window,
                                            ref : ip.rms) ,
                                        (   window,
                                            target : ip.rms) : m2.div;
