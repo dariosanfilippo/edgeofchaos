@@ -117,7 +117,7 @@ hp1praw(cf, in) = (1-cf)*in :  +
                                ~ *(-cf);
 
 // 1-pole-1-zero highpass
-hp1p1z(in, cf) =    in*a0 ,
+hp1p1z(cf, in) =    in*a0 ,
                     in'*a0*a1 : + : +
                                     ~ *(b1)
 with {
