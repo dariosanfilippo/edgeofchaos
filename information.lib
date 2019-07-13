@@ -5,7 +5,6 @@
  * All rights reserved.
  */
 
-au = library("auxiliary.lib");
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
@@ -78,17 +77,14 @@ loudness(window, in) = in <:   peak_env(1/window),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
 // Detects lowest partial in a signal
-lowest_partial(window, in) = (_ <: _,
+lowest_partial(window, in) =   (_ <: _,
                                    (   _, 
                                        in : lp1p1z2 <: _,
-                                                       _) 
-                                           :   (specbal, 
-                                               rms(window) 
-                                                   : m2.div : /(ma.SR) 
-                                                       : *(window) 
-                                                           : f2.int_clip(0, 1)
-                                                               <: *)) 
-                            ~ (*(m2.ny) : max(10))
+                                                       _) :    (specbal, 
+                                                               rms(window) 
+                                   : m2.div : /(ma.SR) : *(window) 
+                                       : f2.int_clip(0, 1) <: *)) 
+                               ~ (*(m2.ny) : max(10))
 with {
       specbal = f2.xover1p1z : rms(window), rms(window)+.000001 
        : ro.cross(2) : -;
@@ -103,17 +99,14 @@ noisiness(window, in) = spec_ten(window, in) : *(m2.ny)
                                        : m2.delta(1) : abs : f2.lp1p(window);
 
 // Detects highest partial in a signal
-highest_partial(window, in) = (_ <: _,
-                                    (  _, 
-                                       in : hp1p1z2 <: _,
-                                                       _) 
-                                           :   (specbal, 
-                                               rms(window) 
-                                                   : m2.div : /(ma.SR) 
-                                                       : *(window) 
-                                                           : f2.int_clip(0, 1)
-                                                               <: *)) 
-                            ~ *(m2.ny)
+highest_partial(window, in) =  (_ <:   _,
+                                       (   _, 
+                                           in : hp1p1z2 <: _,
+                                                           _) :    (specbal, 
+                                                                   rms(window) 
+                                   : m2.div : /(ma.SR) : *(window) 
+                                       : f2.int_clip(0, 1) <: *)) 
+                               ~ *(m2.ny)
 with {
       specbal = f2.xover1p1z : rms(window)+.000001, rms(window) 
        : ro.cross(2) : -;
