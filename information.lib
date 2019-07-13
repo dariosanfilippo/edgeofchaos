@@ -164,13 +164,11 @@ spec_bal(cf, window, in) =  cf,
                                                    rms(window) 
                                                        : ro.cross(2) : -;
 // spectral spread
-spec_spr(window, in) = (   (in,
-                           spec_ten(window, in)) : (   _, 
-                                                       10, 
-                                                       _) : f2.bpbi 
-                                                           : ip.rms(window)),
-                       (window,
-                       in : ip.rms) : m2.div : m2.complement;
+spec_spr(window, in) = (   spec_ten(window, in)*m2.ny,
+                           10,
+                           in) : f2.bpbi : ip.rms(window),
+                                           (in : ip.rms(window)) 
+                                               : m2.div : m2.complement;
 
 // spectral tendency (weighted mean)
 spec_ten(window, in) =  (   (   _ ,
