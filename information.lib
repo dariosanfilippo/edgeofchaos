@@ -59,6 +59,21 @@ dynamicity(in, window) =   ((rms(15, in) : m2.unit_log(10)),
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
 
+// Detects highest partial in a signal
+highest_partial(window, in) =  (_ <:   _,
+                                       (   _, 
+                                           in : hp1p1z2 <: _,
+                                                           _) :    (specbal, 
+                                                                   rms(window) 
+                                   : m2.div : /(ma.SR) : *(window) 
+                                       : f2.int_clip(0, 1) <: *)) 
+                               ~ *(m2.ny)
+with {
+      specbal = f2.xover1p1z : rms(window)+.000001, rms(window) 
+       : ro.cross(2) : -;
+      hp1p1z2(cf, x) = x : seq(i, 2, f2.hp1p1z(cf));
+};
+
 // provides an index of how heterogeneous the state space of a signal is; 
 // inputs are n for number of states (must be provided as an argument), 
 // source signal, lower edge of the state space, upper edge of the state space, 
@@ -97,21 +112,6 @@ noisiness(window, in) = spec_ten(window, in) : *(m2.ny)
                                (   _, 
                                    in : zcr : m2.unit_log(10)) 
                                        : m2.delta(1) : abs : f2.lp1p(window);
-
-// Detects highest partial in a signal
-highest_partial(window, in) =  (_ <:   _,
-                                       (   _, 
-                                           in : hp1p1z2 <: _,
-                                                           _) :    (specbal, 
-                                                                   rms(window) 
-                                   : m2.div : /(ma.SR) : *(window) 
-                                       : f2.int_clip(0, 1) <: *)) 
-                               ~ *(m2.ny)
-with {
-      specbal = f2.xover1p1z : rms(window)+.000001, rms(window) 
-       : ro.cross(2) : -;
-      hp1p1z2(cf, x) = x : seq(i, 2, f2.hp1p1z(cf));
-};
 
 // infinitely fast attack and adjustable release
 peak_env(release, in) = abs(in) :   max
