@@ -5,6 +5,7 @@
  * All rights reserved.
  */
 
+au = library("auxiliary.lib");
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
@@ -76,13 +77,49 @@ with {
 loudness(window, in) = in <:   peak_env(1/window),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
+// Detects lowest partial in a signal
+lowest_partial(window, in) = (_ <: _,
+                                   (   _, 
+                                       in : lp1p1z2 <: _,
+                                                       _) 
+                                           :   (specbal, 
+                                               rms(window) 
+                                                   : m2.div : /(ma.SR) 
+                                                       : *(window) 
+                                                           : f2.int_clip(0, 1)
+                                                               <: *)) 
+                            ~ (*(m2.ny) : max(10))
+with {
+      specbal = f2.xover1p1z : rms(window), rms(window)+.000001 
+       : ro.cross(2) : -;
+      lp1p1z2(cf, x) = x : seq(i, 2, f2.lp1p1z(cf));
+};
+
 // noisiness
 noisiness(window, in) = spec_ten(window, in) : *(m2.ny) 
                            <:  m2.inv,
                                (   _, 
                                    in : zcr : m2.unit_log(10)) 
                                        : m2.delta(1) : abs : f2.lp1p(window);
-                              
+
+// Detects highest partial in a signal
+highest_partial(window, in) = (_ <: _,
+                                    (  _, 
+                                       in : hp1p1z2 <: _,
+                                                       _) 
+                                           :   (specbal, 
+                                               rms(window) 
+                                                   : m2.div : /(ma.SR) 
+                                                       : *(window) 
+                                                           : f2.int_clip(0, 1)
+                                                               <: *)) 
+                            ~ *(m2.ny)
+with {
+      specbal = f2.xover1p1z : rms(window)+.000001, rms(window) 
+       : ro.cross(2) : -;
+      hp1p1z2(cf, x) = x : seq(i, 2, f2.hp1p1z(cf));
+};
+
 // infinitely fast attack and adjustable release
 peak_env(release, in) = abs(in) :   max
                                     ~ *(release : m2.rt60);
@@ -130,8 +167,9 @@ roughness(window, in) = in <:  (   (   .005,
 
 // spectral energy (RMS) difference at a splitting point (Hz)
 spec_bal(cf, window, in) =  cf,
-                            in : f2.xover1p1z <:   rms(window)*(-1),
-                                                   rms(window) : +;
+                            in : f2.xover1p1z <:   rms(window),
+                                                   rms(window) 
+                                                       : ro.cross(2) : -;
 // spectral spread
 spec_spr(window, in) = (   (in,
                            spec_ten(window, in)) : (   _, 
