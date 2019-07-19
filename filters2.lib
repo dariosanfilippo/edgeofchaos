@@ -101,10 +101,11 @@ hpblti(cf, in) =   in,
                    (   cf,
                        in : lpblti) : -;
 
-// classic 1-pole highpass
-hp1p(cf, in) = in*a0 : + ~ *(b1)
+// classic 1-pole highpass; for stability, CF should be between 0 and Ny
+hp1p(cf, in) = in*a0 : + 
+                       ~ *(b1)
 with {
-      a0 = 1-abs(b1);
+      a0 = 1+b1;
       b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
 };
 
@@ -164,11 +165,11 @@ with {
       };
 };
 
-// classic 1-pole lowpass
+// classic 1-pole lowpass; for stability, CF should be between 0 and Ny
 lp1p(cf, in) = in*a0 : + 
                        ~ *(b1)
 with {
-      a0 = 1-abs(b1);
+      a0 = 1-(b1);
       b1 = exp(m2.w(cf)*(-1));
 };
 
