@@ -107,13 +107,13 @@ with {
       lp1p1z2(cf, x) = x : seq(i, 2, f2.lp1p1z(cf));
 };
 
-// noisiness
+// noisiness index normalised for a 96kHz samplerate
 noisiness(window, in) = spec_ten(window, in) : *(m2.ny) : max(1)
                            <:  m2.inv,
                                (   _, 
                                    in : zcr4 : m2.unit_log(10))
-                           : m2.delta(1) : abs : f2.lp1p(window)
-                               : /(.266) <: * : min(1);
+                               : m2.delta(1) : abs : f2.lp1p(window)
+                                   : /(.266) <: * : min(1);
 
 // infinitely fast attack and adjustable release
 peak_env(release, in) = abs(in) :   max
