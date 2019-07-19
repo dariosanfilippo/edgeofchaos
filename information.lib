@@ -88,6 +88,16 @@ with {
                                    lower+((upper-lower)/n)*(i+1);
 };
 
+// instantaneous amplitude
+instant_amp(x) = f2.analytic(x) :  (_ <: *),
+                                   (_ <: *) : sqrt;
+
+// instantaneous frequency
+instant_freq(x) = instant_ph(x) : m2.diff : /(2*ma.PI) : *(ma.SR);
+
+// instantaneous phase
+instant_ph(x) = f2.analytic(x) : ro.cross(2) : atan2;
+
 // loudness with a-weighted function
 loudness(window, in) = in <:   peak_env(1/window),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
@@ -160,7 +170,7 @@ roughness(window, in) = in <:  (   (   .005,
                                            :   f2.lp1p(window)) , 
                                                rms(window) : m2.div;
 
-// spectral energy (RMS) difference at a splitting point (Hz)
+// spectral power (RMS) difference at a splitting point (Hz)
 spec_bal(cf, window, in) =  cf,
                             in : f2.xover1p1z <:   rms(window),
                                                    rms(window) 
@@ -172,7 +182,7 @@ spec_spr(window, in) = (   spec_ten(window, in)*m2.ny,
                                            (in : ip.rms(window)) 
                                                : m2.div : m2.complement;
 
-// spectral tendency (weighted mean)
+// spectral tendency (equal-power spectral split-point)
 spec_ten(window, in) =  (   (   _ ,
                                 window ,
                                 in : spec_bal) ,
