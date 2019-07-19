@@ -90,7 +90,7 @@ with {
 
 // instantaneous amplitude
 instant_amp(x) = f2.analytic(x) :  (_ <: *),
-                                   (_ <: *) : sqrt;
+                                   (_ <: *) : + : sqrt;
 
 // instantaneous frequency
 instant_freq(x) = instant_ph(x) : m2.diff : /(2*ma.PI) : *(ma.SR);
