@@ -165,7 +165,7 @@ rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 
 /* The roughness measurement is based on amplitude transients in the 
- * 15-75Hz range. Theorethically, roughness decreases below 15Hz, 
+ * 15-75Hz range. Theoretically, roughness decreases below 15Hz, 
  * peaks around 15-75Hz, and starts descresing above 75Hz to 
  * disappear around 150Hz and above. The "window" parameter may affect
  * the behaviour in the 0-15Hz range. A 1Hz window seems acceptable.
