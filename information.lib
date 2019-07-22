@@ -164,8 +164,12 @@ rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 // RMS with fourth-order LP
 rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 
-// roughness measurement, based on amplitude fluctuations in the
-// 15-150Hz range
+/* The roughness measurement is based on amplitude fluctuations in the 
+ * 15-75Hz range. Theorethically, roughness decreases below 15Hz, 
+ * peaks around 15-75Hz, and starts descresing above 75Hz to 
+ * disappear  around 150Hz and above. The "window" parameter may affect
+ * the behaviour in the 0-15Hz range. A 1Hz window seems acceptable.
+ */
 roughness(window, in) = instant_amp(in) <: m2.delta(.0005, .0005),
                                            rms(1) : m2.div 
                            : rms4(75) : m2.delta(1/150, 1/150) 
