@@ -164,7 +164,8 @@ rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 // RMS with fourth-order LP
 rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 
-// roughness
+// roughness measurement, based on amplitude fluctuations in the
+// 15-150Hz range
 roughness(window, in) = instant_amp(in) <: m2.delta(.0005, .0005),
                                            rms(1) : m2.div 
                            : rms4(75) : m2.delta(1/150, 1/150) 
