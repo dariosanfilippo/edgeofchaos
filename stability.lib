@@ -22,24 +22,20 @@ cubic(x) = select3( cond,   -2/3,
                             x-(x*x*x/3),
                             2/3)
 with {
-    cond =  (   (x : >(-1)) ,
-                (x : <(1)) : &) ,
+    cond =  (   (x : >(-1)),
+                (x : <(1)) : &),
             (x : >=(1))*2 :> _;
 };
 
 // dynamical compression based on peak
-dyn_comp_peak(curve, release, in) =  in ,
-                                   (   1 ,
-                                       (ip.peak_env(release, in) : clip(0, 1) ,
-                                                                   curve : pow)
-                                                                       : -) : *;
+dyn_comp_peak(curve, release, in) =    in,
+                                       (1-min(ip.peak_env(release, in), 1) 
+                                           : pow(curve)) : *;
 
 // dynamical compression based on RMS
-dyn_comp_rms(curve, window, in) =  in ,
-                                   (   1 ,   
-                                       (ip.rms(window, in) :   clip(0, 1) ,
-                                                               curve : pow) 
-                                                                   : -) : *;
+dyn_comp_rms(curve, window, in) =  in,
+                                   (1-min(ip.rms(window, in), 1)
+                                       : pow(curve)) : *;
 
 // dynamical normalisation based on peak
 dyn_norm_peak(ref, release, target) = (ref ,
