@@ -155,7 +155,7 @@ with {
 };
 
 // real-time pitch-shifter with 4th-order pol. delay lines
-pitch_shift(factor, frame, buff_size, x) = d2.del_pol(del1, buff_size, x)*w1, 
+pitch_shift(buff_size, frame, factor, x) = d2.del_pol(del1, buff_size, x)*w1, 
                                            d2.del_pol(del2, buff_size, x)*w2 
                                                :> _
 with {
@@ -227,7 +227,7 @@ ssbm(shift, in) =  f2.analytic(in),
                                                    !;
 
 // real-time time-stretcher with delay lines
-time_stretch(factor, frame, buff_size, x) =    d2.del_pol(del1, buff_size, x)*w1, 
+time_stretch(buff_size, frame, factor, x) =    d2.del_pol(del1, buff_size, x)*w1, 
                                                d2.del_pol(del2, buff_size, x)*w2 
                                                    :> _
 with {
