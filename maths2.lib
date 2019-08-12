@@ -64,7 +64,7 @@ interpolate_mn(m, n, index) = spat(m, index, 1) , ro.interleave(n, m)
                                                si.bus(n) : ro.interleave(n, 2) 
                                                    : par(i, n, *)) :> si.bus(n)
 with {
-      spat(n, a, d) = 1 <: par(i, n, *(scaler(i, n, a, d) ))
+      spat(n, a, d) = par(i, n, (scaler(i, n, a, d) ))
       with {
        scaler(i, n, a, d) = (d/2.0+0.5)*max(0.0, 1.0-abs(fmod(a+0.5+float(n-i)
                                /n, 1.0)-0.5)*n*d);
