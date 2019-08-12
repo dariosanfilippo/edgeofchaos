@@ -13,6 +13,9 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 
+//make a unipolar signal bipolar, assuming a [0; 1] input range
+bip(x) = x*2-1;
+
 // complement
 complement(x) = 1-x;
 
@@ -165,6 +168,9 @@ top_tri_low(r, c) = par(i, r, par(j, c, ba.if((j : %(r))<=(i : %(c)), 1, 0)));
 
 // upper triangular topology for matrix function
 top_tri_up(r, c) = par(i, r, par(j, c, ba.if((j : %(r))>=(i : %(c)), 1, 0)));
+
+//make a bipolar signal unipolar, assuming a [-1; 1] input range
+uni(x) = (x+1)/2;
 
 // 0-1 range to logarithmic 0-1 range
 unit_log(t, x) = log(x*(t-1)+1)/log(t);
