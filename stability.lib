@@ -28,12 +28,12 @@ with {
 };
 
 // dynamical compression based on peak
-dyn_comp_peak(curve, release, in) =    in,
+dyn_comp_peak(release, curve, in) =    in,
                                        (1-min(ip.peak_env(release, in), 1) 
                                            : pow(curve)) : *;
 
 // dynamical compression based on RMS
-dyn_comp_rms(curve, window, in) =  in,
+dyn_comp_rms(window, curve, in) =  in,
                                    (1-min(ip.rms(window, in), 1)
                                        : pow(curve)) : *;
 
