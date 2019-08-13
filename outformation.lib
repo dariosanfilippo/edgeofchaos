@@ -173,7 +173,7 @@ with {
       w2 = m2.window_hann(ph2);
       del1 = shift*ph1+offset : m2.wrap(0, limit);
       del2 = shift*ph2+offset : m2.wrap(0, limit); 
-}; // NOT WORKING
+};
 
 // pole modulation of normalised 1-pole systems, hence oscillating
 // between low-pass and high-pass. The modulator has a shaping parameter
@@ -220,6 +220,9 @@ with {
       matrix = ro.hadamard(n);
       fb = par(i, n, *(fb_coeff*st));
 };
+
+// sampler with speed, frame size, and buffer position control
+sampler(size, frame, position, speed, x) = 
 
 // single-sideband modulation (positive side)
 ssbm(shift, in) =  f2.analytic(in),
