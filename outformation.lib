@@ -155,8 +155,8 @@ with {
 };
 
 // real-time pitch-shifter with 4th-order pol. delay lines
-pitch_shift(buff_size, frame, factor, x) = d2.del_pol(del1, buff_size, x)*w1, 
-                                           d2.del_pol(del2, buff_size, x)*w2 
+pitch_shift(buff_size, frame, factor, x) = d2.del_pol(buff_size, del1, x)*w1, 
+                                           d2.del_pol(buff_size, del2, x)*w2 
                                                :> _
 with {
       frame_1 = frame : abs;
@@ -173,7 +173,7 @@ with {
       w2 = m2.window_hann(ph2);
       del1 = shift*ph1+offset : m2.wrap(0, limit);
       del2 = shift*ph2+offset : m2.wrap(0, limit); 
-};
+}; // NOT WORKING
 
 // pole modulation of normalised 1-pole systems, hence oscillating
 // between low-pass and high-pass. The modulator has a shaping parameter
@@ -227,8 +227,8 @@ ssbm(shift, in) =  f2.analytic(in),
                                                    !;
 
 // real-time time-stretcher with delay lines
-time_stretch(buff_size, frame, factor, x) =    d2.del_pol(del1, buff_size, x)*w1, 
-                                               d2.del_pol(del2, buff_size, x)*w2 
+time_stretch(buff_size, frame, factor, x) =    d2.del_pol(buff_size, del1, x)*w1, 
+                                               d2.del_pol(buff_size, del2, x)*w2 
                                                    :> _
 with {
       buff = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
