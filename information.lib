@@ -189,9 +189,9 @@ spec_spr(window, in) = (   spec_ten(window, in)*m2.ny,
 
 // spectral tendency (equal-power spectral split-point)
 spec_ten(window, in) =  (   (   _ ,
-                                window ,
-                                in : spec_bal) ,
-                            (   window ,
+                                window,
+                                in : spec_bal),
+                            (   window,
                                 in : rms) : m2.div : *(window) : /(ma.SR) 
                                    : f2.int_clip(0, 1) : pow(4)) 
                         ~ *(m2.ny);
