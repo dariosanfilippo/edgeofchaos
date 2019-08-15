@@ -8,8 +8,10 @@
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
+ip = library("information.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
+ro = library("routes.lib");
 st = library("stability.lib");
 
 // Analytic signal using a Hilbert transform approximation by Olli Niemitalo: 
@@ -267,6 +269,22 @@ with {
       low = lp1p1z(cf, in);
       high = in-low;
 };
+
+// Adaptive crossover: equally redistributes energy among low and high
+// spectra. Useful when only one microphone is available and different
+// signals are needed for internal processing
+xover1p1z_ada(window, in) = (  (_, 
+                               in) : xover1p1z <:  (   ip.rms(window), 
+                                                       ip.rms(window) 
+      : ro.cross(2) : - : /(ip.rms(window, in)) : *(window) 
+       : /(ma.SR) : int_clip(0, 1) : pow(4) : *(m2.ny)),
+                                                   (   _,
+                                                       _)) 
+                               ~ ( _, 
+                                   !, 
+                                   !) : (  !, 
+                                           _, 
+                                           _);
 
 // 1-pole raw-coefficients spectrum splitter; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
