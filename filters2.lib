@@ -272,7 +272,8 @@ with {
 
 // Adaptive crossover: equally redistributes energy among low and high
 // spectra. Useful when only one microphone is available and different
-// signals are needed for internal processing
+// signals are needed for internal processing. "window" sets its
+// responsiveness
 xover1p1z_ada(window, in) = (  (_, 
                                in) : xover1p1z <:  (   ip.rms(window), 
                                                        ip.rms(window) 
