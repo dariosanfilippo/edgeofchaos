@@ -224,16 +224,17 @@ with {
 // sampler with speed, frame size, and buffer position control
 sampler(buff_size, frame, position, factor, x) = d2.del_pol(buff_size, del, x)
 with {
-      frame_1 = frame : abs;
+      frame_1 = frame : abs : f2.lp1p(20);
+      position_1 = position : f2.lp1p(20);
       rate =   1,
                frame_1 : m2.div;
-      shift = (1-factor)*frame_1;
+      shift =  (1-factor)*frame_1;
       offset = ba.if(  shift < 0,
                        -shift,
                        0);
       limit = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
-      ph = m2.ph(rate, 0);
-      del = shift*ph+offset+position : m2.wrap(0, limit);
+      ph = m2.ph(rate, 0) : au.inspect(0, 0, 1);
+      del = shift*ph+offset+position_1 : m2.wrap(0, limit);
 }; 
 
 // single-sideband modulation (positive side)
