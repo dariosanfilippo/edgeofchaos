@@ -233,7 +233,7 @@ with {
                        -shift,
                        0);
       limit = buff_size*ma.SR : m2.round_pow2 : /(ma.SR);
-      ph = m2.ph(rate, 0) : au.inspect(0, 0, 1);
+      ph = m2.ph(rate, 0);
       del = shift*ph+offset+position_1 : m2.wrap(0, limit);
 }; 
 
