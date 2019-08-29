@@ -54,8 +54,7 @@ dynamicity(window, in) =   ((rms(15, in) : m2.unit_log(10)),
                            (spec_ten(15, in) : m2.unit_log(10)),
                            (noisiness(15, in) : m2.unit_log(10))) 
                                : par(i, 3, m2.delta(1/15, 1/15) : abs 
-                                   : f2.lp1p(window)) :> m2.unit_log(10) 
-                                       : ma.tanh;
+                                   : f2.lp1p(window)) :> ma.tanh;
 
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
