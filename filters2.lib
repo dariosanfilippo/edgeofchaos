@@ -212,23 +212,38 @@ sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
                                                                _' : !=),
                                                            in : ba.sAndH;
 
-// state-variable filter with zero-delay feedback topology
+// 1p1z state-variabl filter BLTI (based on the code by Oleg Nesterov)
+svfblti(cf, in) =  tick
+                   ~ _ :   !,
+                           _,
+                           _,
+                           _
+with {
+      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
+      tick(s) = y+v, y, in-(v+s), s+2*v-(in-s)
+      with {
+           v = (in-s)*g;
+           y = v+s;
+      };
+};
+
+// 2p2z state-variable filter with zero-delay feedback topology
 // inputs are cutoff, Q, shelving boost (linear amp.), input signal
 // outputs are LP, HP, BP, BP_normalised, LS, HS, BS, notch, peak AP
-svfblti(cf, q, k, in) =     tick
-                            ~ ( _, 
-                                _) : (  !, 
-                                        !,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _,
-                                        _)
+svf2blti(cf, q, k, in) =   tick
+                           ~ ( _, 
+                               _) : (  !, 
+                                       !,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _,
+                                       _)
 with {
     r = 1/2*q;
     g = m2.w(cf)/2;
