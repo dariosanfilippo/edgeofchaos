@@ -259,3 +259,14 @@ with {
       del1 = position : ba.sAndH(ph1 : m2.diff : <(0));
       del2 = position : ba.sAndH(ph2 : m2.diff : <(0));
 };
+
+// time-variant transfer function
+tvtf(s, zcr, f, in) = d2.del_pol(s, in1, f1)
+with {
+      in1 = in : m2.wrap(-1, 1) : m2.uni : *(s1);
+      s1 = s*ma.SR : m2.round_pow2 : /(ma.SR);
+      f1 = f : seq(i, 4, f2.lp1p(zcr/s1)) : st.dyn_norm_peak(1/s1, 1);
+};
+
+
+
