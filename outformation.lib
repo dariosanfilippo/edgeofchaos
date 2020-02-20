@@ -48,59 +48,45 @@ with {
 };
 
 // DL-based ZC granulator
-grains_dl_zc(n, s) = par(i, n, grain) :> /(n)
+grains_dl_zc(voices, size1) = par(i, voices,    loop
+                                                ~ _) :> /(voices)
 with {
-      size = s*ma.SR : m2.round_pow2;
-      index = ba.period(size);
-      grain(pitch, rate, pos, input) = (input,
-                                       (   input,
-                                               _,
-                                            pitch,
-                                            (rate : abs),
-                                            pos : read_grain) : dl_pol)
-                                       ~ _;
-      read_grain(input, fb, pitch, rate, pos) = 
-        (  trigger,
-           index : ba.sAndH),
-        (  trigger,
-           (   input,
-               pos,
-               fb : zc_index) : ba.sAndH) : - : +(shift) : m2.wrap(0, size)
-      with {
-       zc_index(input, position, direction) = ba.if((m2.diff(direction) : >=(0)),
-                                                    (  input,
-                                                       p : zc_index_up),
-                                                    (  input,
-                                                       p : zc_index_down)) : +(1)
-       with {
-           p = position*ma.SR : m2.wrap(0, size);
-       };
-       trigger =   check
-                   ~ _
-       with {
-           check(ready) =  (fb : ip.zc),
-                           (m2.line_reset(rate, ready) : >=(1)) : &;
-       };
-      shift =  (1,
-               (   trigger,
-                   pitch : ba.sAndH) : -)
-                       *(  1,
-                           (   trigger,
-                               rate : ba.sAndH) : m2.div)
-                                   *ma.SR*m2.line_reset((trigger,
-                                                        rate : ba.sAndH), 
-                                                           trigger);
-      };
-      zc_index_up(input, pos) = (  (input : ip.zc),
-                                   (m2.diff(input) : >(0)) : &),
-                                index : ba.sAndH,
-                                pos : dl;
-      zc_index_down(input, pos) =  (   (input : ip.zc),
-                                       (m2.diff(input) : <(0)) : &),
-                                   index : ba.sAndH,
-                                   pos : dl;
-      dl_pol(in, del) = de.fdelayltv(4, size, del, in);
-      dl(in, del) = in : de.delay(size, del);
+    loop(out, pitch1, rate, position1, input) =
+        (ba.sAndH(trigger(out), zc_index(position, input, out)) 
+            + shift(trigger(out))) : m2.wrap(0, size) - 1,
+        input : grain
+    with {
+        trigger(y) =    loop
+                        ~ _
+        with {
+            loop(ready) =   (ip.zc(y)),
+                            (m2.line_reset(ba.sAndH(1-1' + ready, rate), ready) 
+                                : >=(1)) : &;
+            };
+        shift(reset) = m2.div((1 - pitch), rate) *
+            m2.line_reset(rate, reset) * ma.SR;
+        zc_index(recall, x, y) = index - ba.if( m2.diff(y) : >=(0),
+                                                zc_up,
+                                                zc_down) : m2.wrap(0, size)
+        with {
+            zc_up = ba.sAndH(store, index), recall : dl
+            with {
+                store = ip.zc(x),
+                        (m2.diff(x) : >(0)) : &;
+            };
+            zc_down = ba.sAndH(store, index), recall : dl
+            with { 
+                store = ip.zc(x),
+                        (m2.diff(x) : <(0)) : &;
+            };
+        };
+        size = size1 * ma.SR : m2.round_pow2;
+        pitch = ba.sAndH(trigger(out), pitch1);
+        position = position1 * ma.SR : m2.wrap(0, size);
+        index = ba.period(size);
+        grain(del, in) = de.fdelayltv(4, size, del, in);
+        dl(in, del) = in : de.delay(size, del);
+    };
 };
 
 // table-based ZC granulator, i.e., discontinuities are handled through ZC 
