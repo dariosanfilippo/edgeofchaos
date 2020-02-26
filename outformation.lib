@@ -62,7 +62,7 @@ with {
             loop(ready) =   (ip.zc(y)),
                             (m2.line_reset(ba.sAndH(1-1' + ready, rate), ready) 
                                 : >=(1)) : &;
-            };
+        };
         shift(reset) = m2.div((1 - pitch), rate) *
             m2.line_reset(rate, reset) * ma.SR;
         zc_index(recall, x, y) = index - ba.if( m2.diff(y) : >=(0),
