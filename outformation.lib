@@ -33,13 +33,13 @@ with {
       ph2 = ph1+.5 : ma.decimal;
       w1 = ph1 : m2.window_hann;
       w2 = ph2 : m2.window_hann;
-      head1 = d2.del_pol(size, del1, x)*w1
+      head1 = d2.del_pol(s, del1, x)*w1
       with {
        del1 = sah(ph1, position)+shift1 : m2.wrap(0, s);
        shift1 = (1-sah(ph1, pitch))*(  1,
                                        sah(ph1, rate) : m2.div)*ph1;
       };
-      head2 = d2.del_pol(size, del2, x)*w2
+      head2 = d2.del_pol(s, del2, x)*w2
       with {
        del2 = sah(ph2, position)+shift2 : m2.wrap(0, s);
        shift2 = (1-sah(ph2, pitch))*(  1,
@@ -51,7 +51,7 @@ with {
 grains_dl_zc(voices, size1) = par(i, voices,    loop
                                                 ~ _) :> /(voices)
 with {
-    loop(out, pitch1, rate, position1, input) =
+    loop(out, pitch1, rate1, position1, input) =
         (ba.sAndH(trigger(out), zc_index(position, input, out)) 
             + shift(trigger(out))) : m2.wrap(0, size) - 1,
         input : grain
@@ -81,6 +81,7 @@ with {
             };
         };
         size = size1 * ma.SR : m2.round_pow2;
+        rate = abs(rate1);
         pitch = ba.sAndH(trigger(out), pitch1);
         position = position1 * ma.SR : m2.wrap(0, size);
         index = ba.period(size);
