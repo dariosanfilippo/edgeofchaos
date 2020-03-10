@@ -79,29 +79,29 @@ ph(freq, reset) = freq/ma.SR : (+ : ma.decimal)
                                ~ *(1-(reset : !=(0)));
 
 // BLIT-based variable width pulse train
-pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(.9999) : *(scale) : +(d)
+pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(1-10/ma.SR) : *(scale) : +(d)
 with {
       lim =    m2.ny,
                f : m2.div;
-      scale =  lim,
-               (h : min(lim)) : m2.div;
+      scale =  (h : min(lim)), 
+               lim : m2.div;
 };
 
 // BLIT-based saw
 saw(f, h) = blit_up(f, h) <:   _,
-                               f2.lp1p(1) : - : fi.pole(.9999) : *(scale)
+                               f2.lp1p(f/100) : - : fi.pole(1-10/ma.SR) : *(scale)
 with {
       lim =    m2.ny,
                f : m2.div;
-      scale =  lim,
-               (h : min(lim)) : m2.div;
+      scale =  (h : min(lim)), 
+               lim : m2.div;
 };
 
 // BLIT-based square
-square(f, h) = blit_bp(f, h, .5) : fi.pole(.9999) : *(scale)
+square(f, h) = blit_bp(f, h, .5) : fi.pole(1-10/ma.SR) : *(scale)
 with {
       lim =    m2.ny,
                f : m2.div;
-      scale =  lim,
-               (h : min(lim)) : m2.div;
+      scale =  (h : min(lim)), 
+               lim : m2.div;
 };
