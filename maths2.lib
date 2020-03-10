@@ -81,9 +81,8 @@ line =  _ ,
                     ~ _;
 
 // line with reset input
-line_reset(rate, reset) =  rate ,
-                           ma.SR : / : +
-                                       ~ *(1-(reset : !=(0)));
+line_reset(rate, reset) =  (rate/ma.SR)' :      (+ : *(1-(reset : !=(0))))
+                                                ~ _;
 
 // linear mapping
 map_lin(lower, upper, x) = x*(upper-lower)+lower;
