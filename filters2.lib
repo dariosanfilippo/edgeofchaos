@@ -212,7 +212,7 @@ sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
                                                                _' : !=),
                                                            in : ba.sAndH;
 
-// 1p1z state-variabl filter BLTI (based on the code by Oleg Nesterov)
+// 1p1z state-variable filter BLTI (based on the code by Oleg Nesterov)
 svfblti(cf, in) =  tick
                    ~ _ :   !,
                            _,
@@ -245,7 +245,7 @@ svf2blti(cf, q, k, in) =   tick
                                        _,
                                        _)
 with {
-    r = 1/2*q;
+    r = 1/2*(1/q);
     g = m2.w(cf)/2;
     tick(s1, s2) =  u1,
                     u2,
