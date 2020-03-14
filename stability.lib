@@ -1,7 +1,7 @@
 /* Stability processing functions including standard dynamics processing as well as 
  * self-regulating designs.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
  *
  * All rights reserved.
  */

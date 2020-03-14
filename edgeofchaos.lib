@@ -1,6 +1,6 @@
 /* Access to all Edge of Chaos libraries through a series of environments.
  *
- * Copyright (c) 2019, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
  *
  * All rights reserved.
  */
@@ -13,4 +13,4 @@ m2 = library("maths2.lib");
 st = library("stability.lib");
 o2 = library("oscillators2.lib");
 op = library("outformation.lib");
-ds = library("allds.lib");
+ed = library("alleoc.lib");
