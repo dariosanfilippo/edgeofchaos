@@ -15,12 +15,6 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 
-// normalised average absolute deviation around the mean
-aad(n) = si.bus(n) <:  (si.bus(n),
-                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2) 
-                           : par(i, n, (- : abs)) :> _),
-                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
-
 // function for equal-loudness contour
 a_weighting(f) = (12194^2*f^4)/((f^2+20.6^2)*sqrt((f^2+107.7^2)*(f^2+737.9^2))
                    *(f^2+12194^2));
@@ -81,7 +75,7 @@ with {
 heterogeneity(n, l, h, t, in) = par(i, n,  region(l, h, n, i),
                                            t,
                                            in : recurrence : ip.peak_hold(t) 
-                                               : f2.lp1p(1/t)) : aad(n)
+                                               : f2.lp1p(1/t)) : m2.aad(n)
 with {
       region(lower, upper, n, i) = lower+((upper-lower)/n)*i,
                                    lower+((upper-lower)/n)*(i+1);

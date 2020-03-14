@@ -14,6 +14,12 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 
+// normalised average absolute deviation around the mean
+aad(n) = si.bus(n) <:  (si.bus(n),
+                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2)
+                           : par(i, n, (- : abs)) :> _),
+                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
+
 // arithmetic mean; n is the number of elements in the set
 avg_ari(n) = si.bus(n) :> /(n);
 
