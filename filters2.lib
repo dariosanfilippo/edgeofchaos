@@ -212,6 +212,22 @@ sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
                                                                _' : !=),
                                                            in : ba.sAndH;
 
+// slew limiter; the same as Max's deltaclip~
+// (https://docs.cycling74.com/max7/refpages/deltaclip~)
+slew_limiter(in1, in2, in3) =   tick
+                                ~ _
+with {
+    tick(fb) = ba.if(cond1, max_plus_fb, cond3)
+    with {
+        max_plus_fb = max(in2, in3)+fb;
+        min_plus_fb = min(in2, in3)+fb;
+        cond1 = in1 > max_plus_fb;
+        cond2 = in1 < min_plus_fb;
+        cond3 = ba.if(cond2, max0, in1);
+        max0 = max(0, min_plus_fb);
+    };
+};
+
 // 1p1z state-variable filter BLTI (based on the code by Oleg Nesterov)
 svfblti(cf, in) =  tick
                    ~ _ :   !,
