@@ -111,7 +111,7 @@ with {
       b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
 };
 
-// 1-pole highpass based on naive integration
+// 1-pole highpass based on backward Euler's integration
 hp1pint(cf, in) = in-lp1pint(cf, in);
 
 // highpass 1-pole raw coeff; coeff. should not exceed
@@ -139,6 +139,23 @@ hp1p1zraw(cf, in) = in*(1-cf) <: ( _,
 // bounded integrator
 int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
                                 ~ _;
+
+// forward Euler's integration with cut-off frequency
+int_e_f(cf, x) =   perform ~ 
+                   _ : !, 
+                       _
+with {
+    perform(fb) = x*m2.w(cf)+fb, fb;
+};
+
+// backward Euler's integration with cut-off frequency
+int_e_b(cf, x) = x*m2.w(cf) :  +
+                               ~ _;
+
+// trapezoidal integration
+int_trap(cf, x) = x*m2.w(cf)/2 <:  _, 
+                                   _' :>   + 
+                                           ~ _;
 
 // biquad lowpass
 lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
@@ -334,5 +351,14 @@ xover1p1zraw(cf, in) = low,
 with {
     low = lp1p1zraw(cf, in);
     high = in-low;
+};
+
+// 2-poles-2-zeroes crossover based on 2nd-order Butterworth filters
+xover2p2z(cf, in) =    low,
+                       high
+with {
+      low = fi.lowpass(2, cf1, in);
+      high = fi.highpass(2, cf1, in);
+      cf1 = max(20/ma.SR*m2.ny, min((1-(200/ma.SR))*m2.ny, cf));
 };
 
