@@ -152,7 +152,7 @@ with {
 int_e_b(cf, x) = x*m2.w(cf) :  +
                                ~ _;
 
-// trapezoidal integration
+// trapezoidal integration with cut-off frequency
 int_trap(cf, x) = x*m2.w(cf)/2 <:  _, 
                                    _' :>   + 
                                            ~ _;
