@@ -136,26 +136,39 @@ hp1p1zraw(cf, in) = in*(1-cf) <: ( _,
                                    _' : -) :   +
                                                ~ *(cf*-2+1);
 
-// bounded integrator
-int_clip(lower, upper, in) =    (+(in) : st.clip(lower, upper)) 
+// bounded backward Euler's integration special case CF=1/(2PI)
+int_clip(lower, upper, in) =    (+(in/ma.SR) : st.clip(lower, upper)) 
                                 ~ _;
 
+// backward Euler's integration with cut-off frequency
+int_eu_b(cf, x) = x*m2.w(cf) : +
+                               ~ _;
+
+// bounded backward Euler's integration with cut-off frequency
+int_eu_clip(l, u, cf, x) = (+(x*m2.w(cf)) : st.clip(l, u))
+                           ~ _;
+
 // forward Euler's integration with cut-off frequency
-int_e_f(cf, x) =   perform ~ 
-                   _ : !, 
-                       _
+int_eu_f(cf, x) =  perform
+                   ~ _ :   !, 
+                           _
 with {
     perform(fb) = x*m2.w(cf)+fb, fb;
 };
-
-// backward Euler's integration with cut-off frequency
-int_e_b(cf, x) = x*m2.w(cf) :  +
-                               ~ _;
 
 // trapezoidal integration with cut-off frequency
 int_trap(cf, x) = x*m2.w(cf)/2 <:  _, 
                                    _' :>   + 
                                            ~ _;
+
+// bounded trapezoidal integration with cut-off frequency
+int_trap_clip(l, u, cf, x) = x*m2.w(cf)/2 <:   _,
+                                               _' :>   (+ : st.clip(l, u))
+                                                       ~ _;
+
+// special case of backward Euler's integration with CF=1/(2PI)
+integrator(x) = x/ma.SR :  + 
+                           ~ _;
 
 // biquad lowpass
 lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
@@ -310,6 +323,14 @@ with {
     };
 };
 
+// nth-order crossover with Butterworth filters
+xover_butt(n, cf, x) = low,
+                       high
+with {
+      low = fi.lowpass(n, cf, x);
+      high = fi.highpass(n, cf, x);
+};
+
 // 1-pole-1-zero spectrum splitter
 xover1p1z(cf, in) =    low,
                        high
@@ -318,7 +339,7 @@ with {
       high = in-low;
 };
 
-// Adaptive crossover: equally redistributes energy among low and high
+// Adaptive crossover: equally redistributes power (RMS) among low and high
 // spectra. Useful when only one microphone is available and different
 // signals are needed for internal processing. "window" sets its
 // responsiveness
