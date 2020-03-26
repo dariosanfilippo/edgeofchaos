@@ -53,7 +53,7 @@ dynamicity(window, in) =   ((rms(15, in) : m2.unit_log(10)),
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
 
-// Detects highest partial in a signal
+// detects highest partial in a signal
 highest_partial(window, in) =  (_ <:   _,
                                        (   _, 
                                            in : hp1p1z2 <: _,
@@ -95,7 +95,7 @@ instant_ph(x) = f2.analytic(x) : atan2;
 loudness(window, in) = in <:   peak_env(1/window),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
-// Detects lowest partial in a signal
+// detects lowest partial in a signal
 lowest_partial(window, in) =   (_ <: _,
                                    (   _, 
                                        in : lp1p1z2 <: _,
@@ -173,6 +173,15 @@ spec_bal(cf, window, in) =  cf,
                             in : f2.xover1p1z <:   rms(window),
                                                    rms(window) 
                                                        : ro.cross(2) : -;
+
+// spectral power (RMS) difference at a splitting point (Hz) with
+// nth-order Butterworth filters xover
+spec_bal2(n, cf, window, in) = cf,
+                               in : f2.xover_butt(n) <:    rms(window),
+                                                           rms(window) 
+                                                               : ro.cross(2) 
+                                                                   : -;
+
 // spectral spread
 spec_spr(window, in) = (   spec_ten(window, in)*m2.ny,
                            10,
@@ -185,9 +194,19 @@ spec_ten(window, in) =  (   (   _ ,
                                 window,
                                 in : spec_bal),
                             (   window,
-                                in : rms) : m2.div : *(window) : /(ma.SR) 
+                                in : rms) : m2.div : *(window)
                                    : f2.int_clip(0, 1) : pow(4)) 
                         ~ *(m2.ny);
+
+// spectral tendency (equal-power spectral split-point) with nth-order
+// Butterworth filters xover; improved response and stability
+spec_ten2(n, window, in) = (   (  _ ,
+                                   window,
+                                   in : spec_bal2(n)),
+                               (   window,
+                                   in : rms) : m2.div : pow(3) 
+                                       : f2.int_eu_clip(0, 1, window) : pow(2))
+                           ~ *(m2.ny);
 
 // lite spectral tendency algorithm: no responsiveness parameter; less
 // accurate (especially at low frequencies); 0-to-1 output.
@@ -195,15 +214,15 @@ spec_ten_lite(in) =    (   _,
                            in : f2.xover1p1zraw : ro.cross(2)
                                : balance : (_,
                                            (in : rms) : m2.div)
-                                               : integrator <: *)
+                                               : f2.integrator <: *)
                        ~ _
 with {
-      rms(in) = in <: * : *(.001) : +
-                                   ~ *(.999) : sqrt;
+      a0 = 100/ma.SR;
+      b1 = 1-a0;
+      rms(in) = in <: * : *(a0) :    +
+                                       ~ *(b1) : sqrt;
       balance =    rms,
                    rms : -;
-      integrator = _/ma.SR :  +
-                              ~ _; 
 };
 
 // zero-crossing detection
