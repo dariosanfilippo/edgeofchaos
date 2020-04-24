@@ -75,8 +75,8 @@ with {
 };
 
 // phasor with phase reset
-ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) 
-                               ~ *(1-(reset : !=(0)));
+ph(freq, reset) = (freq/ma.SR)' :  (+ : ma.decimal) * (1-(reset != 0)) 
+                                   ~ _;
 
 // BLIT-based variable width pulse train
 pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(1-10/ma.SR) : *(scale) : +(d)
