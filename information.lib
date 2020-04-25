@@ -96,11 +96,11 @@ loudness(window, in) = in <:   peak_env(1/window),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
 // detects lowest partial in a signal
-lowest_partial(window, in) =   (_ <: _,
-                                   (   _, 
-                                       in : lp1p1z2 <: _,
-                                                       _) :    (specbal, 
-                                                               rms(window) 
+lowest_partial(window, in) =   (_ <:   _,
+                                       (   _, 
+                                           in : lp1p1z2 <: _,
+                                                           _) :    (specbal, 
+                                                                   rms(window) 
                                    : m2.div : /(ma.SR) : *(window) 
                                        : f2.int_clip(0, 1) <: *)) 
                                ~ (*(m2.ny) : max(10))
@@ -151,7 +151,7 @@ with {
 recurrence(lower, upper, t, in) = in <: (  >(lower),
                                            <=(upper) : &) : fi.pole(m2.rt60(t));
 
-// root mean square measurement using lowpass
+// root mean square measurement using 1-pole lowpass for averaging
 rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
 
 // RMS with fourth-order LP
@@ -219,8 +219,8 @@ spec_ten_lite(in) =    (   _,
 with {
       a0 = 100/ma.SR;
       b1 = 1-a0;
-      rms(in) = in <: * : *(a0) :    +
-                                       ~ *(b1) : sqrt;
+      rms(in) = in <: * : *(a0) :  +
+                                   ~ *(b1) : sqrt;
       balance =    rms,
                    rms : -;
 };
