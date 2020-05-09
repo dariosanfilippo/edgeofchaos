@@ -88,6 +88,11 @@ with {
       b2 = (1-alpha)/norm;
 };
 
+// Comb-integrator circuiit lowpass filter.
+// Based on Eric Lyon's: https://www.dsprelated.com/showarticle/1337.php.
+cic(N, cf, x) = x : seq(i, N, m2.delta(1, .5 / cf) : 
+    fi.pole(1)) / (.5 / cf * ma.SR) ^ N;
+
 // biquad highpass (design by Robert Bristow-Johnson)
 hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
@@ -283,6 +288,7 @@ with {
 // 2p2z state-variable filter with zero-delay feedback topology
 // inputs are cutoff, Q, shelving boost (linear amp.), input signal
 // outputs are LP, HP, BP, BP_normalised, LS, HS, BS, notch, peak, AP
+// Ref: Zavalishin; Pirkle.
 svf2blti(cf, q, k, in) =   tick
                            ~ ( _,
                                _) : (  !,
