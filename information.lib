@@ -163,70 +163,71 @@ rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
  * disappear around 150Hz and above. The "window" parameter may affect
  * the behaviour in the 0-15Hz range. A 1Hz window seems acceptable.
  */
-roughness(window, in) = instant_amp(in) <: m2.delta(.001, .001),
+roughness(window, in) = instant_amp(in) <: m2.delta(.001, .001) ,
                                            rms(1) : m2.div 
                            : rms4(75) : m2.delta(1/150, 1/150) 
                                : rms4(window)/.807242;
 
 // spectral power (RMS) difference at a splitting point (Hz)
 spec_bal(cf, window, in) =  cf,
-                            in : f2.xover1p1z <:   rms(window),
+                            in : f2.xover1p1z <:   rms(window) ,
                                                    rms(window) 
                                                        : ro.cross(2) : -;
 
 // spectral power (RMS) difference at a splitting point (Hz) with
-// nth-order Butterworth filters xover
-spec_bal2(n, cf, window, in) = cf,
-                               in : f2.xover_butt(n) <:    rms(window),
+// Nth-order Butterworth filters xover
+spec_balN(N, cf, window, in) = cf ,
+                               in : f2.xover_butt(N) <:    rms(window) ,
                                                            rms(window) 
                                                                : ro.cross(2) 
                                                                    : -;
 
 // spectral spread
-spec_spr(window, in) = (   spec_ten(window, in)*m2.ny,
+spec_spr(window, in) = (   spec_ten(window, in)*m2.ny ,
                            10,
-                           in) : f2.bpbi : ip.rms(window),
+                           in) : f2.bpbi : ip.rms(window) ,
                                            (in : ip.rms(window)) 
                                                : m2.div : m2.complement;
 
 // spectral tendency (equal-power spectral split-point)
 spec_ten(window, in) =  (   (   _ ,
-                                window,
-                                in : spec_bal),
-                            (   window,
+                                window ,
+                                in : spec_bal) ,
+                            (   window ,
                                 in : rms) : m2.div : *(window)
-                                   : f2.int_clip(0, 1) : pow(4)) 
+                                   : f2.int_clip(0, 1) : pow(2)) 
                         ~ *(m2.ny);
 
 // spectral tendency (equal-power spectral split-point) with nth-order
-// Butterworth filters xover; improved response and stability
-spec_ten2(n, window, in) = (   (  _ ,
-                                   window,
-                                   in : spec_bal2(n)),
-                               (   window,
-                                   in : rms) : m2.div : pow(3) 
-                                       : f2.int_eu_clip(0, 1, window) : pow(2))
+// Butterworth filters xover; improved response and stability through
+// cubic nonlinearity
+spec_tenN(N, window, in) = ((  _ ,
+                               window ,
+                               in : spec_balN(N)) ,
+                            (  window ,
+                               in : rms) : m2.div : pow(3) : 
+                                   f2.int_eu_clip(0, 1, window) : pow(2))
                            ~ *(m2.ny);
 
 // lite spectral tendency algorithm: no responsiveness parameter; less
 // accurate (especially at low frequencies); 0-to-1 output.
 spec_ten_lite(in) =    (   _,
                            in : f2.xover1p1zraw : ro.cross(2)
-                               : balance : (_,
-                                           (in : rms) : m2.div)
-                                               : f2.integrator <: *)
+                               : balance : (   _ ,
+                                               (in : rms) : m2.div)
+                                                   : f2.integrator <: *)
                        ~ _
 with {
-      a0 = 100/ma.SR;
-      b1 = 1-a0;
+      a0 = 100 / ma.SR;
+      b1 = 1 - a0;
       rms(in) = in <: * : *(a0) :  +
                                    ~ *(b1) : sqrt;
-      balance =    rms,
+      balance =    rms ,
                    rms : -;
 };
 
 // zero-crossing detection
-zc(x) = x*x' : <(0);
+zc(x) = x * x' : <(0);
                        
 // zero-crossing rate
 zcr(window, x) = zc(x) : f2.lp1p(window);
