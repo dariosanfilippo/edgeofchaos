@@ -44,10 +44,10 @@ with {
 };
 
 // Dynamicity index as accumulation of the magnitude of the delta at a 
-// specified rate of analysis (window). 
+// specified dt (secs) and accumulation rate (window, in Hz).
 // It is supposed to be used with infrasonic low-level information signals such as RMS, 
 // spectral tendency, noisiness.
-dynamicity(window, in) = m2.delta(1, m2.div(1, window)) : abs : f2.lp1p(window);
+dynamicity(window, dt, in) = m2.delta(1, dt) : abs : f2.lp1p(window);
 
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
