@@ -43,20 +43,11 @@ with {
                : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
 };
 
-// dynamicity index based on RMS, spectral tendency and noisiness
-//dynamicity(window, in) =   ((rms(15, in) : m2.unit_log(10)),
-//                           (spec_ten(15, in) : m2.unit_log(10)),
-//                           (noisiness(15, in) : m2.unit_log(10))) 
-//                               : par(i, 3, m2.delta(1/15, 1/15) : abs 
-//                                   : f2.lp1p(window)) :> ma.tanh;
-
 // Dynamicity index as accumulation of the magnitude of the delta at a 
 // specified rate of analysis (window). 
 // It is supposed to be used with infrasonic low-level information signals such as RMS, 
 // spectral tendency, noisiness.
-dynamicity(window, in) = m2.delta(1, 1 / window) : abs : f2.lp1p(window);
-
-// use nan-safe div
+dynamicity(window, in) = m2.delta(1, m2.div(1, window)) : abs : f2.lp1p(window);
 
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
@@ -83,7 +74,7 @@ with {
 heterogeneity(n, l, h, t, in) = par(i, n,  region(l, h, n, i) ,
                                            t ,
                                            in : recurrence : ip.peak_hold(t) 
-                                               : f2.lp1p(1/t)) : m2.aad(n)
+                                               : f2.lp1p(m2.div(1, t))) : m2.aad(n)
 with {
       region(lower, upper, n, i) = lower + ((upper - lower) / n) * i ,
                                    lower + ((upper - lower) / n) * (i + 1);
@@ -100,7 +91,7 @@ instant_freq(x) = instant_ph(x) : m2.diff : /(2*ma.PI) : *(ma.SR);
 instant_ph(x) = f2.analytic(x) : atan2;
 
 // loudness with a-weighted function
-loudness(window, in) = in <:   peak_env(1/window),
+loudness(window, in) = in <:   peak_env(div(1, window)),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
 // detects lowest partial in a signal
@@ -136,21 +127,21 @@ peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
 // detects lower and upper peaks and holds them for a time (in s) specified by 
 // "release"
 peaks(release, in) =   (   check_low 
-                           ~ _),
+                           ~ _) ,
                        (   check_high
                            ~ _)
 with {
-      check_low(s) =   (   in, 
-                           s : <= <:   _, 
-                                       (   1/release,
-                                           _ : m2.ph : m2.diff : <(0)) : |),
-                       s,
+      check_low(s) =   (   in , 
+                           s : <= <:   _ , 
+                                       (   m2.div(1, release) ,
+                                           _ : m2.ph : m2.diff : <(0)) : |) ,
+                       s ,
                        in : select2;
-      check_high(s) =  (   in, 
-                           s : >= <:   _, 
-                                       (   1/release,
-                                           _ : m2.ph : m2.diff : <(0)) : |),
-  		       s,
+      check_high(s) =  (   in , 
+                           s : >= <:   _ , 
+                                       (   m2.div(1, release) ,
+                                           _ : m2.ph : m2.diff : <(0)) : |) ,
+  		       s ,
                        in : select2;
 };
 
