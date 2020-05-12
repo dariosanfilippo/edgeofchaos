@@ -181,10 +181,22 @@ prime_base_pow(n) = ba.take(n, primes) ,
 // closest power of 2
 round_pow2(x) = 2^(ma.log2(x) : rint);
 
-// 1-pole coeff. for 60-dB decay in a desired time
-rt60(x) =   .001 ,
-            (   sp ,
-                max(x, .001) : /) : pow;
+// 1-pole coeff. for ~9 dB decay (e^-1 factor) in a desired time "t".
+rt9(t) = ba.tau2pole(t);
+
+// 1-pole coeff. for ~19 dB decay (e^-2.2 factor) in a desired time "t".
+// This decay factor is used in [Zölzer 2008] for the calculation of RMS
+// with 1-pole filters.
+rt19(t) = ba.tau2pole(t / 2.2);
+
+// 1-pole coeff. for ~55 dB decay (e^(-2pi) factor) in a desired time "t".
+// This coeff. calculation is found in [Chamberlin 1985] for the
+// implementation of 1-pole LP filters that simulate the dis/charging
+// behaviours of a capacitor.
+rt55(t) = ba.tau2pole(t / (2 * ma.PI));
+
+// 1-pole coeff. for ~60 dB decay (e^-log(1000) factor) in a desired time "t".
+rt60(t) = ba.tau2pole(t / 6.907755279);
 
 // stanrdard deviation; n is the number of elements in the set
 sd(n) = sqrt(var(n));
