@@ -60,17 +60,16 @@ with {
 
 // quadrature oscillator by Martin Vicanek
 osc_quad(f) =  tick 
-               ~ ( _, 
+               ~ ( _ , 
                    _)
 with {
-      init = 1-1';
-      w1 = m2.w(f);
-      k1 = tan(.5*w1);
-      k2 = 2*k1/(1+k1*k1);
-      tick(u, v) = omega-k1*(v+k2*omega), 
-                   v+k2*omega
+      init = 1 - 1';
+      k1 = tan(ma.PI * f / ma.SR);
+      k2 = 2 * k1 / (1 + k1 * k1);
+      tick(u, v) = omega - k1 * (v + k2 * omega), 
+                   v + k2 * omega
       with {
-       omega = (u+init)-k1*v;
+       omega = (u + init) - k1 * v;
       };
 };
 
