@@ -19,35 +19,16 @@ si = library("signals.lib");
 a_weighting(f) = (12194^2*f^4)/((f^2+20.6^2)*sqrt((f^2+107.7^2)*(f^2+737.9^2))
                    *(f^2+12194^2));
 
-// complexity index based on the edge of chaos of 
-// RMS, spectral tendency and noisiness
-complexity(window, in) =   (rms(15, in) : m2.unit_log(10)),
-                           (spec_ten(15, in) : m2.unit_log(10)),
-                           (noisiness(15, in) : m2.unit_log(10)) 
-                               : par(i, 3, heterogeneity(10, 0, 1, window)) 
-                                   : (  m2.div(_, t1),
-                                        m2.div(_, t2),
-                                        m2.div(_, t3)) : 
-                                           par(i, 3, f2.lp1p(1/(window*2))) 
-                                               : par(i, 3, m2.delta(   16, 
-                                                                       window*2) 
-                                                   : abs) 
-                                                       :> f2.lp1p(1/(window*2)) 
-                                                           : ma.tanh
-with {
-      t1 = ((rms(15, in) : m2.unit_log(10)) : ip.peaks(window) : ro.cross(2) 
-               : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
-      t2 = ((spec_ten(15, in) : m2.unit_log(10)) : ip.peaks(window) 
-               : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
-      t3 = ((noisiness(15, in) : m2.unit_log(10)) : ip.peaks(window) 
-               : ro.cross(2) : -) : f2.lp1p(1/window) : m2.map_lin(.25, 1);
-};
+// Complexity measurement as edge-of-chaos detection, that is,  accumulation 
+// of the variations in the heterogeneity of a state space.
+complexity(max_dt, dt, window, x) = ip.heterogeneity10(window, x) :
+      m2.delta(max_dt, dt) : abs : f2.lp1p(1/window);
 
 // Dynamicity index as accumulation of the magnitude of the delta at a 
 // specified dt (secs) and accumulation rate (window, in Hz).
 // It is supposed to be used with infrasonic low-level information signals such as RMS, 
 // spectral tendency, noisiness.
-dynamicity(window, dt, in) = m2.delta(1, dt) : abs : f2.lp1p(window);
+dynamicity(max_dt, dt, window, in) = m2.delta(max_dt, dt) : abs : f2.lp1p(window);
 
 // envelope following
 env_fol(window, in) = in : abs : lp1p(window);
@@ -79,6 +60,8 @@ with {
       region(lower, upper, n, i) = lower + ((upper - lower) / n) * i ,
                                    lower + ((upper - lower) / n) * (i + 1);
 };
+// shortcut for a 10-region state space with [0; 1] range.
+heterogeneity10(t, in) = heterogeneity(10, 0, 1, t, in);
 
 // instantaneous amplitude
 instant_amp(x) = f2.analytic(x) :  (_ <: *),
@@ -148,7 +131,7 @@ with {
 // detects and integrates occurrences of signals within a specified range; 
 // with exponential decay in s
 recurrence(lower, upper, t, in) = in <: (  >(lower),
-                                           <=(upper) : &) : fi.pole(m2.rt60(t));
+                                           <=(upper) : &) : fi.pole(m2.rt55(t));
 
 // root mean square measurement using 1-pole lowpass for averaging
 rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
