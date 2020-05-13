@@ -74,6 +74,18 @@ with {
       b2 = (1-alpha)/norm;
 };
 
+// 2p2z normalised BP shortcut from SVF TPT 2nd-order (Zavalishin / Pirkle)
+bp2blti(cf, q, x) = svf2blti(cf, q, 1, x) : (  ! , 
+                                               ! , 
+                                               ! , 
+                                               _ , 
+                                               ! , 
+                                               ! , 
+                                               ! , 
+                                               ! , 
+                                               ! , 
+                                               !);
+
 // biquad bandstop (design by Robert Bristow-Johnson)
 bsbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
