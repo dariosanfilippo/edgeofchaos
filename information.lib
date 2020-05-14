@@ -163,8 +163,17 @@ spec_balN(N, cf, window, in) = cf ,
                                                            rms(window) : 
                                    ro.cross(2) : -;
 
-// Spectral peak
-spec_peakN(N, window, in) = ((_, 4, in) : f2.bp2blti : spec_tenN(2, .01)) ~ _;
+// Spectral peak with Nth-order spectral tendency calculation and
+// 2nd-order normalised BP filter (BLTI). It works by recursively
+// removing components on the sides of the spectral tendency frequency.
+// Currently a prototype as it still requires a mechanism to detect new
+// appearing signals that happen to fall within the filtered band.
+// One possibility is to drive the Q through the complement of the
+// derivative of a spectral tendency measure at the top of the chain. Still
+// a work in progress but it works well to isolate the frequency of pure
+// tones in a noisy background.
+spec_peakN(N, window, in) = ((max(10), 1, in) : f2.bp2blti : 
+                               spec_tenN(N, window)) ~ *(m2.ny);
 
 // spectral spread: complement of the ratio between the RMS of the 
 // spec_ten-centered bandpassed input and the input RMS. Nth-order
