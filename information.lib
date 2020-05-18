@@ -74,7 +74,7 @@ instant_freq(x) = instant_ph(x) : m2.diff / (2 * ma.PI) * ma.SR;
 instant_ph(x) = f2.analytic(x) : ro.cross(2) : atan2;
 
 // loudness with a-weighted function
-loudness(window, in) = in <:   peak_env(div(1, window)),
+loudness(window, in) = in <:   peak_env(m2.div(1, window)),
                                (spec_ten(window)*m2.ny : a_weighting) : *;
 
 // detects lowest partial in a signal
