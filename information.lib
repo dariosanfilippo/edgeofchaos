@@ -16,8 +16,9 @@ ro = library("routes.lib");
 si = library("signals.lib");
 
 // function for equal-loudness contour
-a_weighting(f) = (12194^2*f^4)/((f^2+20.6^2)*sqrt((f^2+107.7^2)*(f^2+737.9^2))
-                   *(f^2+12194^2));
+a_weighting(f) = (12194 ^ 2 * f ^ 4) / ((f ^ 2 + 20.6 ^ 2) * 
+                   sqrt((f ^ 2 + 107.7 ^ 2) * (f ^ 2 + 737.9 ^ 2)) * 
+                       (f ^ 2 + 12194 ^ 2)) + .206;
 
 // Complexity measurement as edge-of-chaos detection, that is,  accumulation 
 // of the variations in the heterogeneity of a state space.
