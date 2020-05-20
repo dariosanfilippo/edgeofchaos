@@ -120,6 +120,21 @@ with {
       };
 };
 
+// If true, 
+
+// If-then-else – unlike Faust's if-then-else, the condition is true for
+// any value != than 0, whereas Faust gives false for |fractions| < 1.
+if(cond, then, else) = ceil(cond) , 
+                       else , 
+                       then : select2;
+
+// If-then-else-if-... with arbitrary number of conditions. 
+// It takes pairs of IF-THEN couples plus a final ELSE. 
+// These should be given as a list, hence within parentheses. 
+// Code by Oleg Nesterov.
+ifN((c, t, e)) = if(c, t, ifN(e));
+ifN(e) = e;
+
 // NAN-safe inverse
 inv(x) =   1,
            x : div;
