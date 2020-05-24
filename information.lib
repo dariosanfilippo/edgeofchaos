@@ -108,6 +108,23 @@ peak_env(release, in) = abs(in) :   max
 // hold peak for a time specified in seconds
 peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
 
+// Peak envelope function with independent attack and release times. The
+// smoothing filters are based on a time constant that is 2pi * tau; the
+// filters will reach 1 - e^(-2pi) of the final valuein AT seconds, or will 
+// decay by e^(-2pi) in RT seconds.
+peak_a_r(AT, RT, x) =  loop
+                       ~ _
+with {
+      loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
+      with {
+       attack = (1 - AT_coeff) * abs : +
+                                       ~ * AT_coeff;
+       release = * RT_coeff;
+       AT_coeff = m2.rt55(AT);
+       RT_coeff = m2.rt55(RT);
+      };
+};
+
 // detects lower and upper peaks and holds them for a time (in s) specified by 
 // "release"
 peaks(release, in) =   (   check_low 
