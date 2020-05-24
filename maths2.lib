@@ -122,7 +122,7 @@ with {
 
 // If-then-else – unlike Faust's if-then-else, the condition is true for
 // any value != than 0, whereas Faust gives false for |fractions| < 1.
-if(cond, then, else) = ceil(cond) , 
+if(cond, then, else) = cond != 0 , 
                        else , 
                        then : select2;
 
@@ -177,7 +177,7 @@ matrix(r, c) = (si.bus(r), ro.interleave(c, r))
                                                : par(i, c, *)) :> si.bus(c);
 
 // Nyquist
-ny = ma.SR/2;
+ny = ma.SR / 2;
 
 // phasor with phase reset
 ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) 
@@ -192,6 +192,13 @@ primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
 // n-th prime number raised to a power
 prime_base_pow(n) = ba.take(n, primes) ,
                     _ : pow;
+
+// Relay hysteron – the basic building block of the Preisach model
+relay_hysteron(alpha, beta, x) =   loop 
+                                   ~ _
+with {
+    loop(fb) = m2.if(x <= alpha, 0, m2.if(x >= beta, 1, fb));
+};
 
 // closest power of 2
 round_pow2(x) = 2^(ma.log2(x) : rint);
