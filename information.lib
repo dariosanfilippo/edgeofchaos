@@ -112,7 +112,7 @@ peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
 // smoothing filters are based on a time constant that is 2pi * tau; the
 // filters will reach 1 - e^(-2pi) of the final valuein AT seconds, or will 
 // decay by e^(-2pi) in RT seconds.
-peak_a_r(AT, RT, x) =  loop
+peakAR(AT, RT, x) =    loop
                        ~ _
 with {
       loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
