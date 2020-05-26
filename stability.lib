@@ -54,11 +54,49 @@ with {
 // hyperbolic saturator
 hyperbolic(x) = x/(1+abs(x));
 
-// look-ahead limiting
-limiter(lim, in) = d2.del(.002, .002, in),
-                   (   lim ,
-                       (in : ip.peak_hold(.1) : f2.lp1p(500) 
-                           : ip.peak_env(1)) : m2.div : min(1)) : *;
+// Simple lookahead limiter based on IOhannes Zmölnig post, which is in
+// turn based on the thesis by Peter Falkner "Entwicklung eines digitalen 
+// Stereo-Limiters mit Hilfe des Signalprozessors DSP56001".
+// This version of the limiter simply uses a peak-holder with smoothed
+// attack and release based on e^(-2pi) time constant filters.
+// This time constant allows for the amplitude profile to reach 1 -
+// e^(-2pi) of the final peak after the attack time. The input path
+// can be delayed by the same amount as attack time to synchronise input and
+// amplitude profile, or by any other lookahead time specified by the user.
+//
+// #### Usage
+//
+// ```
+// _ : limiter_basic_mono(threshold, lag, attack, hold, release) : _;
+// ```
+//
+// Where:
+//
+// * `lag` lookahead delay in seconds.
+// * `threshold` is the linear amplitude limiting threshold.
+// * `attack` is the attack time in seconds 
+//     (note that it sets the input delay and it must be known at compile-time).
+// * `hold` is hold time in seconds.
+// * `release` is release time in seconds.
+//
+// Example: limiter_basic_mono(.01, 1, .01, .1, 1);
+//
+// #### Reference:
+//
+// http://iem.at/~zmoelnig/publications/limiter/.
+//-----------------------------------------------------------------------------
+limiter_lookahead(lag, threshold, attack, hold, release, x) =
+      x @ (lag * ma.SR) * scaling
+with {
+      scaling = threshold / amp_profile : min(1);
+      amp_profile = ip.peak_hold(hold, x) : att_smooth(attack) :
+       rel_smooth(release);
+      att_smooth(time, in) = f2.lp1p(1 / time, in);
+      rel_smooth(time, in) = ip.peak_env(time, in);
+};
+
+// Lookahead limiter special case (mono).
+limiter(lim, in) = limiter_lookahead(.002, 1, .002, .1, 1, in);
 
 // parabolic saturator
 parabolic(x) = ba.if(abs(x) : >=(2),    ma.signum(x),
