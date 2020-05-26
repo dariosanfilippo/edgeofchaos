@@ -76,8 +76,7 @@ hyperbolic(x) = x/(1+abs(x));
 //
 // * `lag` lookahead delay in seconds.
 // * `threshold` is the linear amplitude limiting threshold.
-// * `attack` is the attack time in seconds 
-//     (note that it sets the input delay and it must be known at compile-time).
+// * `attack` is the attack time in seconds. 
 // * `hold` is hold time in seconds.
 // * `release` is release time in seconds.
 //
