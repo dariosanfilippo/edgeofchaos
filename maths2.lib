@@ -178,14 +178,14 @@ matrix(r, c) = (si.bus(r), ro.interleave(c, r))
 
 // Returns the max value between a number of signals, "N", specified at
 // compile-time.
-maxN(2) = max( _ , 
-               _);
+maxN(1) = _;
+maxN(2) = max;
 maxN(N) = max(maxN(N - 1));
 
 // Returns the min value between a number of signals, "N", specified at
 // compile-time.
-minN(2) = min( _ ,
-               _);
+minN(1) = _;
+minN(2) = min;
 minN(N) = min(minN(N - 1));
 
 // Nyquist
