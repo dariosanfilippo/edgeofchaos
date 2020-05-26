@@ -118,8 +118,8 @@ with {
       loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
       with {
        attack = (1 - AT_coeff) * abs : +
-                                       ~ * AT_coeff;
-       release = * RT_coeff;
+                                       ~ * (AT_coeff);
+       release = * (RT_coeff);
        AT_coeff = m2.rt55(AT);
        RT_coeff = m2.rt55(RT);
       };
