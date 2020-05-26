@@ -176,6 +176,18 @@ matrix(r, c) = (si.bus(r), ro.interleave(c, r))
                                            si.bus(c) : ro.interleave(c, 2) 
                                                : par(i, c, *)) :> si.bus(c);
 
+// Returns the max value between a number of signals, "N", specified at
+// compile-time.
+maxN(1) = max( _ , 
+               _);
+maxN(N) = max(maxN(N - 1));
+
+// Returns the min value between a number of signals, "N", specified at
+// compile-time.
+minN(1) = min( _ ,
+               _);
+minN(N) = min(minN(N - 1));
+
 // Nyquist
 ny = ma.SR / 2;
 
