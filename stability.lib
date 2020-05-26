@@ -69,7 +69,7 @@ hyperbolic(x) = x/(1+abs(x));
 // #### Usage
 //
 // ```
-// _ : limiter_basic_mono(threshold, lag, attack, hold, release) : _;
+// _ : limiter_basic_mono(lag, threshold, attack, hold, release) : _;
 // ```
 //
 // Where:
