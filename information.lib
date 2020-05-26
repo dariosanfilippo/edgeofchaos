@@ -103,7 +103,7 @@ noisiness(window, in) = spec_ten(window, in) : *(m2.ny) : max(1)
 
 // infinitely fast attack and adjustable release
 peak_env(release, in) = abs(in) :   max
-                                    ~ *(release : m2.rt60);
+                                    ~ *(m2.rt55(release));
 
 // hold peak for a time specified in seconds
 peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
