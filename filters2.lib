@@ -19,33 +19,33 @@ st = library("stability.lib");
 analytic(x) =   real ,
                 imaginary
 with {
-    im_c = (   0.47944111608296202665,
-               0.87624358989504858020,
-               0.97660296916871658368,
+    im_c = (   0.47944111608296202665 ,
+               0.87624358989504858020 ,
+               0.97660296916871658368 ,
                0.99749940412203375040);
-    re_c = (   0.16177741706363166219,
-               0.73306690130335572242,
-               0.94536301966806279840,
+    re_c = (   0.16177741706363166219 ,
+               0.73306690130335572242 ,
+               0.94536301966806279840 ,
                0.99060051416704042460);
-    tf(c, y, x) = c*(x+y')-x'';
-    imaginary = x' : seq(i, 4, tf(ba.take(i+1, im_c))
+    tf(c, y, x) = c * (x + y') - x'';
+    imaginary = x' : seq(i, 4, tf(ba.take(i + 1, im_c))
                                ~ _);
-    real = x : seq(i, 4,   tf(ba.take(i+1, re_c))
+    real = x : seq(i, 4,   tf(ba.take(i + 1, re_c))
                            ~ _);
 };
 
 // biquad allpass (design by Robert Bristow-Johnson)
 apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(5, m2.ny-5, cf);
+      cf1 = st.clip(5, m2.ny - 5, cf);
       q1 = .707;
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = (1-alpha)/norm;
-      a1 = -1*cos(m2.w(cf1))*2/norm;
-      a2 = (1+alpha)/norm;
-      b1 = -1*cos(m2.w(cf1))*2/norm;
-      b2 = (1-alpha)/norm;
+      alpha = sin(m2.w(cf1))/ (2 * q1);
+      norm = 1 + alpha;
+      a0 = (1 - alpha) / norm;
+      a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+      a2 = (1 + alpha) / norm;
+      b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+      b2 = (1 - alpha) / norm;
 };
 
 // 1p1z allpass BLTI (design by Zavalishin)
@@ -56,22 +56,22 @@ apblti(cf, in) = ( cf,
 // biquad section
 biquad(a0, a1, a2, b1, b2, x) = fir : + ~ iir
 with {
-      fir = a0*x+a1*x'+a2*x'';
-      iir(fb) = -b1*fb-b2*fb';
+      fir = a0 * x + a1 * x' + a2 * x'';
+      iir(fb) = -b1 * fb - b2 * fb';
 };
 
 // biquad bandpass (design by Robert Bristow-Johnson)
 bpbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(5, m2.ny-5, cf);
+      cf1 = st.clip(5, m2.ny - 5, cf);
       q1 = max(q, .001);
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = alpha/norm;
+      alpha = sin(m2.w(cf1)) / (2 * q1);
+      norm = 1 + alpha;
+      a0 = alpha / norm;
       a1 = 0;
-      a2 = -alpha/norm;
-      b1 = cos(m2.w(cf1))*-2/norm;
-      b2 = (1-alpha)/norm;
+      a2 = -alpha / norm;
+      b1 = cos(m2.w(cf1)) * -2 / norm;
+      b2 = (1 - alpha) / norm;
 };
 
 // 2p2z normalised BP shortcut from SVF TPT 2nd-order (Zavalishin / Pirkle)
@@ -89,15 +89,15 @@ bp2blti(cf, q, x) = svf2blti(cf, q, 1, x) : (  ! ,
 // biquad bandstop (design by Robert Bristow-Johnson)
 bsbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(5, m2.ny-5, cf);
+      cf1 = st.clip(5, m2.ny - 5, cf);
       q1 = max(q, .001);
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = 1/norm;
-      a1 = -1*cos(m2.w(cf1))*2/norm;
-      a2 = 1/norm;
-      b1 = -1*cos(m2.w(cf1))*2/norm;
-      b2 = (1-alpha)/norm;
+      alpha = sin(m2.w(cf1)) / (2 * q1);
+      norm = 1 + alpha;
+      a0 = 1 / norm;
+      a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+      a2 = 1 / norm;
+      b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+      b2 = (1 - alpha) / norm;
 };
 
 // Comb-integrator circuiit lowpass filter.
@@ -108,15 +108,15 @@ cic(N, cf, x) = x : seq(i, N, m2.delta(1, .5 / cf) :
 // biquad highpass (design by Robert Bristow-Johnson)
 hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(5, m2.ny-5, cf);
+      cf1 = st.clip(5, m2.ny - 5, cf);
       q1 = .707;
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = ((1+cos(m2.w(cf1)))/2)/norm;
-      a1 = -1*(1+cos(m2.w(cf1)))/norm;
-      a2 = ((1+cos(m2.w(cf1)))/2)/norm;
-      b1 = cos(m2.w(cf1))*-2/norm;
-      b2 = (1-alpha)/norm;
+      alpha = sin(m2.w(cf1)) / (2 * q1);
+      norm = 1 + alpha;
+      a0 = ((1 + cos(m2.w(cf1))) / 2) / norm;
+      a1 = -1 * (1 + cos(m2.w(cf1))) / norm;
+      a2 = ((1 + cos(m2.w(cf1))) / 2) / norm;
+      b1 = cos(m2.w(cf1)) * -2 / norm;
+      b2 = (1 - alpha) / norm;
 };
 
 // 1p1z highpass BLTI (design by Zavalishin)
@@ -129,45 +129,45 @@ hpblti(cf, in) =   in,
 hp1p(cf, in) = in*a0 : + 
                        ~ *(b1)
 with {
-      a0 = 1+b1;
-      b1 = exp((.5-cf/ma.SR)*-2*ma.PI)*(-1);
+      a0 = 1 + b1;
+      b1 = exp((.5 - cf / ma.SR) * -2 * ma.PI) * -1;
 };
 
 // 1-pole highpass based on backward Euler's integration (design by Zavalishin)
-hp1pint(cf, in) = in-lp1pint(cf, in);
+hp1pint(cf, in) = in - lp1pint(cf, in);
 
 // highpass 1-pole raw coeff; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-hp1praw(cf, in) = (1-cf)*in :  +
-                               ~ *(-cf);
+hp1praw(cf, in) = (1 - cf) * in :  +
+                                   ~ * (-cf);
 
 // 1-pole-1-zero highpass (design by Cliff Sparks)
-hp1p1z(cf, in) =    in*a0 ,
-                    in'*a0*a1 : + : +
-                                    ~ *(b1)
+hp1p1z(cf, in) =    in * a0 ,
+                    in' * a0 * a1 : + :    +
+                                           ~ * (b1)
 with {
-    a0 = (1+b1)/2;
+    a0 = (1 + b1) / 2;
     a1 = -1;
-    b1 =    (1-sin(m2.w(cf))) ,
+    b1 =    (1 - sin(m2.w(cf))) ,
             cos(m2.w(cf)) : m2.div;
 };
 
 // highpass 1-pole-1-zero raw coeff; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-hp1p1zraw(cf, in) = in*(1-cf) <: ( _,
-                                   _' : -) :   +
-                                               ~ *(cf*-2+1);
+hp1p1zraw(cf, in) = in * (1 - cf) <: ( _,
+                                       _' : -) :   +
+                                                   ~ * (cf * -2 + 1);
 
 // bounded backward Euler's integration special case CF=1/(2PI)
-int_clip(lower, upper, in) =    (+(in/ma.SR) : st.clip(lower, upper)) 
+int_clip(lower, upper, in) =    (+ (in / ma.SR) : st.clip(lower, upper)) 
                                 ~ _;
 
 // backward Euler's integration with cut-off frequency
-int_eu_b(cf, x) = x*m2.w(cf) : +
-                               ~ _;
+int_eu_b(cf, x) = x * m2.w(cf) :   +
+                                   ~ _;
 
 // bounded backward Euler's integration with cut-off frequency
-int_eu_clip(l, u, cf, x) = (+(x*m2.w(cf)) : st.clip(l, u))
+int_eu_clip(l, u, cf, x) = (+ (x * m2.w(cf)) : st.clip(l, u))
                            ~ _;
 
 // forward Euler's integration with cut-off frequency
@@ -175,35 +175,35 @@ int_eu_f(cf, x) =  perform
                    ~ _ :   !, 
                            _
 with {
-    perform(fb) = x*m2.w(cf)+fb, fb;
+    perform(fb) = x * m2.w(cf) + fb, fb;
 };
 
 // trapezoidal integration with cut-off frequency
-int_trap(cf, x) = x*m2.w(cf)/2 <:  _, 
-                                   _' :>   + 
-                                           ~ _;
+int_trap(cf, x) = x * m2.w(cf) / 2 <:  _, 
+                                       _' :>   + 
+                                               ~ _;
 
 // bounded trapezoidal integration with cut-off frequency
-int_trap_clip(l, u, cf, x) = x*m2.w(cf)/2 <:   _,
-                                               _' :>   (+ : st.clip(l, u))
-                                                       ~ _;
+int_trap_clip(l, u, cf, x) = x * m2.w(cf) / 2 <:   _,
+                                                   _' :>   (+ : st.clip(l, u))
+                                                           ~ _;
 
 // special case of backward Euler's integration with CF=1/(2PI)
-integrator(x) = x/ma.SR :  + 
-                           ~ _;
+integrator(x) = x / ma.SR :    + 
+                               ~ _;
 
 // biquad lowpass (design by Robert Bristow-Johnson)
 lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
 with {
-      cf1 = st.clip(5, m2.ny-5, cf);
+      cf1 = st.clip(5, m2.ny - 5, cf);
       q1 = .707;
-      alpha = sin(m2.w(cf1))/(2*q1);
-      norm = 1+alpha;
-      a0 = ((1-cos(m2.w(cf1)))/2)/norm;
-      a1 = (1-cos(m2.w(cf1)))/norm;
-      a2 = ((1-cos(m2.w(cf1)))/2)/norm;
-      b1 = cos(m2.w(cf1))*-2/norm;
-      b2 = (1-alpha)/norm;
+      alpha = sin(m2.w(cf1)) / (2 * q1);
+      norm = 1 + alpha;
+      a0 = ((1 - cos(m2.w(cf1))) / 2) / norm;
+      a1 = (1 - cos(m2.w(cf1))) / norm;
+      a2 = ((1 - cos(m2.w(cf1))) / 2) / norm;
+      b1 = cos(m2.w(cf1)) * -2 / norm;
+      b2 = (1 - alpha) / norm;
 };
 
 // 1p1z lowpass BLTI (Faust code by Oleg Nesterov)
@@ -211,59 +211,59 @@ lpblti(cf, in) =   tick
                    ~ _ :   ! , 
                            _
 with {
-      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      tick(s) = y+v, y
+      g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
+      tick(s) = y + v, y
       with { 
-           v = (in-s)*g;
-           y = v+s;
+           v = (in - s) * g;
+           y = v + s;
       };
 };
 
 // 1-pole lowpass; for stability, CF should be between 0 and Ny 
 // (design by Chamberlin)
-lp1p(cf, in) = in*a0 : + 
-                       ~ *(b1)
+lp1p(cf, in) = in * a0 :   + 
+                           ~ * (b1)
 with {
-      a0 = 1-(b1);
-      b1 = exp(m2.w(cf)*(-1));
+      a0 = 1 - (b1);
+      b1 = exp(m2.w(cf) * -1);
 };
 
 // 1-pole lowpass based on backward Euler's integration 
 // (design by Zavalishin)
 lp1pint(cf, in) =   (in ,
                     _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)) 
-                    ~ *(-1);
+                    ~ * (-1);
 
 // lowpass 1-pole raw coeff; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-lp1praw(cf, in) = in*cf :  +
-                           ~ *(1-cf);
+lp1praw(cf, in) = in * cf :    +
+                               ~ *(1 - cf);
 
 // 1-pole-1-zero lowpass  (design by Cliff Sparks)
-lp1p1z(cf, in) =    in*a0 ,
-                    in'*a0*a1 : + : +
-                                    ~ *(b1)
+lp1p1z(cf, in) =    in * a0 ,
+                    in' * a0 * a1 : + :    +
+                                           ~ * (b1)
 with {
-    a0 = (1-b1)/2;
+    a0 = (1 - b1) / 2;
     a1 = 1;
-    b1 =    (1-sin(m2.w(cf))) ,
+    b1 =    (1 - sin(m2.w(cf))) ,
             cos(m2.w(cf)) : m2.div;
 };
 
 // lowpass 1-pole-1-zero raw coeff; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-lp1p1zraw(cf, in) = in*cf <: (  _,
-                                _' : +) :   +
-                                            ~ *(cf*-2+1);
+lp1p1zraw(cf, in) = in * cf <: (   _,
+                                   _' : +) :   +
+                                               ~ * (cf * -2 + 1);
 
 // sample-and-hold signals that have remained constant for t seconds
-sah_dc(t, in) =    m2.delta(t, in) : ==(0),
+sah_dc(t, in) =    m2.delta(t, in) : ==(0) ,
                    in : ba.sAndH;
 
 // sample-and-hold signals that have changed in direction
-sah_inv(in) = m2.diff(in) : ma.signum <:   abs,
-                                           _ : ba.sAndH <: (   _,
-                                                               _' : !=),
+sah_inv(in) = m2.diff(in) : ma.signum <:   abs ,
+                                           _ : ba.sAndH <: (   _ ,
+                                                               _' : !=) ,
                                                            in : ba.sAndH;
 
 // slew limiter; the same as Max's deltaclip~
@@ -273,8 +273,8 @@ slew_limiter(in1, in2, in3) =   tick
 with {
     tick(fb) = ba.if(cond1, max_plus_fb, cond3)
     with {
-        max_plus_fb = max(in2, in3)+fb;
-        min_plus_fb = min(in2, in3)+fb;
+        max_plus_fb = max(in2, in3) + fb;
+        min_plus_fb = min(in2, in3) + fb;
         cond1 = in1 > max_plus_fb;
         cond2 = in1 < min_plus_fb;
         cond3 = ba.if(cond2, max0, in1);
@@ -284,16 +284,16 @@ with {
 
 // 1p1z state-variable filter BLTI (based on the code by Oleg Nesterov)
 svfblti(cf, in) =  tick
-                   ~ _ :   !,
-                           _,
-                           _,
+                   ~ _ :   ! ,
+                           _ ,
+                           _ ,
                            _
 with {
-      g = tan(m2.w(cf)/2)/(1+tan(m2.w(cf)/2));
-      tick(s) = y+v, y, in-(v+s), s+2*v-(in-s)
+      g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
+      tick(s) = y + v, y, in - (v + s), s + 2 * v - (in - s)
       with {
-           v = (in-s)*g;
-           y = v+s;
+           v = (in - s) * g;
+           y = v + s;
       };
 };
 
@@ -302,55 +302,55 @@ with {
 // outputs are LP, HP, BP, BP_normalised, LS, HS, BS, notch, peak, AP
 // Ref: Zavalishin; Pirkle.
 svf2blti(cf, q, k, in) =   tick
-                           ~ ( _,
-                               _) : (  !,
-                                       !,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
-                                       _,
+                           ~ ( _ ,
+                               _) : (  ! ,
+                                       ! ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
+                                       _ ,
                                        _)
 with {
-    r = 1/(2*q);
-    wa = (2*ma.SR)*tan(m2.w(cf)/2);
-    g = wa/ma.SR/2;
-    tick(s1, s2) =  u1,
-                    u2,
-                    lp,
-                    hp,
-                    bp,
-                    bp_norm,
-                    ls,
-                    hs,
-                    b_shelf,
-                    notch,
-                    peak,
+    r = 1 / (2 * q);
+    wa = (2 * ma.SR) * tan(m2.w(cf) / 2);
+    g = wa / ma.SR / 2;
+    tick(s1, s2) =  u1 ,
+                    u2 ,
+                    lp ,
+                    hp ,
+                    bp ,
+                    bp_norm ,
+                    ls ,
+                    hs ,
+                    b_shelf ,
+                    notch ,
+                    peak ,
                     ap
     with {
-        u1 = v1+bp;
-        u2 = v2+lp;
-        v1 = hp*g;
-        v2 = bp*g;
-        hp = (in-2*r*s1-g*s1-s2)/(1+2*r*g+g*g);
-        bp = s1+v1;
-        lp = s2+v2;
-        bp_norm = bp*2*r;
-        b_shelf = in+k*bp_norm;
-        ls = in+k*lp;
-        hs = in+k*hp;
-        notch = in-bp_norm;
-        ap = in-4*r*bp;
-        peak = lp-hp;
+        u1 = v1 + bp;
+        u2 = v2 + lp;
+        v1 = hp * g;
+        v2 = bp * g;
+        hp = (in - 2 * r * s1 - g * s1 - s2) / (1 + 2 * r * g + g * g);
+        bp = s1 + v1;
+        lp = s2 + v2;
+        bp_norm = bp * 2 * r;
+        b_shelf = in + k * bp_norm;
+        ls = in + k * lp;
+        hs = in + k * hp;
+        notch = in - bp_norm;
+        ap = in - 4 * r * bp;
+        peak = lp - hp;
     };
 };
 
 // nth-order crossover with Butterworth filters
-xover_butt(n, cf, x) = low,
+xover_butt(n, cf, x) = low ,
                        high
 with {
       low = fi.lowpass(n, cf, x);
@@ -358,54 +358,54 @@ with {
 };
 
 // 1-pole-1-zero spectrum splitter
-xover1p1z(cf, in) =    low,
+xover1p1z(cf, in) =    low ,
                        high
 with {
       low = lp1p1z(cf, in);
-      high = in-low;
+      high = in - low;
 };
 
 // Adaptive crossover: equally redistributes power (RMS) among low and high
 // spectra. Useful when only one microphone is available and different
 // signals are needed for internal processing. "window" sets its
 // responsiveness
-xover1p1z_ada(window, in) = (  (_, 
-                               in) : xover1p1z <:  (   ip.rms(window), 
+xover1p1z_ada(window, in) = (  (_ , 
+                               in) : xover1p1z <:  (   ip.rms(window) , 
                                                        ip.rms(window) 
-      : ro.cross(2) : - : /(ip.rms(window, in)) : *(window) 
-       : /(ma.SR) : int_clip(0, 1) : pow(4) : *(m2.ny)),
-                                                   (   _,
+      : ro.cross(2) : - : / (ip.rms(window, in)) : * (window) 
+       : / (ma.SR) : int_clip(0, 1) : pow(4) :     * (m2.ny)) ,
+                                                   (   _ ,
                                                        _)) 
-                               ~ ( _, 
-                                   !, 
-                                   !) : (  !, 
-                                           _, 
+                               ~ ( _ , 
+                                   ! , 
+                                   !) : (  ! , 
+                                           _ , 
                                            _);
 
 // 1-pole raw-coefficients spectrum splitter; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-xover1praw(cf, in) =   low,
+xover1praw(cf, in) =   low ,
                        high
 with {
     low = lp1praw(cf, in);
-    high = in-low;
+    high = in - low;
 };
 
 // 1-pole-1-zero raw-coefficients spectrum splitter; coeff. should not exceed
 // the [0; 1] range (DC and Nyquist)
-xover1p1zraw(cf, in) = low,
+xover1p1zraw(cf, in) = low ,
                        high
 with {
     low = lp1p1zraw(cf, in);
-    high = in-low;
+    high = in - low;
 };
 
 // 2-poles-2-zeroes crossover based on 2nd-order Butterworth filters
-xover2p2z(cf, in) =    low,
+xover2p2z(cf, in) =    low ,
                        high
 with {
       low = fi.lowpass(2, cf1, in);
       high = fi.highpass(2, cf1, in);
-      cf1 = max(20/ma.SR*m2.ny, min((1-(200/ma.SR))*m2.ny, cf));
+      cf1 = max(20 / ma.SR * m2.ny, min((1 - (200 / ma.SR)) * m2.ny, cf));
 };
 
