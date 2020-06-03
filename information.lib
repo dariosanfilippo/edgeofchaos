@@ -1,57 +1,57 @@
-/* =============================================================================
- * ========== information.lib ==================================================
- * =============================================================================
- *
- * Information processing functions library including low-level and high-level
- * algorithms both based on hard-coded and adaptive mechanisms. The
- * low-level functions provide time-domain techniques for feature
- * extraction that are normally based on FFT processing, such as
- * spectral centroid and spectral flatness (noisiness). The high-level
- * functions provide an analysis of the state space of low-level
- * information signals to determine, based on notions of complexity theory and
- * music perception, characteristics such as dynamicity, heterogeneity,
- * and complexity of audio streams.
- *
- * All functions below that use one-pole lowpass filters for
- * accumulation are based on a time constant that is 2pi*tau.
- *
- * The environment prefix is "ip".
- *
- * List of functions:
- *
- *    a_weighting, 
- *    complexity, 
- *    dynamicity, 
- *    env_fol, 
- *    highest_partial, 
- *    heterogeneity, 
- *    heterogeneity10, 
- *    instant_amp, 
- *    instant_freq, 
- *    instant_ph, 
- *    loudness, 
- *    lowest_partial, 
- *    noisiness, 
- *    peak_env, 
- *    peak_hold, 
- *    peakAR, 
- *    peaks, 
- *    recurrence, 
- *    rms, 
- *    rms4, 
- *    roughness, 
- *    spec_bal, 
- *    spec_balN, 
- *    spec_peakN, 
- *    spec_ten, 
- *    spec_tenN, 
- *    spec_ten_lite, 
- *    zc, 
- *    zcr, 
- *    zcr4.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
- * All rights reserved. */
+// =============================================================================
+// ========== information.lib ==================================================
+// =============================================================================
+// 
+// Information processing functions library including low-level and high-level
+// algorithms both based on hard-coded and adaptive mechanisms. The
+// low-level functions provide time-domain techniques for feature
+// extraction that are normally based on FFT processing, such as
+// spectral centroid and spectral flatness (noisiness). The high-level
+// functions provide an analysis of the state space of low-level
+// information signals to determine, based on notions of complexity theory and
+// music perception, characteristics such as dynamicity, heterogeneity,
+// and complexity of audio streams.
+// 
+// All functions below that use one-pole lowpass filters for
+// accumulation are based on a time constant that is 2pi*tau.
+// 
+// The environment prefix is "ip".
+// 
+// List of functions:
+// 
+//    a_weighting, 
+//    complexity, 
+//    dynamicity, 
+//    env_fol, 
+//    highest_partial, 
+//    heterogeneity, 
+//    heterogeneity10, 
+//    instant_amp, 
+//    instant_freq, 
+//    instant_ph, 
+//    loudness, 
+//    lowest_partial, 
+//    noisiness, 
+//    peak_env, 
+//    peak_hold, 
+//    peakAR, 
+//    peaks, 
+//    recurrence, 
+//    rms, 
+//    rms4, 
+//    roughness, 
+//    spec_bal, 
+//    spec_balN, 
+//    spec_peakN, 
+//    spec_ten, 
+//    spec_tenN, 
+//    spec_ten_lite, 
+//    zc, 
+//    zcr, 
+//    zcr4.
+// 
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
 
 declare name "Information Processing Library";
 declare author "Dario Sanfilippo";
