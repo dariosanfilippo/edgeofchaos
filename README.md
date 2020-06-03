@@ -59,8 +59,12 @@ sanfilippo.dario at gmail dot com
                         dynamicity, heterogeneity, and complexity of audio 
                         streams.
 
-    maths2.lib:         more math functions including matrices, maps, windowing, 
-                        interpolators, statistics.
+    maths2.lib:         Math library containing functions for statistics, 
+                        linear and nonlinear fuzzy logic, interpolators, 
+                        network topologies, matrixes, linear and nonlinear 
+                        mapping, windowing functions, hysteresis, angular 
+                        frequency, and several time constants for exponential 
+                        decays in one-pole systems.
 
     oscillators2.lib:   mainly BLIT-based oscillators and self-oscillating 
                         systems.
