@@ -72,20 +72,25 @@ sanfilippo.dario at gmail dot com
 
 –   80 characters per line;
 
-–   infix syntax should be used when possible to increace conciseness;
+–   Infix syntax should be used when possible to increace conciseness;
 
-–   spacing should be used between operands and operators to increase readbility;
+–   Spacing should be used between operands and operators to increase 
+    readability;
 
-–   spacing should be used between operators and arguments for partial 
+–   Spacing should be used between operators and arguments for partial 
     application with infix operators (see the Faust manual for a complete list 
     of such operators);
 
-–   no spacing should be used between operators and arguments for partial 
+–   No spacing should be used between operators and arguments for partial 
     application with functions; 
 
-–   spacing should be used between the first operand and the parallel composition 
-    operator, while the second operand should be on a new line indented with the 
-    first one;
+–   Spacing should be used between the first operand and the parallel composition 
+    operator (comma operator), while the second operand should be on a new line 
+    indented with the first one;
 
-–   the recursive composition operator and its right-operand should be on a new 
+–   When separating arguments, there should be no spacing between the comma and 
+    the argument on its left to distinguish it from the parallel comporition 
+    operator (comma).
+
+–   The recursive composition operator and its right-operand should be on a new 
     line and indented with the operator where the recursion is connected.
