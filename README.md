@@ -35,10 +35,10 @@ sanfilippo.dario at gmail dot com
                         samplerate-independent delay parameters based on 
                         aust's delay lines for integer and fractional delays.
 
-    edgeofchaos.lib:    This file provides access to all the Edge of Chaos 
+    edgeofchaos.lib:    this file provides access to all the Edge of Chaos 
                         library modules through a series of environments.
 
-    filters2.lib:       Filters library containing bilinear transform and 
+    filters2.lib:       filters library containing bilinear transform and 
                         topology preserving transform implementations 
                         (zero-delay feedback) of allpass, lowpass, highpass, 
                         bandpass, bandstop, shelving, and state-variable 
@@ -46,7 +46,7 @@ sanfilippo.dario at gmail dot com
                         crossovers, comb-integrator circuits, analytic filters, 
                         and integrators, among others.
 
-    information.lib:    Information processing functions library including 
+    information.lib:    information processing functions library including 
                         low-level and high-level algorithms both based on 
                         hard-coded and adaptive mechanisms. The low-level 
                         functions provide time-domain techniques for feature 
@@ -59,7 +59,7 @@ sanfilippo.dario at gmail dot com
                         dynamicity, heterogeneity, and complexity of audio 
                         streams.
 
-    maths2.lib:         More math functions including matrices, maps, windowing, 
+    maths2.lib:         more math functions including matrices, maps, windowing, 
                         interpolators, statistics.
 
     oscillators2.lib:   mainly BLIT-based oscillators and self-oscillating 
