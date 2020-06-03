@@ -70,23 +70,23 @@ sanfilippo.dario at gmail dot com
 
 ## Coding conventions
 
-–   80 characters per line;
+–   80 characters per line.
 
-–   Infix syntax should be used when possible to increace conciseness;
+–   Infix syntax should be used when possible to increace conciseness.
 
 –   Spacing should be used between operands and operators to increase 
-    readability;
+    readability.
 
 –   Spacing should be used between operators and arguments for partial 
     application with infix operators (see the Faust manual for a complete list 
-    of such operators);
+    of such operators).
 
 –   No spacing should be used between operators and arguments for partial 
-    application with functions; 
+    application with functions.
 
 –   Spacing should be used between the first operand and the parallel composition 
     operator (comma operator), while the second operand should be on a new line 
-    indented with the first one;
+    indented with the first one.
 
 –   When separating arguments, there should be no spacing between the comma and 
     the argument on its left to distinguish it from the parallel comporition 
