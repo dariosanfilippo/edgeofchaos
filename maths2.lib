@@ -1,10 +1,99 @@
-/* More math functions including matrices, maps, windowing, interpolators, 
- * statistics.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== maths2.lib =======================================================
+// =============================================================================
+// 
+// Math library containing functions for statistics, linear and nonlinear
+// fuzzy logic, interpolators, network topologies, matrixes, linear and
+// nonlinear mapping, windowing functions, hysteresis, angular frequency,
+// and several time constants for exponential decays in one-pole systems.
+// 
+// The environment prefix is "m2".
+// 
+// List of functions:
+// 
+//       aad, 
+//       avg_ari, 
+//       avg_ari_w, 
+//       avg_geo, 
+//       avg_geo_w, 
+//       avg_harm, 
+//       avg_harm_w, 
+//       avg_pow, 
+//       avg_quad, 
+//       bip, 
+//       complement, 
+//       delta, 
+//       delta2, 
+//       diff, 
+//       div, 
+//       hp_and, 
+//       hp_imp, 
+//       hp_nand, 
+//       hp_nimp, 
+//       hp_nor, 
+//       hp_nxr, 
+//       hp_or, 
+//       hp_xor, 
+//       interpolate_mn, 
+//       if, 
+//       ifN, 
+//       inv, 
+//       line, 
+//       line_reset, 
+//       map_lin, 
+//       map_par, 
+//       map_pcw, 
+//       map_log, 
+//       map_pow, 
+//       matrix, 
+//       maxN, 
+//       minN, 
+//       ny, 
+//       ph, 
+//       primes, 
+//       prime_base_pow, 
+//       relay_hysteron, 
+//       round_pow2, 
+//       rt9, 
+//       rt19, 
+//       rt55, 
+//       rt60, 
+//       sd, 
+//       sp, 
+//       topologies, 
+//       top_anti_diag, 
+//       top_diagonal, 
+//       top_diag_shift, 
+//       top_full, 
+//       top_tri_low, 
+//       top_tri_up, 
+//       uni, 
+//       unit_log, 
+//       var, 
+//       w, 
+//       window_hann, 
+//       window_sine, 
+//       wrap, 
+//       y_and, 
+//       y_or, 
+//       z_and, 
+//       z_imp, 
+//       z_nand, 
+//       z_nimp, 
+//       z_nor, 
+//       z_nxr, 
+//       z_or, 
+//       z_xor.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Math Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 ba = library("basics.lib");
 de = library("delays.lib");
@@ -14,118 +103,464 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 
-// normalised average absolute deviation around the mean
-aad(n) = si.bus(n) <:  (si.bus(n),
-                       (si.bus(n) :> /(n) <: si.bus(n)) : ro.interleave(n, 2)
-                           : par(i, n, (- : abs)) :> _),
-                       (si.bus(n) :> /(n)) : m2.div : /((n-1)*2);
+// m2.aad(N); ------------------------------------------------------------------
+//
+// Normalised average absolute deviation around the mean.
+//
+// N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], average absolute deviation in the range [0; 1] of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals.
+//
+aad(N) = si.bus(N) <:  (si.bus(N) ,
+                       (si.bus(N) :> / (N) <: si.bus(N)) : ro.interleave(N, 2) : 
+      par(i, N, (- : abs)) :> _) ,
+      (si.bus(N) :> / (N)) : m2.div : / ((N - 1) * 2);
+// -----------------------------------------------------------------------------
 
-// arithmetic mean; n is the number of elements in the set
-avg_ari(n) = si.bus(n) :> /(n);
+// m2.avg_ari(N); --------------------------------------------------------------
+//
+// Arithmetic mean.
+//
+// N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], arithmetic mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals.
+//
+avg_ari(N) = si.bus(N) :> / (N);
+// -----------------------------------------------------------------------------
 
-// weighted arithmetic mean; n is the number of elements in the set
-// (first n signals) having n corresponding weights (remaining n signals)
-avg_ari_w(n) = si.bus(n),
-               (si.bus(n) <:   si.bus(n),
-                               (si.bus(n) :> _)) 
-                                   :   ro.interleave(n, 2), 
-                                       _ : (par(i, n, *) :> _), 
-                                           _ : /;
+// m2.avg_ari_w(N); ------------------------------------------------------------
+//
+// Weighted arithmetic mean.
+//
+// 2N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n], input signals;
+//    w1[n];
+//    ...
+//    wN-1[n];
+//    wN[n], corresponding weighting signals.
+//
+// 1 outputs:
+//    y[n], weighted arithmetic mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals and corresponding weighting
+//         signals.
+//
+avg_ari_w(N) = si.bus(N) ,
+               (si.bus(N) <:   si.bus(N) ,
+                               (si.bus(N) :> _)) : 
+      ro.interleave(N, 2) , 
+      _ :  (par(i, N, *) :> _) , 
+           _ : /;
+// -----------------------------------------------------------------------------
 
-// geometric mean, n is the number of elements in the set
-avg_geo(n) = prod(i, n, _) : pow(1/n);
+// m2.avg_geo(N); --------------------------------------------------------------
+//
+// Geometric mean.
+//
+// N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], geometric mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals.
+//
+avg_geo(N) = prod(i, N, _) : pow(1 / N);
+// -----------------------------------------------------------------------------
 
-// weighted geometric mean; n is the number of elements in the set
-// (first n signals) having n corresponding weights (remaining n signals)
-avg_geo_w(n) = (si.bus(n) : par(i, n, log)),
-               (si.bus(n) <:   si.bus(n),
-                               (si.bus(n) :> _)) 
-                                   :   ro.interleave(n, 2),
-                                       _ : (par(i, n, *) :> _), 
-                                           _ : / : exp;
+// m2.avg_geo_w(N); ------------------------------------------------------------
+//
+// Weighted geometric mean.
+//
+// 2N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n]; 
+//    xN[n], input signals;
+//    w1[n];
+//    ...
+//    wN-1[n];
+//    wN[n], corresponding weighting signals.
+//
+// 1 outputs:
+//    y[n], weighted geometric mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals and corresponding weighting
+//         signals.
+//
+avg_geo_w(N) = (si.bus(N) : par(i, N, log)) ,
+               (si.bus(N) <:   si.bus(N) ,
+                               (si.bus(N) :> _)) : 
+      ro.interleave(N, 2) ,
+      _ :  (par(i, N, *) :> _) , 
+           _ : / : exp;
+// -----------------------------------------------------------------------------
 
-// harmonic mean; n is the number of elements in the set
-avg_harm(n) = si.bus(n) : par(i, n, ma.inv) :> n/_;
+// m2.avg_harm(N); -------------------------------------------------------------
+//
+// Harmonic mean.
+//
+// N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], harmonic mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals.
+//
+avg_harm(N) = si.bus(N) : par(i, N, ma.inv) :> N / _;
 
-// weighted harmonic mean; n is the number of elements in the set
-// (first n signals) having n corresponding weights (remaining n signals)
-avg_harm_w(n) =    (si.bus(n) : par(i, n, ma.inv)),
-                   (si.bus(n) <:   si.bus(n),
-                                   (si.bus(n) :> _))
-                                       :   ro.interleave(n, 2),
-                                           _ : (par(i, n, *) :> _),
-                                               _ : / : ma.inv;
+// m2.avg_harm_w(N); -----------------------------------------------------------
+//
+// Weighted harmonic mean.
+//
+// 2N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n]; 
+//    xN[n], input signals;
+//    w1[n];
+//    ...
+//    wN-1[n];
+//    wN[n], corresponding weighting signals.
+//
+// 1 outputs:
+//    y[n], weighted harmonic mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals and corresponding weighting
+//         signals.
+//
+avg_harm_w(N) =    (si.bus(N) : par(i, N, ma.inv)) ,
+                   (si.bus(N) <:   si.bus(N) ,
+                                   (si.bus(N) :> _)) :
+      ro.interleave(N, 2) ,
+      _ :  (par(i, N, *) :> _) ,
+           _ : / : ma.inv;
+// -----------------------------------------------------------------------------
 
-// generalised mean; n is the number of elements in the set, m is the exponent
-avg_pow(n, m) = si.bus(n) : par(i, n, pow(m)) :> /(n) : pow(1/m);
+// m2.avg_pow(N, E[n]); --------------------------------------------------------
+//
+// Generalised mean.
+//
+// N+1 inputs:
+//    E[n], exponent for each element in the set;
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], generalised mean of a set of N elements.
+//
+// Compile-time arguments:
+//    N, (integere) number of input signals.
+//
+avg_pow(N, m) = si.bus(N) : par(i, N, pow(m)) :> / (N) : pow(1 / m);
+// -----------------------------------------------------------------------------
 
-// quadratic mean; n is the number of elements in the set
-avg_quad(n) = si.bus(n) : par(i, n, _ <: *) :> /(n) : sqrt;
+// m2.avg_quad(N); -------------------------------------------------------------
+//
+// Quadratic mean.
+//
+// N inputs:
+//    x1[n];
+//    ...
+//    xN-1[n];
+//    xN[n].
+//
+// 1 outputs:
+//    y[n], quadratic mean of the input signals.
+//
+// Compile-time arguments:
+//    N, (integer) number of input signals.
+//
+avg_quad(N) = si.bus(N) : par(i, N, _ <: *) :> / (N) : sqrt;
+// -----------------------------------------------------------------------------
 
-//make a unipolar signal bipolar, assuming a [0; 1] input range
-bip(x) = x*2-1;
+// m2.bip(x[n]); ---------------------------------------------------------------
+//
+// Unipolar to bipolar signal conversion: [0; 1] range to [-1; 1] range.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], bipolarised input.
+//
+bip(x) = x * 2 - 1;
+// -----------------------------------------------------------------------------
 
-// complement
-complement(x) = 1-x;
+// m2.complement(x[n]); --------------------------------------------------------
+//
+// Complement.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], 1 - x[n].
+//
+complement(x) = 1 - x;
+// -----------------------------------------------------------------------------
 
-// first derivative
-delta(s, t, in) =  in ,
-                   d2.del_lin(s, t, in) : -;
+// m2.delta(S, dt[n], x[n]); ---------------------------------------------------
+//
+// First derivative using linear interpolation delay lines, hence
+// allowing fractional differentiation periods.
+//
+// 2 inputs:
+//    dt[n], differentiation period in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], first derivative of x[n].
+//
+// Compile-time arguments:
+//    S, maximum differentiation period in seconds.
+//
+delta(s, t, in) =  in - d2.del_lin(s, t, in);
+// -----------------------------------------------------------------------------
 
-// second derivative
+// m2.delta2(S, dt[n], x[n]); ---------------------------------------------------
+//
+// Second derivative using linear interpolation delay lines, hence
+// allowing fractional differentiation periods.
+//
+// 2 inputs:
+//    dt[n], differentiation period in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], second derivative of x[n].
+//
+// Compile-time arguments:
+//    S, maximum differentiation period in seconds.
+//
 delta2(s, t, in) = delta(s, t, in) : delta(s, t);
+// -----------------------------------------------------------------------------
 
-// differentiator
-diff(x) = x-x';
+// m2.diff(x[n]); --------------------------------------------------------------
+//
+// Differentiator: special case of a delta-function where the
+// differentiation period is 1 / SR.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], first derivative of x[n].
+//
+diff(x) = x - x';
+// -----------------------------------------------------------------------------
 
-// NAN-safe divider
-div(x1, x2) = ba.if(x2 : ==(0), 0, (x1 ,
-                                    x2 : /));
+// m2.div(x1[n], x2[n]); -------------------------------------------------------
+//
+// Divider that avoids INF with division by zero, as it can sometimes
+// cause crashes.
+//
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n], x1[n] / x2[n], if x2[n] != 0.
+//
+div(x1, x2) = m2.if(x2 == 0, 0, x1 / x2);
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid AND
-hp_and(x, y) = x*y;
+// m2.hp_and(x1[n], x2[n]); ----------------------------------------------------
+//
+// Hyperbolic paraboloid AND.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_and(x, y) = x * y;
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid IMPLIES
-hp_imp(x, y) = 1-x+x*y;
+// m2.hp_imp(x1[n], x2[n]); ----------------------------------------------------
+//
+// Hyperbolic paraboloid IMPLIES.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_imp(x, y) = 1 - x + x * y;
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid NOT AND
-hp_nand(x, y) = 1-x*y;
+// m2.hp_nand(x1[n], x2[n]); ---------------------------------------------------
+//
+// Hyperbolic paraboloid NOT AND.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_nand(x, y) = 1 - x * y;
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid NOT IMPLIES
-hp_nimp(x, y) = x*(1-y);
+// m2.hp_nimp(x1[n], x2[n]); ---------------------------------------------------
+//
+// Hyperbolic paraboloid NOT IMPLIES.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_nimp(x, y) = x * (1 - y);
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid NOT OR
-hp_nor(x, y) = 1-x-y+x*y;
+// m2.hp_nor(x1[n], x2[n]); ----------------------------------------------------
+//
+// Hyperbolic paraboloid NOT OR.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_nor(x, y) = 1 - x - y + x * y;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // hyperbolic paraboloid NOT excluding OR
-hp_nxr(x, y) = 1-x-y+2*x*y;
+// m2.hp_nxr(x1[n], x2[n]); ----------------------------------------------------
+//
+// Hyperbolic paraboloid NOT excluding OR.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_nxr(x, y) = 1 - x - y + 2 * x * y;
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid OR
-hp_or(x, y) = x+y-x*y;
+// m2.hp_or(x1[n], x2[n]); -----------------------------------------------------
+//
+// Hyperbolic paraboloid OR.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_or(x, y) = x + y - x * y;
+// -----------------------------------------------------------------------------
 
-// hyperbolic paraboloid excluding OR
-hp_xor(x, y) = x+y-2*x*y;
+// m2.hp_xor(x1[n], x2[n]); ----------------------------------------------------
+//
+// Hyperbolic paraboloid excluding OR.
+// 
+// 2 inputs:
+//    x1[n];
+//    x2[n].
+//
+// 1 outputs:
+//    y[n].
+//
+hp_xor(x, y) = x + y - 2 * x * y;
+// -----------------------------------------------------------------------------
 
-// linear interpolation between m blocks of n signals (spat by Romain Michon)
-interpolate_mn(m, n, index) = spat(m, index, 1) , ro.interleave(n, m) 
-                               : ro.interleave(m, n+1) 
-                                   : par(i, m, (_ <: si.bus(n)), 
-                                               si.bus(n) : ro.interleave(n, 2) 
-                                                   : par(i, n, *)) :> si.bus(n)
-with {
-      spat(n, a, d) = par(i, n, (scaler(i, n, a, d) ))
+// m2.interpolate_mn(M, N, i[n]); ----------------------------------------------
+//
+// Linear interpolation between m blocks of n signals (spat by Romain Michon).
+//
+// M*N+1 inputs:
+//    i[n], interpolating index in the [0; 1] range performing a
+//         complete interpolation cycle among the M blocks. 
+//         Hence, interpolation indexes of 0 and 1 have the same outputs.
+//    x11[n];
+//    ...
+//    x1N-1[n];
+//    x1N[n];
+//    xM1[n];
+//    ...
+//    xMN[n].
+//
+// N outputs:
+//    y1[n];
+//    ...
+//    yN-1[n];
+//    yN[n], interpolated N-signal block.
+//
+// Compile-time arguments:
+//    M, (integer) number of blocks;
+//    N, integer number of signals in each block.
+//
+interpolate_mn(m, n, index) =  spat(m, index, 1) , 
+                               ro.interleave(n, m) : 
+      ro.interleave(m, n + 1) :    par(i, m, (_ <: si.bus(n)) , 
+                                   si.bus(n) : ro.interleave(n, 2) : 
+           par(i, n, *)) :> si.bus(n)
       with {
-       scaler(i, n, a, d) = (d/2.0+0.5)*max(0.0, 1.0-abs(fmod(a+0.5+float(n-i)
-                               /n, 1.0)-0.5)*n*d);
+           spat(n, a, d) = par(i, n, (scaler(i, n, a, d) ))
+               with {
+                   scaler(i, n, a, d) = (d / 2.0 + .5) * max(.0, 1.0 - 
+                       abs(fmod(a + .5 + float(n - i) / n, 1.0) - .5) * n * d);
+               };
       };
-};
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // If-then-else – unlike Faust's if-then-else, the condition is true for
 // any value != than 0, whereas Faust gives false for |fractions| < 1.
 if(cond, then, else) = cond != 0 , 
                        else , 
                        then : select2;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // If-then-else-if-... with arbitrary number of conditions. 
 // It takes pairs of IF-THEN couples plus a final ELSE. 
 // These should be given as a list, hence within parentheses.
@@ -134,189 +569,280 @@ if(cond, then, else) = cond != 0 ,
 // Code by Oleg Nesterov.
 ifN((c, t, e)) = if(c, t, ifN(e));
 ifN(e) = e;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // NAN-safe inverse
-inv(x) =   1,
-           x : div;
+inv(x) = div(1, x);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // line: in signal sets x/y ratio
 line =  _ ,
         ma.SR : / : +
                     ~ _;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // line with reset input
-line_reset(rate, reset) =  (rate/ma.SR)' :      (+ : *(1-(reset : !=(0))))
-                                                ~ _;
+line_reset(rate, reset) =  rate / ma.SR :  (+ : * (1 - (reset != 0)))
+                                           ~ _;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // linear mapping
-map_lin(lower, upper, x) = x*(upper-lower)+lower;
+map_lin(lower, upper, x) = x * (upper - lower) + lower;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // parabolic mapping; t (must be an even int) is the tension parameter
-map_par(t, lower, upper, x) = x*2-1 : pow(t_1) : map_lin(lower, upper)
-with {
-      t_1 = t : int : *(2);
-};
+map_par(t, lower, upper, x) = x * 2 - 1 : pow(t_1) : map_lin(lower, upper)
+      with {
+           t_1 = int(t) * 2;
+      };
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // piece-wise mapping (two segments)
 map_pcw(split, exp1, exp2, l1, u1, l2, u2, x) = 
-      ba.if(   x : <=(split), 
-               map_pow(exp1, l1, u1, x),
-               map_pow(exp2, l2, u2, x));
+      m2.if(x <= split, map_pow(exp1, l1, u1, x), map_pow(exp2, l2, u2, x));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // logarithmic mapping; t is the base acting as a tension parameter
-map_log(t, lower, upper, x) = log(x*(t-1)+1)/log(t) : map_lin(lower, upper);
+map_log(t, lower, upper, x) = log(x * (t - 1) + 1) / log(t) : 
+      map_lin(lower, upper);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // power mapping; t is the exponent or tension parameter
 map_pow(t, lower, upper, x) = x : pow(t) : map_lin(lower, upper);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // r-input, c-output matrix
-matrix(r, c) = (si.bus(r), ro.interleave(c, r)) 
-                   : ro.interleave(r, c+1) 
-                       : par(i, r, (_ <:   si.bus(c)), 
-                                           si.bus(c) : ro.interleave(c, 2) 
-                                               : par(i, c, *)) :> si.bus(c);
+matrix(r, c) = (si.bus(r), ro.interleave(c, r)) : ro.interleave(r, c + 1) :
+      par(i, r, (_ <: si.bus(c)), 
+      si.bus(c) : ro.interleave(c, 2) : par(i, c, *)) :> si.bus(c);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Returns the max value between a number of signals, "N", specified at
 // compile-time.
 maxN(1) = _;
 maxN(2) = max;
 maxN(N) = max(maxN(N - 1));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Returns the min value between a number of signals, "N", specified at
 // compile-time.
 minN(1) = _;
 minN(2) = min;
 minN(N) = min(minN(N - 1));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Nyquist
 ny = ma.SR / 2;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // phasor with phase reset
-ph(freq, reset) = freq/ma.SR : (+ : ma.decimal) 
-                               ~ *(1-(reset : !=(0)));
+ph(freq, reset) = freq / ma.SR :   (+ : ma.decimal) 
+                                   ~ * (1 - (reset != 0));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // first 64 prime numbers
 primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149,
 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233,
 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // n-th prime number raised to a power
 prime_base_pow(n) = ba.take(n, primes) ,
                     _ : pow;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Relay hysteron – the basic building block of the Preisach model
 relay_hysteron(alpha, beta, x) =   loop 
                                    ~ _
 with {
     loop(fb) = m2.if(x <= alpha, 0, m2.if(x >= beta, 1, fb));
 };
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // closest power of 2
 round_pow2(x) = 2^(ma.log2(x) : rint);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // 1-pole coeff. for ~9 dB decay (e^-1 factor) in a desired time "t".
 rt9(t) = ba.tau2pole(t);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // 1-pole coeff. for ~19 dB decay (e^-2.2 factor) in a desired time "t".
 // This decay factor is used in [Zölzer 2008] for the calculation of RMS
 // with 1-pole filters.
 rt19(t) = ba.tau2pole(t / 2.2);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // 1-pole coeff. for ~55 dB decay (e^(-2pi) factor) in a desired time "t".
 // This coeff. calculation is found in [Chamberlin 1985] for the
 // implementation of 1-pole LP filters that simulate the dis/charging
 // behaviours of a capacitor.
 rt55(t) = ba.tau2pole(t / (2 * ma.PI));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // 1-pole coeff. for ~60 dB decay (e^-log(1000) factor) in a desired time "t".
 rt60(t) = ba.tau2pole(t / 6.907755279);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // stanrdard deviation; n is the number of elements in the set
 sd(n) = sqrt(var(n));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // sampling period
 sp = 1/ma.SR;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // linearly interpolated topologies for matrix function
 topologies(r, c, type) =   top_full(r, c),
                            top_anti_diag(r, c),
                            top_diagonal(r, c),
                            top_diag_shift(r, c, 1) 
                                : interpolate_mn(4, r*c, type);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // anti-diagonal topology for matrix function
 top_anti_diag(r, c) = par(i, r, par(j, c, ba.if((j : %(r))!=(i : %(c)), 
                                                 1, 
                                                 0)));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // diagonal topology for matrix function
 top_diagonal(r, c) = par(i, r, par(j, c, ba.if((j : %(r))==(i : %(c)), 1, 0)));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // shifted diagonal topology for matrix function
 top_diag_shift(r, c, s) = par(i, r, par(j, c, ba.if((j : %(r))==(i+s : %(c)), 
                                                     1, 
                                                     0)));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // fully-connected topology for matrix function
 top_full(r, c) = 1 <: si.bus(r*c);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // lower triangular topology for matrix function
 top_tri_low(r, c) = par(i, r, par(j, c, ba.if((j : %(r))<=(i : %(c)), 1, 0)));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // upper triangular topology for matrix function
 top_tri_up(r, c) = par(i, r, par(j, c, ba.if((j : %(r))>=(i : %(c)), 1, 0)));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 //make a bipolar signal unipolar, assuming a [-1; 1] input range
 uni(x) = (x+1)/2;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // 0-1 range to logarithmic 0-1 range
 unit_log(t, x) = log(x*(t-1)+1)/log(t);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // variance; n is the number of elements in the set
 var(n) = si.bus(n) <:  si.bus(n),
                        (si.bus(n) :> /(n) <: si.bus(n)) :
                            ro.interleave(n, 2) : par(i, n, - <: *) :> /(n);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // angular frequency
 w(x) = x*2*ma.PI/ma.SR;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Hann window
 window_hann(x) = sin(ma.PI*x) <: *;
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Sine window
 window_sine(x) = sin(ma.PI*x);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // wrap around a range
 wrap(lower, upper, x) = (x-lower)/(upper-lower) : ma.decimal : *(upper-lower) 
                            : +(lower);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Yager AND
 y_and(x, y) = 1-min(1, sqrt((1-x)^2+(1-y)^2));
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Yager OR
 y_or(x, y) = min(1, (x^2+y^2)^2);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh AND
 z_and(x, y) = min(x, y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh IMPLIES
 z_imp(x, y) = 1-min(x, 1-y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh NOT AND
 z_nand(x, y) = 1-min(x, y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh NOT IMPLIES
 z_nimp(x, y) = min(x, 1-y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh NOT OR
 z_nor(x, y) = 1-max(x, y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh NOT XOR
 z_nxr(x, y) = 1-x-y+2*min(x, y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh OR
 z_or(x, y) = max(x, y);
+// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 // Zadeh excluding OR
 z_xor(x, y) = x+Y-2*min(x, y);
+// -----------------------------------------------------------------------------
