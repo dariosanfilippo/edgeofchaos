@@ -71,15 +71,21 @@ sanfilippo.dario at gmail dot com
 ## Coding conventions
 
 –   80 characters per line;
+
 –   infix syntax should be used when possible to increace conciseness;
+
 –   spacing should be used between operands and operators to increase readbility;
+
 –   spacing should be used between operators and arguments for partial 
     application with infix operators (see the Faust manual for a complete list 
     of such operators);
+
 –   no spacing should be used between operators and arguments for partial 
     application with functions; 
+
 –   spacing should be used between the first operand and the parallel composition 
     operator, while the second operand should be on a new line indented with the 
     first one;
+
 –   the recursive composition operator and its right-operand should be on a new 
     line and indented with the operator where the recursion is connected.
