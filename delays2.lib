@@ -1,34 +1,117 @@
-/* Samplerate-independent delays. 
- * 
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved. 
- */
+// =============================================================================
+// ========== delays2.lib ======================================================
+// =============================================================================
+//
+// Delay line functions library with samplerate-independent delay parameters 
+// based on Faust's delay lines for integer and fractional delays.
+//
+// The environment prefix is "d2".
+//
+// List of functions:
+//
+//    del,
+//    del_lin,
+//    del_pol,
+//    del_smo.
+// 
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+// All rights reserved.
+ 
+declare name "Delays Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 de = library("delays.lib");
 d2 = library("delays2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
 
-// integer delay
-del(size, del, in) = in : de.delay(size*ma.SR, del*ma.SR);
+// d2.del(size, D[n], x[n]); ---------------------------------------------------
+//
+// Non-interpolating delay line: the signal is delayed by a number of
+// samples that is the closest integer of the specified delay in seconds
+// times the samplerate.
+//
+// 2 inputs: 
+//    D[n], delay amount in seconds (approximately); 
+//    x[n].
+//
+// 1 outputs: 
+//    y[n], delayed x[n].
+//
+// Compile-time arguments: 
+//    "size", delay line size and maximum delay in seconds.
+//
+del(size, del, in) = de.delay(size * ma.SR, del * ma.SR, in);
+// -----------------------------------------------------------------------------
 
-// linear interpolation between samples
-del_lin(size, del, in) = de.fdelay(size*ma.SR, del*ma.SR, in);
+// d2.del_lin(size, D[n], x[n]); -----------------------------------------------
+//
+// Interpolating delay line: the input signal is delayed by a delay
+// expressed in seconds where fractional-sample delays are achieved 
+// through linear interpolation.
+//
+// 2 inputs:
+//    D[n], delay amount in seconds; 
+//    x[n].
+//
+// 1 outputs:
+//    y[n], delayed x[n].
+//
+// Compile-time arguments: 
+//    "size", delay line size and maximum delay in seconds.
+//
+del_lin(size, del, in) = de.fdelay(size * ma.SR, del * ma.SR, in);
+// -----------------------------------------------------------------------------
 
-// polynomial interpolation
+// d2.del_pol(size, D[n], x[n]); -----------------------------------------------
+//
+// Interpolating delay line: the input signal is delayed by a delay
+// expressed in seconds where fractional-sample delays are achieved 
+// through 4th-order polynomial interpolation.
+//
+// 2 inputs:
+//    D[n], delay amount in seconds; 
+//    x[n].
+//
+// 1 outputs:
+//    y[n], delayed x[n].
+//
+// Compile-time arguments: 
+//    "size", delay line size and maximum delay in seconds which is the
+//     closest power-of-two number of samples representing the delay in seconds.
+//
 del_pol(size, del, in) = de.fdelayltv(4, s, d, in)
-with {
-      s = size*ma.SR : m2.round_pow2;
-      d = del*ma.SR : max((4-1)/2);
-};
+      with { 
+           s = size * ma.SR : m2.round_pow2;
+           d = del * ma.SR;
+           //d = del * ma.SR : max((4 - 1) / 2); 
+      };
+// -----------------------------------------------------------------------------
 
-// linear interpolation between two delay lines
-del_smo(size, itime, del, in) = in : de.sdelay(s, it, d)
-with {
-      s = size*ma.SR;
-      it = itime*ma.SR;
-      d = del*ma.SR;
-};
-
-
+// d2.del_smo(size, IT[n], D[n], x[n]); ----------------------------------------
+//
+// Delay line with variable delay and no clicks or Doppler effect: the
+// mechanism works by interpolating between the output of two delay lines.
+//
+// 3 inputs:
+//    IT[n], interpolation time in seconds;
+//    D[n], delay amount in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], delayed input.
+//
+// Compile-time arguments: 
+//    "size", delay line size and maximum delay in seconds.
+//
+del_smo(size, itime, del, in) = de.sdelay(s, it, d, in)
+      with {
+           s = size * ma.SR;
+           it = itime * ma.SR;
+           d = del * ma.SR;
+      };
+// -----------------------------------------------------------------------------

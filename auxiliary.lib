@@ -1,23 +1,74 @@
-/* Auxiliary function for testing, inspection and debugging.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== auxiliary.lib ====================================================
+// =============================================================================
+//
+// Auxiliary functions library for testing, analysis, inspection, and debugging.
+//
+// The environment prefix is "au".
+//
+// List of functions:
+//
+//    dirac,
+//    inspect,
+//    step.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Auxiliary Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 au = library("auxiliary.lib");
 
-// full-amp 1-sample impulse
-dirac = 1-1';
+// au.dirac; -------------------------------------------------------------------
+//
+// Dirac impulse: full-amplitude, 1-sample impulse.
+// y[n] = 1 if n = 0; 0 otherwise.
+//
+// 0 inputs.
+//
+// 1 outputs: 
+//    y[n].
+//
+dirac = 1 - 1';
+// -----------------------------------------------------------------------------
 
-// signal inspector
-inspect(i, lower, upper) = _ <: attach(_ , 
-                                       _ : vbargraph("sig_%i [style:numerical]", 
-                                                       lower, 
-                                                       upper));
+// au.inspect(i, lower, upper, x[n]); ------------------------------------------
+//
+// Signal inspector: it displays the value of a signal at block-size rate.
+//
+// 1 inputs: 
+//    x[n].
+// 
+// 1 outputs: 
+//    x[n].
+//
+// Compile-time arguments: 
+//    "i", integer identifier;
+//    "lower", lower display limit; 
+//    "upper", upper display limit.
+//
+inspect(i, lower, upper) = 
+      _ <: _ ,
+           vbargraph("sig_%i [style:numerical]", lower, upper) : attach;
+// -----------------------------------------------------------------------------
 
-// full-amp n-sample step function
-step(n) = 1 <:  _ ,
-                @(n) : -;
-
-
+// au.step(m); -----------------------------------------------------------------
+//
+// Step function: full-amplitude, m-sample step.
+// y[n] = 1 if 0 <= n < m; 0 otherwise.
+//
+// 0 inputs.
+//
+// 1 outputs: 
+//    Step().
+//
+// Compile-time arguments: 
+//    "m", step size in samples.
+//
+step(m) = 1 <:  _ - _ @(m);
+// -----------------------------------------------------------------------------

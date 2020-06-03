@@ -1,9 +1,19 @@
-/* Access to all Edge of Chaos libraries through a series of environments.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== edgeofchaos.lib ==================================================
+// =============================================================================
+//
+// This file provides access to all the Edge of Chaos library modules through a 
+// series of environments.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Access to the Edge of Chaos library environments";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 au = library("auxiliary.lib");
 d2 = library("delays2.lib");

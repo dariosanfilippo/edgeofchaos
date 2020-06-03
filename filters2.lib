@@ -1,9 +1,66 @@
-/* More filters including those with zero-delay feedback design.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== filters2.lib =====================================================
+// =============================================================================
+//
+// Filters library containing bilinear transform and topology preserving 
+// transform implementations (zero-delay feedback) of allpass, lowpass,
+// highpass, bandpass, bandstop, shelving, and state-variable filters. 
+// Furthermore, there are implementations of crossovers, comb-integrator 
+// circuits, analytic filters, and integrators, among others.
+//
+// The environment prefix is "f2".
+//
+// List of functions:
+//
+//    analytic,
+//    apbi,
+//    apblti, 
+//    biquad, 
+//    bpbi, 
+//    bp2blti, 
+//    bsbi, 
+//    cic, 
+//    hpbi, 
+//    hpblti, 
+//    hp1p, 
+//    hp1pint, 
+//    hp1praw, 
+//    hp1p1z, 
+//    hp1p1zraw, 
+//    int_clip, 
+//    int_eu_b, 
+//    int_eu_clip, 
+//    int_eu_f, 
+//    int_trap, 
+//    int_trap_clip, 
+//    integrator, 
+//    lpbi, 
+//    lpblti, 
+//    lp1p, 
+//    lp1pint, 
+//    lp1praw, 
+//    lp1p1z, 
+//    lp1p1zraw, 
+//    sah_inv, 
+//    slew_limiter, 
+//    svfblti, 
+//    svf2blti, 
+//    xover_butt, 
+//    xover1p1z, 
+//    xover1p1z_ada, 
+//    xover1praw, 
+//    xover1p1zraw, 
+//    xover2p2z.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Filters Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 ba = library("basics.lib");
 fi = library("filters.lib");
@@ -14,293 +71,701 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 st = library("stability.lib");
 
-// Analytic signal using a Hilbert transform approximation by Olli Niemitalo: 
-// https://dsp.stackexchange.com/questions/37411/iir-hilbert-transformer/59157#59157
-analytic(x) =   real ,
-                imaginary
-with {
-    im_c = (   0.47944111608296202665 ,
-               0.87624358989504858020 ,
-               0.97660296916871658368 ,
-               0.99749940412203375040);
-    re_c = (   0.16177741706363166219 ,
-               0.73306690130335572242 ,
-               0.94536301966806279840 ,
-               0.99060051416704042460);
-    tf(c, y, x) = c * (x + y') - x'';
-    imaginary = x' : seq(i, 4, tf(ba.take(i + 1, im_c))
-                               ~ _);
-    real = x : seq(i, 4,   tf(ba.take(i + 1, re_c))
-                           ~ _);
-};
+// f2.analytic(x[n]); ----------------------------------------------------------
+//
+// Analytic signal using a Hilbert filter by Olli Niemitalo: 
+// dsp.stackexchange.com/questions/37411/iir-hilbert-transformer/59157#59157.
+// Four of the following sections cascaded for each of the two outputs, plus an 
+// extra delay for the imaginary path:
+//    y[n] = c * (x[n] + y[n - 2]) - x[n - 2].
+//
+// 1 inputs: 
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], real part;
+//    y2[n], imaginary part (-90-degree shift).
+//
+analytic(x) =  real ,
+               imaginary
+      with {
+           im_c = (    0.47944111608296202665 ,
+                       0.87624358989504858020 ,
+                       0.97660296916871658368 ,
+                       0.99749940412203375040);
+           re_c = (    0.16177741706363166219 ,
+                       0.73306690130335572242 ,
+                       0.94536301966806279840 ,
+                       0.99060051416704042460);
+           tf(c, y, x) = c * (x + y') - x'';
+           imaginary = x' : seq(i, 4,  tf(ba.take(i + 1, im_c))
+                                       ~ _);
+           real = x : seq(i, 4,    tf(ba.take(i + 1, re_c))
+                                   ~ _);
+      };
+// -----------------------------------------------------------------------------
 
-// biquad allpass (design by Robert Bristow-Johnson)
-apbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny - 5, cf);
-      q1 = .707;
-      alpha = sin(m2.w(cf1))/ (2 * q1);
-      norm = 1 + alpha;
-      a0 = (1 - alpha) / norm;
-      a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
-      a2 = (1 + alpha) / norm;
-      b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
-      b2 = (1 - alpha) / norm;
-};
+// f2.apbi(CF[n], x[n]); -------------------------------------------------------
+//
+// Biquad allpass (design by Robert Bristow-Johnson).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], -90-degree shift at CF[n].
+//
+apbi(cf, in) = f2.biquad(a0, a1, a2, b1, b2, in)
+      with {
+           cf1 = st.clip(5, m2.ny - 5, cf);
+           q1 = .707;
+           alpha = sin(m2.w(cf1)) / (2 * q1);
+           norm = 1 + alpha;
+           a0 = (1 - alpha) / norm;
+           a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+           a2 = (1 + alpha) / norm;
+           b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+           b2 = (1 - alpha) / norm;
+      };
+// -----------------------------------------------------------------------------
 
-// 1p1z allpass BLTI (design by Zavalishin)
-apblti(cf, in) = ( cf,
-                   in) <:  lpblti,
-                           hpblti : -;
+// f2.apblti(CF[n], x[n]); -----------------------------------------------------
+//
+// One-pole-one-zero allpass based on zero-delay feedback with bilinear 
+// transform integrator (design by Zavalishin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], -90-degree shift at CF[n].
+//
+apblti(cf, in) = ( cf ,
+                   in) <:  f2.lpblti ,
+                           f2.hpblti : -;
+// -----------------------------------------------------------------------------
 
-// biquad section
-biquad(a0, a1, a2, b1, b2, x) = fir : + ~ iir
-with {
-      fir = a0 * x + a1 * x' + a2 * x'';
-      iir(fb) = -b1 * fb - b2 * fb';
-};
+// f2.biquad(a0[n], a1[n], a2[n], b1[n], b2[n], x[n]); -------------------------
+//
+// Biquad filter section.
+//
+// 6 inputs:
+//    x[n] coeff (a0[n]);
+//    x[n - 1] coeff (a1[n]);
+//    x[n - 2] coeff (a2[n]);
+//    y[n - 1] coeff (b1[n]);
+//    y[n - 2] coeff (b2[n]);
+//    x[n].
+//
+// 1 outputs:
+//    y[n] = a0[n] * x[n] + a1[n] * x[n - 1] + a2[n] * x[n - 2]
+//             - b1[n] * y[n - 1] - b2[n] * y[n - 2].
+//
+biquad(a0, a1, a2, b1, b2, x) = fir :  + 
+                                       ~ iir
+      with {
+           fir = a0 * x + a1 * x' + a2 * x'';
+           iir(fb) = -b1 * fb - b2 * fb';
+      };
+// -----------------------------------------------------------------------------
 
-// biquad bandpass (design by Robert Bristow-Johnson)
-bpbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny - 5, cf);
-      q1 = max(q, .001);
-      alpha = sin(m2.w(cf1)) / (2 * q1);
-      norm = 1 + alpha;
-      a0 = alpha / norm;
-      a1 = 0;
-      a2 = -alpha / norm;
-      b1 = cos(m2.w(cf1)) * -2 / norm;
-      b2 = (1 - alpha) / norm;
-};
+// f2.bpbi(CF[n], Q[n], x[n]); -------------------------------------------------
+//
+// Biquad bandpass (design by Robert Bristow-Johnson).
+//
+// 3 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    Q[n], Q-factor;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], bandpassed x[n].
+//
+bpbi(cf, q, in) = f2.biquad(a0, a1, a2, b1, b2, in)
+      with {
+           cf1 = st.clip(5, m2.ny - 5, cf);
+           q1 = max(q, .001);
+           alpha = sin(m2.w(cf1)) / (2 * q1);
+           norm = 1 + alpha;
+           a0 = alpha / norm;
+           a1 = 0;
+           a2 = -alpha / norm;
+           b1 = cos(m2.w(cf1)) * -2 / norm;
+           b2 = (1 - alpha) / norm;
+      };
+// -----------------------------------------------------------------------------
 
-// 2p2z normalised BP shortcut from SVF TPT 2nd-order (Zavalishin / Pirkle)
-bp2blti(cf, q, x) = svf2blti(cf, q, 1, x) : (  ! , 
-                                               ! , 
-                                               ! , 
-                                               _ , 
-                                               ! , 
-                                               ! , 
-                                               ! , 
-                                               ! , 
-                                               ! , 
-                                               !);
+// f2.bp2blti(CF[n], Q[n], x[n]); ----------------------------------------------
+//
+// Two-pole-two-zero normalised band-pass (shortcut from the SVF TPT 2nd-order by
+// Zavalishin / Pirkle).
+//
+// 3 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    Q[n], Q-factor;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], bandpassed x[n].
+//
+bp2blti(cf, q, x) = f2.svf2blti(cf, q, 1, x) : (! , 
+                                                ! , 
+                                                ! , 
+                                                _ , 
+                                                ! , 
+                                                ! , 
+                                                ! , 
+                                                ! , 
+                                                ! , 
+                                                !);
+// -----------------------------------------------------------------------------
 
-// biquad bandstop (design by Robert Bristow-Johnson)
-bsbi(cf, q, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny - 5, cf);
-      q1 = max(q, .001);
-      alpha = sin(m2.w(cf1)) / (2 * q1);
-      norm = 1 + alpha;
-      a0 = 1 / norm;
-      a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
-      a2 = 1 / norm;
-      b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
-      b2 = (1 - alpha) / norm;
-};
+// f2.bsbi(CF[n], Q[n], x[n]); -------------------------------------------------
+//
+// Biquad bandstop (design by Robert Bristow-Johnson).
+//
+// 3 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    Q[n], Q-factor;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], bandstopped x[n].
+//
+bsbi(cf, q, in) = f2.biquad(a0, a1, a2, b1, b2, in)
+      with {
+           cf1 = st.clip(5, m2.ny - 5, cf);
+           q1 = max(q, .001);
+           alpha = sin(m2.w(cf1)) / (2 * q1);
+           norm = 1 + alpha;
+           a0 = 1 / norm;
+           a1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+           a2 = 1 / norm;
+           b1 = -1 * cos(m2.w(cf1)) * 2 / norm;
+           b2 = (1 - alpha) / norm;
+      };
+// -----------------------------------------------------------------------------
 
-// Comb-integrator circuiit lowpass filter.
+// f2.cic(N, CF[n], x[n]); -----------------------------------------------------
+//
+// Comb-integrator circuit lowpass filter.
 // Based on Eric Lyon's: https://www.dsprelated.com/showarticle/1337.php.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
+// Compile-time arguments: 
+//    "N", (integer) order of the filter.
+//
 cic(N, cf, x) = x : seq(i, N, m2.delta(1, .5 / cf) : 
     fi.pole(1)) / (.5 / cf * ma.SR) ^ N;
+// -----------------------------------------------------------------------------
 
-// biquad highpass (design by Robert Bristow-Johnson)
-hpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny - 5, cf);
-      q1 = .707;
-      alpha = sin(m2.w(cf1)) / (2 * q1);
-      norm = 1 + alpha;
-      a0 = ((1 + cos(m2.w(cf1))) / 2) / norm;
-      a1 = -1 * (1 + cos(m2.w(cf1))) / norm;
-      a2 = ((1 + cos(m2.w(cf1))) / 2) / norm;
-      b1 = cos(m2.w(cf1)) * -2 / norm;
-      b2 = (1 - alpha) / norm;
-};
+// f2.hpbi(CF[n], x[n]); -------------------------------------------------------
+//
+// Biquad highpass (design by Robert Bristow-Johnson).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hpbi(cf, in) = f2.biquad(a0, a1, a2, b1, b2, in)
+      with {
+           cf1 = st.clip(5, m2.ny - 5, cf);
+           q1 = .707;
+           alpha = sin(m2.w(cf1)) / (2 * q1);
+           norm = 1 + alpha;
+           a0 = ((1 + cos(m2.w(cf1))) / 2) / norm;
+           a1 = -1 * (1 + cos(m2.w(cf1))) / norm;
+           a2 = ((1 + cos(m2.w(cf1))) / 2) / norm;
+           b1 = cos(m2.w(cf1)) * -2 / norm;
+           b2 = (1 - alpha) / norm;
+      };
+// -----------------------------------------------------------------------------
 
-// 1p1z highpass BLTI (design by Zavalishin)
-hpblti(cf, in) =   in,
-                   (   cf,
-                       in : lpblti) : -;
+// f2.hpblti(CF[n], x[n]); -----------------------------------------------------
+//
+// One-pole-one-zero highpass based on zero-delay feedback with bilinear 
+// transform integrator (design by Zavalishin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hpblti(cf, in) =   in ,
+                   (   cf ,
+                       in : f2.lpblti) : -;
+// -----------------------------------------------------------------------------
 
-// 1-pole highpass; for stability, CF should be between 0 and Ny
-// (design by Chamberlin)
-hp1p(cf, in) = in*a0 : + 
-                       ~ *(b1)
-with {
-      a0 = 1 + b1;
-      b1 = exp((.5 - cf / ma.SR) * -2 * ma.PI) * -1;
-};
+// f2.hp1p(CF[n], x[n]); -------------------------------------------------------
+//
+// One-pole highpass (design by Chamberlin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hp1p(cf, in) = in * a0 :   + 
+                           ~ * (b1)
+      with {
+           a0 = 1 + b1;
+           b1 = exp((.5 - cf / ma.SR) * -2 * ma.PI) * -1;
+      };
+// -----------------------------------------------------------------------------
 
-// 1-pole highpass based on backward Euler's integration (design by Zavalishin)
-hp1pint(cf, in) = in - lp1pint(cf, in);
+// f2.hp1pint(CF[n], x[n]); ----------------------------------------------------
+//
+// One-pole highpass based on backward Euler's integration 
+// (design by Zavalishin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hp1pint(cf, in) = in - f2.lp1pint(cf, in);
+// -----------------------------------------------------------------------------
 
-// highpass 1-pole raw coeff; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
+// f2.hp1praw(CF[n], x[n]); ----------------------------------------------------
+//
+// One-pole highpass with raw coefficients in the [0; 1] where the extremes 
+// correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
 hp1praw(cf, in) = (1 - cf) * in :  +
                                    ~ * (-cf);
+// -----------------------------------------------------------------------------
 
-// 1-pole-1-zero highpass (design by Cliff Sparks)
-hp1p1z(cf, in) =    in * a0 ,
-                    in' * a0 * a1 : + :    +
+// f2.hp1p1z(CF[n], x[n]); -----------------------------------------------------
+//
+// One-pole-one-zero highpass (design by Cliff Sparks).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
                                            ~ * (b1)
-with {
-    a0 = (1 + b1) / 2;
-    a1 = -1;
-    b1 =    (1 - sin(m2.w(cf))) ,
-            cos(m2.w(cf)) : m2.div;
-};
+      with {
+           a0 = (1 + b1) / 2;
+           a1 = -1;
+           b1 =    (1 - sin(m2.w(cf))) ,
+                   cos(m2.w(cf)) : m2.div;
+      };
+// -----------------------------------------------------------------------------
 
-// highpass 1-pole-1-zero raw coeff; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
-hp1p1zraw(cf, in) = in * (1 - cf) <: ( _,
+// f2.hp1p1zraw(CF[n], x[n]); --------------------------------------------------
+//
+// One-pole-one-zero highpass with raw coefficients in the [0; 1] where the
+// extremes correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], highpassed x[n].
+//
+hp1p1zraw(cf, in) = in * (1 - cf) <: ( _ ,
                                        _' : -) :   +
                                                    ~ * (cf * -2 + 1);
+// -----------------------------------------------------------------------------
 
-// bounded backward Euler's integration special case CF=1/(2PI)
-int_clip(lower, upper, in) =    (+ (in / ma.SR) : st.clip(lower, upper)) 
-                                ~ _;
+// f2.int_clip(L[n], H[n], x[n]); ----------------------------------------------
+//
+// Special case of bounded backward Euler's integration where CF[n] = 1 / (2PI).
+//
+// 3 inputs:
+//    L[n], lower limit;
+//    H[n], upper limit;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated and clipped x[n].
+//
+int_clip(lower, upper, in) =   (+ (in / ma.SR) : st.clip(lower, upper)) 
+                               ~ _;
+// -----------------------------------------------------------------------------
 
-// backward Euler's integration with cut-off frequency
+// f2.int_eu_b(CF[n], x[n]); ---------------------------------------------------
+//
+// Backward Euler's integration.
+//
+// 2 inputs:
+//    CF[n], in Hz, sets the input gain as the angular frequency;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
 int_eu_b(cf, x) = x * m2.w(cf) :   +
                                    ~ _;
+// -----------------------------------------------------------------------------
 
-// bounded backward Euler's integration with cut-off frequency
+// f2.int_eu_clip(L[n], H[n], CF[n], x[n]); ------------------------------------
+//
+// Bounded backward Euler's integration.
+//
+// 4 inputs:
+//    L[n], lower bound;
+//    H[n], upperbound;
+//    CF[n], in Hz, sets the input gain as the angular frequency;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
 int_eu_clip(l, u, cf, x) = (+ (x * m2.w(cf)) : st.clip(l, u))
                            ~ _;
+// -----------------------------------------------------------------------------
 
-// forward Euler's integration with cut-off frequency
+// f2.int_eu_f(CF[n], x[n]); ---------------------------------------------------
+//
+// Forward Euler's integration.
+//
+// 2 inputs:
+//    CF[n], in Hz, sets the input gain as the angular frequency;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
 int_eu_f(cf, x) =  perform
-                   ~ _ :   !, 
+                   ~ _ :   ! , 
                            _
-with {
-    perform(fb) = x * m2.w(cf) + fb, fb;
-};
+      with {
+           perform(fb) =   x * m2.w(cf) + fb , 
+                           fb;
+      };
+// -----------------------------------------------------------------------------
 
-// trapezoidal integration with cut-off frequency
-int_trap(cf, x) = x * m2.w(cf) / 2 <:  _, 
+// f2.int_trap(CF[n], x[n]); ---------------------------------------------------
+//
+// Trapezoidal integration.
+//
+// 2 inputs:
+//    CF[n], in Hz, sets the input gain as the angular frequency;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
+int_trap(cf, x) = x * m2.w(cf) / 2 <:  _ , 
                                        _' :>   + 
                                                ~ _;
+// -----------------------------------------------------------------------------
 
-// bounded trapezoidal integration with cut-off frequency
-int_trap_clip(l, u, cf, x) = x * m2.w(cf) / 2 <:   _,
-                                                   _' :>   (+ : st.clip(l, u))
-                                                           ~ _;
+// f2.int_trap_clip(L[n], H[n], CF[n], x[n]); ----------------------------------
+//
+// Bounded trapezoidal integration.
+//
+// 4 inputs:
+//    L[n], lower bound;
+//    H[n], upper bound;
+//    CF[n], in Hz, sets the input gain as the angular frequency;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
+int_trap_clip(l, u, cf, x) = 
+      x * m2.w(cf) / 2 <:  _ ,
+                           _' :>   (+ : st.clip(l, u))
+                                   ~ _;
+// -----------------------------------------------------------------------------
 
-// special case of backward Euler's integration with CF=1/(2PI)
+// f2.integrator(x[n]); --------------------------------------------------------
+//
+// Special case of backward Euler's integration with CF = 1 / (2PI).
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], integrated x[n].
+//
 integrator(x) = x / ma.SR :    + 
                                ~ _;
+// -----------------------------------------------------------------------------
 
-// biquad lowpass (design by Robert Bristow-Johnson)
-lpbi(cf, in) = biquad(a0, a1, a2, b1, b2, in)
-with {
-      cf1 = st.clip(5, m2.ny - 5, cf);
-      q1 = .707;
-      alpha = sin(m2.w(cf1)) / (2 * q1);
-      norm = 1 + alpha;
-      a0 = ((1 - cos(m2.w(cf1))) / 2) / norm;
-      a1 = (1 - cos(m2.w(cf1))) / norm;
-      a2 = ((1 - cos(m2.w(cf1))) / 2) / norm;
-      b1 = cos(m2.w(cf1)) * -2 / norm;
-      b2 = (1 - alpha) / norm;
-};
+// f2.lpbi(CF[n], x[n]); -------------------------------------------------------
+//
+// Biquad lowpass (design by Robert Bristow-Johnson).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
+lpbi(cf, in) = f2.biquad(a0, a1, a2, b1, b2, in)
+      with {
+           cf1 = st.clip(5, m2.ny - 5, cf);
+           q1 = .707;
+           alpha = sin(m2.w(cf1)) / (2 * q1);
+           norm = 1 + alpha;
+           a0 = ((1 - cos(m2.w(cf1))) / 2) / norm;
+           a1 = (1 - cos(m2.w(cf1))) / norm;
+           a2 = ((1 - cos(m2.w(cf1))) / 2) / norm;
+           b1 = cos(m2.w(cf1)) * -2 / norm;
+           b2 = (1 - alpha) / norm;
+      };
+// -----------------------------------------------------------------------------
 
-// 1p1z lowpass BLTI (Faust code by Oleg Nesterov)
+// f2.lpblti(CF[n], x[n]); -----------------------------------------------------
+//
+// One-pole-one-zero lowpass based on zero-delay feedback with bilinear 
+// transform integrator (design by Zavalishin; Faust code by Oleg Nesterov).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
 lpblti(cf, in) =   tick 
                    ~ _ :   ! , 
                            _
-with {
-      g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
-      tick(s) = y + v, y
-      with { 
-           v = (in - s) * g;
-           y = v + s;
+      with {
+           g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
+           tick(s) = y + v, y
+               with { 
+                   v = (in - s) * g;
+                   y = v + s;
+               };
       };
-};
+// -----------------------------------------------------------------------------
 
-// 1-pole lowpass; for stability, CF should be between 0 and Ny 
-// (design by Chamberlin)
+// f2.lp1p(CF[n], x[n]); -------------------------------------------------------
+//
+// One-pole lowpass (design by Chamberlin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
 lp1p(cf, in) = in * a0 :   + 
                            ~ * (b1)
-with {
-      a0 = 1 - (b1);
-      b1 = exp(m2.w(cf) * -1);
-};
+      with {
+           a0 = 1 - (b1);
+           b1 = exp(m2.w(cf) * -1);
+      };
+// -----------------------------------------------------------------------------
 
-// 1-pole lowpass based on backward Euler's integration 
-// (design by Zavalishin)
-lp1pint(cf, in) =   (in ,
-                    _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)) 
-                    ~ * (-1);
+// f2.lp1pint(CF[n], x[n]); ----------------------------------------------------
+//
+// One-pole lowpass based on backward Euler's integration 
+// (design by Zavalishin).
+//
+// 2 inputs:
+//    CF[n] (cut-off, Hz);
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
+lp1pint(cf, in) =  (in ,
+                   _ : + : *(m2.w(cf) : st.clip(0, 2)) : fi.pole(1)) 
+                   ~ * (-1);
+// -----------------------------------------------------------------------------
 
-// lowpass 1-pole raw coeff; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
+// f2.lp1praw(CF[n], x[n]); ----------------------------------------------------
+//
+// One-pole lowpass with raw coefficients in the [0; 1] where the extremes 
+// correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
 lp1praw(cf, in) = in * cf :    +
-                               ~ *(1 - cf);
+                               ~ * (1 - cf);
+// -----------------------------------------------------------------------------
 
-// 1-pole-1-zero lowpass  (design by Cliff Sparks)
-lp1p1z(cf, in) =    in * a0 ,
-                    in' * a0 * a1 : + :    +
+// f2.lp1p1z(CF[n], x[n]); -----------------------------------------------------
+//
+// One-pole-one-zero lowpass (design by Cliff Sparks).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
+lp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
                                            ~ * (b1)
-with {
-    a0 = (1 - b1) / 2;
-    a1 = 1;
-    b1 =    (1 - sin(m2.w(cf))) ,
-            cos(m2.w(cf)) : m2.div;
-};
+      with {
+           a0 = (1 - b1) / 2;
+           a1 = 1;
+           b1 =    (1 - sin(m2.w(cf))) ,
+                   cos(m2.w(cf)) : m2.div;
+      };
+// -----------------------------------------------------------------------------
 
-// lowpass 1-pole-1-zero raw coeff; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
-lp1p1zraw(cf, in) = in * cf <: (   _,
-                                   _' : +) :   +
-                                               ~ * (cf * -2 + 1);
+// f2.lp1p1zraw(CF[n], x[n]); --------------------------------------------------
+//
+// One-pole-one-zero lowpass with raw coefficients in the [0; 1] where the extremes 
+// correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lowpassed x[n].
+//
+lp1p1zraw(cf, in) = in * cf <: _ + _' :    +
+                                           ~ * (cf * -2 + 1);
+// -----------------------------------------------------------------------------
 
-// sample-and-hold signals that have remained constant for t seconds
-sah_dc(t, in) =    m2.delta(t, in) : ==(0) ,
+// f2.sah_dc(T[n], x[n]); ------------------------------------------------------
+//
+// Sample-and-hold signals that have remained constant for t seconds.
+//
+// 2 inputs:
+//    T[n], SAH trigger period in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], sample-and-held stationary values in x[n].
+//
+sah_dc(t, in) =    m2.delta(t, in) == 0 ,
                    in : ba.sAndH;
+// -----------------------------------------------------------------------------
 
-// sample-and-hold signals that have changed in direction
+// f2.sah_inv(x[n]); -----------------------------------------------------------
+//
+// Sample-and-hold signals that have changed in direction.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], sample-and-held x[n] upon change of direction.
+//
 sah_inv(in) = m2.diff(in) : ma.signum <:   abs ,
-                                           _ : ba.sAndH <: (   _ ,
-                                                               _' : !=) ,
+                                           _ : ba.sAndH <: _ != _' ,
                                                            in : ba.sAndH;
+// -----------------------------------------------------------------------------
 
-// slew limiter; the same as Max's deltaclip~
-// (https://docs.cycling74.com/max7/refpages/deltaclip~)
-slew_limiter(in1, in2, in3) =   tick
-                                ~ _
-with {
-    tick(fb) = ba.if(cond1, max_plus_fb, cond3)
-    with {
-        max_plus_fb = max(in2, in3) + fb;
-        min_plus_fb = min(in2, in3) + fb;
-        cond1 = in1 > max_plus_fb;
-        cond2 = in1 < min_plus_fb;
-        cond3 = ba.if(cond2, max0, in1);
-        max0 = max(0, min_plus_fb);
-    };
-};
+// f2.slew_limiter(Min[n], Max[n], x[n]); --------------------------------------
+//
+// Slew limiter; the same as Max's deltaclip~
+// (https://docs.cycling74.com/max7/refpages/deltaclip~).
+//
+// 3 inputs:
+//    Min[n], minimum slope;
+//    Max[n], maximum slope;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], filtered x[n].
+//
+slew_limiter(in1, in2, in3) =  tick
+                               ~ _
+      with {
+           tick(fb) = m2.if(cond1, max_plus_fb, cond3)
+               with {
+                   max_plus_fb = max(in2, in3) + fb;
+                   min_plus_fb = min(in2, in3) + fb;
+                   cond1 = in1 > max_plus_fb;
+                   cond2 = in1 < min_plus_fb;
+                   cond3 = ba.if(cond2, max0, in1);
+                   max0 = max(0, min_plus_fb);
+               };
+      };
+// -----------------------------------------------------------------------------
 
-// 1p1z state-variable filter BLTI (based on the code by Oleg Nesterov)
+// f2.svfblti(CF[n], x[n]); ----------------------------------------------------
+//
+// One-pole-one-zero stae-variable filter based on zero-delay feedback with 
+// bilinear transform integrator (design by Zavalishin).
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 3 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n];
+//    y3[n], allpassed x[n].
+//
 svfblti(cf, in) =  tick
                    ~ _ :   ! ,
                            _ ,
                            _ ,
                            _
-with {
-      g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
-      tick(s) = y + v, y, in - (v + s), s + 2 * v - (in - s)
       with {
-           v = (in - s) * g;
-           y = v + s;
+           g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
+           tick(s) =   y + v , 
+                       y , 
+                       in - (v + s) , 
+                       s + 2 * v - (in - s)
+               with {
+                   v = (in - s) * g;
+                   y = v + s;
+               };
       };
-};
+// -----------------------------------------------------------------------------
 
-// 2p2z state-variable filter with zero-delay feedback topology
-// inputs are cutoff, Q, shelving boost (linear amp.), input signal
-// outputs are LP, HP, BP, BP_normalised, LS, HS, BS, notch, peak, AP
-// Ref: Zavalishin; Pirkle.
+// f2.svf2blti(CF[n], Q[n], K[n], x[n]); ---------------------------------------
+//
+// Two-pole-two-zero state-variable filter with zero-delay feedback topology
+// (design from Zavalishin / Pirkle).
+//
+// 4 inputs:
+//    CF[n], cut-off frequencyin Hz;
+//    Q[n], Q-factor;
+//    K[n], linear amplitude for shelving filters;
+//    x[n].
+//
+// 10 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n];
+//    y3[n], bandpassed x[n];
+//    y4[n], bandpassed (normalised) x[n];
+//    y5[n], lowshelved x[n];
+//    y6[n], highshelved x[n];
+//    y7[n], bandshelved x[n];
+//    y8[n], bandstopped x[n];
+//    y9[n], peak-filtered x[n];
+//    y10[n], allpassed x[n].
+//
 svf2blti(cf, q, k, in) =   tick
                            ~ ( _ ,
                                _) : (  ! ,
@@ -315,97 +780,172 @@ svf2blti(cf, q, k, in) =   tick
                                        _ ,
                                        _ ,
                                        _)
-with {
-    r = 1 / (2 * q);
-    wa = (2 * ma.SR) * tan(m2.w(cf) / 2);
-    g = wa / ma.SR / 2;
-    tick(s1, s2) =  u1 ,
-                    u2 ,
-                    lp ,
-                    hp ,
-                    bp ,
-                    bp_norm ,
-                    ls ,
-                    hs ,
-                    b_shelf ,
-                    notch ,
-                    peak ,
-                    ap
-    with {
-        u1 = v1 + bp;
-        u2 = v2 + lp;
-        v1 = hp * g;
-        v2 = bp * g;
-        hp = (in - 2 * r * s1 - g * s1 - s2) / (1 + 2 * r * g + g * g);
-        bp = s1 + v1;
-        lp = s2 + v2;
-        bp_norm = bp * 2 * r;
-        b_shelf = in + k * bp_norm;
-        ls = in + k * lp;
-        hs = in + k * hp;
-        notch = in - bp_norm;
-        ap = in - 4 * r * bp;
-        peak = lp - hp;
-    };
-};
+      with {
+           r = 1 / (2 * q);
+           wa = (2 * ma.SR) * tan(m2.w(cf) / 2);
+           g = wa / ma.SR / 2;
+           tick(s1, s2) =  u1 ,
+                           u2 ,
+                           lp ,
+                           hp ,
+                           bp ,
+                           bp_norm ,
+                           ls ,
+                           hs ,
+                           b_shelf ,
+                           notch ,
+                           peak ,
+                           ap
+               with {
+                   u1 = v1 + bp;
+                   u2 = v2 + lp;
+                   v1 = hp * g;
+                   v2 = bp * g;
+                   hp = (in - 2 * r * s1 - g * s1 - s2) / 
+                       (1 + 2 * r * g + g * g);
+                   bp = s1 + v1;
+                   lp = s2 + v2;
+                   bp_norm = bp * 2 * r;
+                   b_shelf = in + k * bp_norm;
+                   ls = in + k * lp;
+                   hs = in + k * hp;
+                   notch = in - bp_norm;
+                   ap = in - 4 * r * bp;
+                   peak = lp - hp;
+               };
+      };
+// -----------------------------------------------------------------------------
 
-// nth-order crossover with Butterworth filters
-xover_butt(n, cf, x) = low ,
+// f2.xover_butt(N, CF[n], x[n]); ----------------------------------------------
+//
+// Nth-order crossover based on Faust's Butterworth filters.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
+// Compile-time arguments:
+//    "N", (integer) crossover order.
+//
+xover_butt(N, cf, x) = low ,
                        high
-with {
-      low = fi.lowpass(n, cf, x);
-      high = fi.highpass(n, cf, x);
-};
+      with {
+           low = fi.lowpass(N, cf, x);
+           high = fi.highpass(N, cf, x);
+      };
+// -----------------------------------------------------------------------------
 
-// 1-pole-1-zero spectrum splitter
+// f2.xover1p1z(CF[n], x[n]); --------------------------------------------------
+//
+// One-pole-one-zero crossover.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
 xover1p1z(cf, in) =    low ,
                        high
-with {
-      low = lp1p1z(cf, in);
-      high = in - low;
-};
+      with {
+           low = f2.lp1p1z(cf, in);
+           high = in - low;
+      };
+// -----------------------------------------------------------------------------
 
-// Adaptive crossover: equally redistributes power (RMS) among low and high
-// spectra. Useful when only one microphone is available and different
-// signals are needed for internal processing. "window" sets its
-// responsiveness
-xover1p1z_ada(window, in) = (  (_ , 
-                               in) : xover1p1z <:  (   ip.rms(window) , 
-                                                       ip.rms(window) 
-      : ro.cross(2) : - : / (ip.rms(window, in)) : * (window) 
-       : / (ma.SR) : int_clip(0, 1) : pow(4) :     * (m2.ny)) ,
-                                                   (   _ ,
-                                                       _)) 
+// f2.xover1p1z_ada(R[n], x[n]); -----------------------------------------------
+//
+// Adaptive crossover based on 1p1z filters: it equally redistributes power 
+// (RMS) among low and high spectra. Useful when only one microphone is 
+// available  and different signals are needed for internal processing.
+//
+// 2 inputs:
+//    R[n], sets the responsiveness of the system in Hz;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
+xover1p1z_ada(window, in) = (  (   _ , 
+                                   in) : f2.xover1p1z <:   (   ip.rms(window) , 
+                                                               ip.rms(window) : 
+      ro.cross(2) : - : / (ip.rms(window, in)) : * (window) : / (ma.SR) : 
+          f2.int_clip(0, 1) : pow(2) : * (m2.ny)) ,
+                                                           (   _ ,
+                                                               _)) 
                                ~ ( _ , 
                                    ! , 
                                    !) : (  ! , 
                                            _ , 
                                            _);
+// -----------------------------------------------------------------------------
 
-// 1-pole raw-coefficients spectrum splitter; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
+// f2.xover1praw(CF[n], x[n]); -------------------------------------------------
+//
+// One-pole crossover with raw coefficients in the [0; 1] where the extremes 
+// correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
 xover1praw(cf, in) =   low ,
                        high
-with {
-    low = lp1praw(cf, in);
-    high = in - low;
-};
+      with {
+           low = f2.lp1praw(cf, in);
+           high = in - low;
+      };
+// -----------------------------------------------------------------------------
 
-// 1-pole-1-zero raw-coefficients spectrum splitter; coeff. should not exceed
-// the [0; 1] range (DC and Nyquist)
+// f2.xover1p1zraw(CF[n], x[n]); -----------------------------------------------
+//
+// One-pole-one-zero crossover with raw coefficients in the [0; 1] where the
+// extremes correspond to DC and Nyquist, although the mapping is nonlinear.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency, scalar;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
 xover1p1zraw(cf, in) = low ,
                        high
-with {
-    low = lp1p1zraw(cf, in);
-    high = in - low;
-};
+      with {
+           low = f2.lp1p1zraw(cf, in);
+           high = in - low;
+      };
+// -----------------------------------------------------------------------------
 
-// 2-poles-2-zeroes crossover based on 2nd-order Butterworth filters
+// f2.xover2p2z(CF[n], x[n]); --------------------------------------------------
+//
+// Two-pole-two-zero crossover based on 2nd-order Butterworth filters.
+//
+// 2 inputs:
+//    CF[n], cut-off frequency in Hz;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowpassed x[n];
+//    y2[n], highpassed x[n].
+//
 xover2p2z(cf, in) =    low ,
                        high
-with {
-      low = fi.lowpass(2, cf1, in);
-      high = fi.highpass(2, cf1, in);
-      cf1 = max(20 / ma.SR * m2.ny, min((1 - (200 / ma.SR)) * m2.ny, cf));
-};
-
+      with {
+           low = fi.lowpass(2, cf1, in);
+           high = fi.highpass(2, cf1, in);
+           cf1 = max(20 / ma.SR * m2.ny, min((1 - (200 / ma.SR)) * m2.ny, cf));
+      };
+// -----------------------------------------------------------------------------

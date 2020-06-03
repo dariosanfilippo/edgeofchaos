@@ -1,9 +1,64 @@
-/* Information processing algorithms in the time domain for low-level and high-level features.
+/* =============================================================================
+ * ========== information.lib ==================================================
+ * =============================================================================
  *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+ * Information processing functions library including low-level and high-level
+ * algorithms both based on hard-coded and adaptive mechanisms. The
+ * low-level functions provide time-domain techniques for feature
+ * extraction that are normally based on FFT processing, such as
+ * spectral centroid and spectral flatness (noisiness). The high-level
+ * functions provide an analysis of the state space of low-level
+ * information signals to determine, based on notions of complexity theory and
+ * music perception, characteristics such as dynamicity, heterogeneity,
+ * and complexity of audio streams.
  *
- * All rights reserved.
- */
+ * All functions below that use one-pole lowpass filters for
+ * accumulation are based on a time constant that is 2pi*tau.
+ *
+ * The environment prefix is "ip".
+ *
+ * List of functions:
+ *
+ *    a_weighting, 
+ *    complexity, 
+ *    dynamicity, 
+ *    env_fol, 
+ *    highest_partial, 
+ *    heterogeneity, 
+ *    heterogeneity10, 
+ *    instant_amp, 
+ *    instant_freq, 
+ *    instant_ph, 
+ *    loudness, 
+ *    lowest_partial, 
+ *    noisiness, 
+ *    peak_env, 
+ *    peak_hold, 
+ *    peakAR, 
+ *    peaks, 
+ *    recurrence, 
+ *    rms, 
+ *    rms4, 
+ *    roughness, 
+ *    spec_bal, 
+ *    spec_balN, 
+ *    spec_peakN, 
+ *    spec_ten, 
+ *    spec_tenN, 
+ *    spec_ten_lite, 
+ *    zc, 
+ *    zcr, 
+ *    zcr4.
+ *
+ * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+ * All rights reserved. */
+
+declare name "Information Processing Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 au = library("auxiliary.lib");
 ba = library("basics.lib");
@@ -15,172 +70,500 @@ m2 = library("maths2.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 
-// function for equal-loudness contour
+// ip.a_weighting(F[n]); -------------------------------------------------------
+//
+// Function for equal-loudness contour based on the A-weighting equation. 
+// The function is calibrated to output unity (0 dB) at 1000 Hz.
+//
+// 1 inputs:
+//    F[n], frequency in Hz;
+//
+// 1 outputs:
+//    y[n], linear amplitude at F[n].
+//
 a_weighting(f) = (12194 ^ 2 * f ^ 4) / ((f ^ 2 + 20.6 ^ 2) * 
-                   sqrt((f ^ 2 + 107.7 ^ 2) * (f ^ 2 + 737.9 ^ 2)) * 
-                       (f ^ 2 + 12194 ^ 2)) + .206;
+      sqrt((f ^ 2 + 107.7 ^ 2) * (f ^ 2 + 737.9 ^ 2)) * 
+           (f ^ 2 + 12194 ^ 2)) + .206;
+// -----------------------------------------------------------------------------
 
+// ip.complexity(max_dt, dt[n], R[n], x[n]); -----------------------------------
+//
 // Complexity measurement as edge-of-chaos detection, that is,  accumulation 
-// of the variations in the heterogeneity of a state space.
+// of the variations in the heterogeneity of a state space. The function
+// outputs an index in the [0; 1] range. The input signal is assumed in
+// the [0; 1] range, and the resolution is of 10 sub-regions in the state space.
+//
+// 3 inputs:
+//    dt[n], differentiation period in seconds;
+//    R[n], responsiveness of the system in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], complexity index for x[n].
+//
+// Compile-time arguments:
+//    max_dt, maximum differentiation period in seconds.
+//
 complexity(max_dt, dt, window, x) = ip.heterogeneity10(window, x) :
-      m2.delta(max_dt, dt) : abs : f2.lp1p(1/window);
+      m2.delta(max_dt, dt) : abs : f2.lp1p(1 / window);
+// -----------------------------------------------------------------------------
 
+// ip.dynamicity(max_dt, dt[n], R[t], x[n]); -----------------------------------
+//
 // Dynamicity index as accumulation of the magnitude of the delta at a 
-// specified dt (secs) and accumulation rate (window, in Hz).
-// It is supposed to be used with infrasonic low-level information signals such as RMS, 
-// spectral tendency, noisiness.
-dynamicity(max_dt, dt, window, in) = m2.delta(max_dt, dt) : abs : f2.lp1p(window);
+// specified dt (secs) and accumulation rate (Hz).
+// It is supposed to be used with infrasonic low-level information signals such 
+// as RMS, spectral tendency, noisiness.
+//
+// 3 inputs:
+//    dt[n], differentiation period in seconds;
+//    R[n], responsiveness of the system in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], dynamicity index for x[n].
+//
+// Compile-time arguments:
+//    max_dt, maximum differentiation period in seconds.
+//
+dynamicity(max_dt, dt, window, in) = m2.delta(max_dt, dt, in) : abs : 
+      f2.lp1p(window);
+// -----------------------------------------------------------------------------
 
-// envelope following
-env_fol(window, in) = in : abs : lp1p(window);
+// ip.env_fol(R[n], x[n]); -----------------------------------------------------
+//
+// Envelope following (Dodge and Jerse).
+//
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], amplitude envelope of x[n].
+//
+env_fol(window, in) = in : abs : f2.lp1p(window);
+// -----------------------------------------------------------------------------
 
-// detects highest partial in a signal
-highest_partial(window, in) =  (_ <:   _,
-                                       (   _, 
-                                           in : hp1p1z2 <: _,
-                                                           _) :    (specbal, 
-                                                                   rms(window) 
-                                   : m2.div : /(ma.SR) : *(window) 
-                                       : f2.int_clip(0, 1) <: *)) 
-                               ~ *(m2.ny)
-with {
-      specbal = f2.xover1p1z : rms(window)+.000001, rms(window) 
-       : ro.cross(2) : -;
-      hp1p1z2(cf, x) = x : seq(i, 2, f2.hp1p1z(cf));
-};
+// ip.highest_partial(R[n], x[n]); ---------------------------------------------
+//
+// It detects the highest partial in a signal. This function is an
+// extension of the spectral tendency algorithm by including a positive
+// feedback loop at the top of the chain: the system recursively removes 
+// low-frequency componenets through a highpass until no components are
+// left on the upper side of the spectrum except the last partial.
+// The SNR and sensitivity of the filter, approximately, could be adjusted
+// by changing the order of the filters.
+// 
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+// 
+// 1 outputs:
+//    y[n], frequency of the highest partial in x[n].
+// 
+highest_partial(window, in) =  
+      (_ <:    _ ,
+               (   _ , 
+                   in : hp1p1z2 <: _ ,
+                                   _) : (  specbal , 
+                                           ip.rms(window) 
+           : m2.div : / (ma.SR) : * (window) : f2.int_clip(0, 1) <: *)) 
+      ~ * (m2.ny)
+      with {
+           specbal = f2.xover1p1z :    ip.rms(window) + .000001 , 
+                                       ip.rms(window) 
+               : ro.cross(2) : -;
+           hp1p1z2(cf, x) = x : seq(i, 2, f2.hp1p1z(cf));
+      };
+// -----------------------------------------------------------------------------
 
-// Provides an index of how heterogeneous the state space of a signal is. 
-// Inputs are "n" for number of states (must be provided as an argument at 
-// compile-time); lower edge of the state space; upper edge of the state space; 
-// memory of the analysis in seconds (hold-time and decay based on tau); input.
-heterogeneity(n, l, h, t, in) = par(i, n,  region(l, h, n, i) ,
-                                           t ,
-                                           in : recurrence : ip.peak_hold(t) 
-                                               : f2.lp1p(m2.div(1, t))) : m2.aad(n)
-with {
-      region(lower, upper, n, i) = lower + ((upper - lower) / n) * i ,
-                                   lower + ((upper - lower) / n) * (i + 1);
-};
-// shortcut for a 10-region state space with [0; 1] range.
-heterogeneity10(t, in) = heterogeneity(10, 0, 1, t, in);
+// ip.heterogeneity(N, L[n], H[n], T[n], x[n]); --------------------------------
+//
+// Provides an index of how heterogeneous the state space of a signal is, which
+// correlates to the unpredictability of the signal. The algorithm
+// follows principles of recurrence quantification analysis by dividing the
+// state space into sub-regions of the same size. If the signal is in a
+// sub-region, then an integrator is triggered to keep track of the
+// recurrence of that state. When the signal moves to a different
+// sub-region, then the recurrence value in the non-active sub-region is
+// held for a specified time before being reset to 0. The output of the
+// peak holder is smoothed out by a one-pole lowpass with the same period
+// as the peak holder for attack and decay smoothing. The final
+// heterogeneity index is then computed by processing the outputs of the
+// sub-regions recurrences through normalised average absolute deviation (AAD). 
+// AAD is used instead of standard deviation to have an output in the range 
+// [0; 1].
+//
+// 4 inputs:
+//    L[n], lower edge of the state space;
+//    H[n], upper edge of the state space;
+//    T[n], analysis period, it sets the memory of the system, in
+//         seconds, determining hold and decay times;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], heterogeneity index for x[n].
+//
+// Compile-time arguments:
+//    N, state space resolution, that is, (integer) number of
+//         equally-spaced regions in the state space.
+//
+heterogeneity(N, l, h, t, in) = 
+      par(i, N,    region(l, h, N, i) ,
+                   t ,
+                   in : ip.recurrence : ip.peak_hold(t) : 
+                       f2.lp1p(m2.div(1, t))) : m2.aad(N)
+      with {
+           region(lower, upper, N, i) = 
+               lower + ((upper - lower) / N) * i ,
+               lower + ((upper - lower) / N) * (i + 1);
+      };
+// -----------------------------------------------------------------------------
 
-// instantaneous amplitude
+// ip.heterogeneity10(T[n], x[n]); ---------------------------------------------
+//
+// Shortcut for a heterogeneity index for a 10-region state space in a [0; 1] 
+// range.
+//
+// 2 inputs:
+//    T[n], analysis period, it sets the memory of the system, in
+//         seconds, determining hold and decay times;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], heterogeneity index for x[n] with a 10-region resolution in the 
+//    state space, assuming that its range is [0; 1].
+//
+heterogeneity10(t, in) = ip.heterogeneity(10, 0, 1, t, in);
+// -----------------------------------------------------------------------------
+
+// ip.instant_amp(x[n]); -------------------------------------------------------
+//
+// Instantaneous amplitude.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], instantaneous amplitude of x[n], sqrt(re^2 + im^2).
+//
 instant_amp(x) = f2.analytic(x) :  (_ <: *) ,
                                    (_ <: *) : + : sqrt;
+// -----------------------------------------------------------------------------
 
-// instantaneous frequency
+// ip.instant_freq(x[n]); ------------------------------------------------------
+//
+// Instantaneous frequency.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], instantaneous frequency of x[n] as derivative of the instantaneous
+//    phase.
+//
 instant_freq(x) = instant_ph(x) : m2.diff / (2 * ma.PI) * ma.SR;
+// -----------------------------------------------------------------------------
 
-// instantaneous phase
+// ip.instant_ph(x[n]); --------------------------------------------------------
+//
+// Instantaneous phase.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], instantaneous phase of x[n] as the arcotangent of the ratio
+//         between its imaginary and real parts.
+//
 instant_ph(x) = f2.analytic(x) : ro.cross(2) : atan2;
+// -----------------------------------------------------------------------------
 
-// loudness with a-weighted function
-loudness(window, in) = in <:   peak_env(m2.div(1, window)),
-                               (spec_ten(window)*m2.ny : a_weighting) : *;
+// ip.loudness(R[n], x[n]); ----------------------------------------------------
+//
+// Loudness measurement through A-weighting function and spectral centroid.
+//
+// 1 inputs:
+//    R[n], responsiveness of the system in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], loudness of x[n] as linear amplitude.
+//
+loudness(window, in) = in <:   peak_env(m2.div(1, window)) ,
+                               (spec_ten(window) * m2.ny : a_weighting) : *;
+// -----------------------------------------------------------------------------
 
-// detects lowest partial in a signal
-lowest_partial(window, in) =   (_ <:   _,
-                                       (   _, 
-                                           in : lp1p1z2 <: _,
-                                                           _) :    (specbal, 
-                                                                   rms(window) 
-                                   : m2.div : /(ma.SR) : *(window) 
-                                       : f2.int_clip(0, 1) <: *)) 
-                               ~ (*(m2.ny) : max(10))
-with {
-      specbal = f2.xover1p1z : rms(window), rms(window)+.000001 
-       : ro.cross(2) : -;
-      lp1p1z2(cf, x) = x : seq(i, 2, f2.lp1p1z(cf));
-};
+// ip.lowest_partial(R[n], x[n]); ----------------------------------------------
+//
+// It detects the lowest partial in a signal. This function is an
+// extension of the spectral tendency algorithm by including a positive
+// feedback loop at the top of the chain: the system recursively removes 
+// high-frequency componenets through a lowpass until no components are
+// left on the lower side of the spectrum except the last partial.
+// The SNR and sensitivity of the filter, approximately, could be adjusted
+// by changing the order of the filters.
+// 
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+// 
+// 1 outputs:
+//    y[n], frequency of the lowhest partial in x[n].
+// 
+lowest_partial(window, in) =   
+      (_ <:    _ ,
+               (   _ , 
+                   in : lp1p1z2 <: _ ,
+                                   _) : (  specbal , 
+                                           rms(window) 
+           : m2.div : /(ma.SR) : *(window) : f2.int_clip(0, 1) <: *)) 
+      ~ (* (m2.ny) : max(10))
+      with {
+           specbal = f2.xover1p1z :    rms(window) , 
+                                       rms(window) + .000001 
+               : ro.cross(2) : -;
+           lp1p1z2(cf, x) = x : seq(i, 2, f2.lp1p1z(cf));
+      };
+// -----------------------------------------------------------------------------
 
-// noisiness index normalised for a 96kHz samplerate
-noisiness(window, in) = spec_ten(window, in) : *(m2.ny) : max(1)
-                           <:  m2.inv,
-                               (   _, 
-                                   in : zcr4 : m2.unit_log(10))
-                               : m2.delta(1) : abs : f2.lp1p(window)
-                                   : /(.266) <: * : min(1);
+// ip.noisiness(R[n], x[n]); ---------------------------------------------------
+//
+// Noisiness index normalised for a 96 kHz samplerate, that is, the
+// output of the function is 1 for white noise, and 0 (or very close to 0)
+// for sinusoids. Unlike noisiness drectly calculated through zero-crossing
+// rate (ZCR), this algorithm measures noisiness based on the derivative of the
+// ZCR, as non-periodicity characterises noisy signals, whereas
+// high-frequency sinusoidal signals can still have a high ZCR.
+//
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+// 
+// 1 outputs:
+//    y[n], noisiness index of x[n] in the [0; 1] range.
+// 
+noisiness(window, in) = spec_ten(window, in) : * (m2.ny) : max(1) <:  
+      m2.inv ,
+      (    _, 
+           in : zcr4 : m2.unit_log(10)) : m2.delta(1) : abs : f2.lp1p(window)
+           : / (.266) <: * : min(1);
+// -----------------------------------------------------------------------------
 
-// infinitely fast attack and adjustable release
+// ip.peak_env(R[n], x[n]); ----------------------------------------------------
+//
+// Peak envelope function: infinitely fast attack and adjustable release.
+//
+// 2 inputs:
+//    R[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak envelope of x[n].
+//
 peak_env(release, in) = abs(in) :   max
-                                    ~ *(m2.rt55(release));
+                                    ~ * (m2.rt55(release));
+// -----------------------------------------------------------------------------
 
-// hold peak for a time specified in seconds
-peak_hold(release, in) = in : ba.peakholder(release*ma.SR);
+// ip.peak_hold(R[n], x[n]); ---------------------------------------------------
+//
+// Peak holder: it holds the peak of the absolute value of the input
+// signal for a time specified in seconds. If no new peak occurs before
+// the specified time, the peak will reset to whatever the absolute value
+// of the input is.
+//
+// 2 inputs:
+//    R[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak of |x[n]|.
+//
+peak_hold(release, in) = in : ba.peakholder(release * ma.SR);
+// -----------------------------------------------------------------------------
 
+// ip.peakAR(AT[n], RT[n], x[n]); ----------------------------------------------
+//
 // Peak envelope function with independent attack and release times. The
-// smoothing filters are based on a time constant that is 2pi * tau; the
-// filters will reach 1 - e^(-2pi) of the final valuein AT seconds, or will 
-// decay by e^(-2pi) in RT seconds.
+// function applies two independent filter sections depending on whether 
+// the input is in the attack or release phase, which is determined by 
+// comparing the absolute value of the input signal with the output. 
+// The attack-smoothing filter is a one-pole lowpass: a leaky integrator
+// whose input is scaled down with the complement of the pole position.
+// The release-smoothing filter, on the other hand, is simply an
+// exponential decay of the detected peak.
+//
+// 3 inputs:
+//    AT[n], attack time in seconds;
+//    RT[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak envelope of x[n].
+//
 peakAR(AT, RT, x) =    loop
                        ~ _
-with {
-      loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
       with {
-       attack = (1 - AT_coeff) * abs : +
-                                       ~ * (AT_coeff);
-       release = * (RT_coeff);
-       AT_coeff = m2.rt55(AT);
-       RT_coeff = m2.rt55(RT);
+           loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
+               with {
+                   attack = (1 - AT_coeff) * abs : +
+                                                   ~ * (AT_coeff);
+                   release = * (RT_coeff);
+                   AT_coeff = m2.rt55(AT);
+                   RT_coeff = m2.rt55(RT);
+               };
       };
-};
+// -----------------------------------------------------------------------------
 
-// detects lower and upper peaks and holds them for a time (in s) specified by 
-// "release"
+// ip.peaks(R[n], x[n]); -------------------------------------------------------
+//
+// It detects lower and upper peaks and, if no new peaks are detected,
+// it holds them for a specified time in seconds before resetting the peaks
+// to the new ones given by the incoming input.
+//
+// 2 inputs:
+//    R[n], release time in seconds;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lowwer peak in x[n],
+//    y2[n], upper peak in x[n].
+//
 peaks(release, in) =   (   check_low 
                            ~ _) ,
                        (   check_high
                            ~ _)
-with {
-      check_low(s) =   (   in , 
-                           s : <= <:   _ , 
+      with {
+           check_low(s) =  (in <= s <: _ , 
                                        (   m2.div(1, release) ,
-                                           _ : m2.ph : m2.diff : <(0)) : |) ,
-                       s ,
-                       in : select2;
-      check_high(s) =  (   in , 
-                           s : >= <:   _ , 
+                                           _ : m2.ph : m2.diff < 0) : |) ,
+                           s ,
+                           in : select2;
+           check_high(s) = (in >= s <: _ , 
                                        (   m2.div(1, release) ,
-                                           _ : m2.ph : m2.diff : <(0)) : |) ,
-  		       s ,
-                       in : select2;
-};
+                                           _ : m2.ph : m2.diff < 0) : |) ,
+  		           s ,
+                           in : select2;
+      };
+// -----------------------------------------------------------------------------
 
-// detects and integrates occurrences of signals within a specified range; 
-// with exponential decay in s
-recurrence(lower, upper, t, in) = in <: (  >(lower),
-                                           <=(upper) : &) : fi.pole(m2.rt55(t));
+// ip.recurrence(L[n], H[n], T[n], x[n]); --------------------------------------
+//
+// It detects and integrates occurrences of signals within a specified
+// range using a leaky integrator with a specified decay time in seconds.
+//
+// 4 inputs:
+//    L[n], lower bound (not including the edge for the detection);
+//    H[n], upper bound (including the edge for the detection);
+//    T[n], decay period in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], recurrence of the signal x[n] within the specified range
+//         ]lower; upper].
+//
+recurrence(lower, upper, t, in) =  in > lower ,
+                                   in <= upper : & : fi.pole(m2.rt55(t));
+// -----------------------------------------------------------------------------
 
-// root mean square measurement using 1-pole lowpass for averaging
+// ip.rms(R[n], x[n]); ---------------------------------------------------------
+//
+// Root mean square measurement using one-pole lowpass for averaging.
+//
+// 2 inputs:
+//    R[n], analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], RMS of x[n].
+//
 rms(window, in) = in <: * : f2.lp1p(window) : sqrt;
+// -----------------------------------------------------------------------------
 
-// RMS with fourth-order LP
+// ip.rms4(R[n], x[n]); --------------------------------------------------------
+//
+// RMS with four cascaded one-pole lowpass for averaging.
+//
+// 2 inouts:
+//    R[n], analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], RMS of x[n].
+//
 rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
+// -----------------------------------------------------------------------------
 
-/* The roughness measurement is based on amplitude transients in the 
- * 15-75Hz range. Theoretically, roughness decreases below 15Hz, 
- * peaks around 15-75Hz, and starts descresing above 75Hz to 
- * disappear around 150Hz and above. The "window" parameter may affect
- * the behaviour in the 0-15Hz range. A 1Hz window seems acceptable.
- */
+// ip.roughness(R[n], x[n]); ---------------------------------------------------
+//
+// The roughness measurement is based on amplitude transients in the 
+// 15-75 Hz range. Theoretically, roughness decreases below 15Hz, 
+// peaks around 15-75 Hz, and starts descresing above 75Hz to 
+// disappear around 150 Hz and above. The analysis rate parameter may affect
+// the behaviour in the 0-15Hz range. An analysis rate of 1 Hz seems acceptable.
+// References: [Helmholtz 2013; Vassilakis and Kendall 2010; Terhardt
+// 1974; Molla and Torrésani 2004; Moore 1995].
+//
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], roughness index of x[n] in the range [0; 1].
+//
 roughness(window, in) = instant_amp(in) <: m2.delta(.001, .001) ,
                                            rms(1) : m2.div : 
                            rms4(75) : m2.delta(1/150, 1/150) : 
                                rms4(window)/.807242;
+// -----------------------------------------------------------------------------
 
-// spectral power (RMS) difference at a splitting point (Hz)
-spec_bal(cf, window, in) =  cf,
+// ip.spec_bal(CF[n], R[n], x[n]); ---------------------------------------------
+//
+// Spectral power (RMS) difference at a splitting point, in Hz, of the
+// spectrum of a signal. The input signal is filtered through a one-pole
+// crossover; the difference of the RMS of the high and low spectra is the
+// output.
+//
+// 3 inputs:
+//    CF[n], crossover cut-off frequency in Hz;
+//    R[n], RMS analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], RMS difference of the crossover outputs.
+//
+spec_bal(cf, window, in) =  cf ,
                             in : f2.xover1p1z <:   rms(window) ,
                                                    rms(window) : 
-                               ro.cross(2) : -;
+      ro.cross(2) : -;
+// -----------------------------------------------------------------------------
 
-// spectral power (RMS) difference at a splitting point (Hz) with
-// Nth-order Butterworth filters xover
+// ip.spec_balN(N, CF[n], R[n], x[n]); -----------------------------------------
+//
+// Spectral power (RMS) difference at a splitting point, in Hz, of the
+// spectrum of a signal. The input signal is filtered through an
+// Nth-order Butterworth crossover; the difference of the RMS of the high and 
+// low spectra is the output.
+//
+// 3 inputs:
+//    CF[n], crossover cut-off frequency in Hz;
+//    R[n], RMS analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], RMS difference of the crossover outputs.
+//
+// Compile-time arguments:
+//    N, (integer) order of the crossover.
+//
 spec_balN(N, cf, window, in) = cf ,
                                in : f2.xover_butt(N) <:    rms(window) ,
                                                            rms(window) : 
-                                   ro.cross(2) : -;
+      ro.cross(2) : -;
+// -----------------------------------------------------------------------------
 
+// ip.spec_peakN(N, R[n], x[n]); -----------------------------------------------
+//
 // Spectral peak with Nth-order spectral tendency calculation and
 // 2nd-order normalised BP filter (BLTI). It works by recursively
 // removing components on the sides of the spectral tendency frequency.
@@ -190,59 +573,183 @@ spec_balN(N, cf, window, in) = cf ,
 // derivative of a spectral tendency measure at the top of the chain. Still
 // a work in progress but it works well to isolate the frequency of pure
 // tones in a noisy background.
+//
+// 2 inputs:
+//    R[n], responsiveness in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], spectral peak in Hz.
+//
+// Compile-time arguments:
+//    N, (integer) order of the crossover in the spectral centroid
+//         analysis.
 spec_peakN(N, window, in) = ((max(10), 1, in) : f2.bp2blti : 
-                               spec_tenN(N, window)) ~ *(m2.ny);
+      spec_tenN(N, window)) 
+                            ~ * (m2.ny);
+// -----------------------------------------------------------------------------
 
-// spectral spread: complement of the ratio between the RMS of the 
-// spec_ten-centered bandpassed input and the input RMS. Nth-order
-// spectral tendency, arbitrary q for the BP.
+// ip.spec_sprN(N, Q[n], R[n], x[n]); ------------------------------------------
+//
+// Spectral spread: complement of the ratio between the RMS of the 
+// spectral-centroid-centered bandpassed input and the input RMS. Nth-order
+// spectral tendency, arbitrary Q-factor for the bandpass to tune-in
+// specific applications.
+//
+// 3 inputs:
+//    Q[n], Q-factor in the bandpass filter;
+//    R[n], RMS analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], spectral spread index for x[n] in the range [0; 1] (0 no
+//         spread; 1 maximum spread).
+//
+// Compile-time arguments:
+//    N, (integer) order of the Butterworth crossover in the spectral
+//         centroid analysis.
+//
 spec_sprN(N, q, window, in) = (    spec_tenN(N, window, in) * m2.ny ,
                                    q ,
                                    in) :   f2.bpbi : ip.rms(window) ,
                                            (in : ip.rms(window)) : 
-                                   m2.div : m2.complement;
+      m2.div : m2.complement;
+// -----------------------------------------------------------------------------
 
-// spectral tendency (equal-power spectral split-point)
+// ip.spec_ten(R[n], x[n]); ----------------------------------------------------
+//
+// Spectral tendency (we can call it centroid as it finds a balancing
+// point) equal-power spectral split-point. The adaptive algorithm finds
+// the cut-off frequency of a crossover where the RMS difference of its
+// outputs is 0 through a negative feedback mechanism. To be precise, the
+// algorithm minimally oscillates, hence it is in dynamical equilibrium,
+// around the equilibrium point. The input is filtered through a
+// one-pole-one-zero crossover; the difference of the RMS of the outputs of the 
+// filter is integrated; the result is squared and clipped for stability, mapped 
+// over Nyquist, and fed back to drive the frequency of the crossover.
+//
+// 2 inputs:
+//    R[n], RMS analysis rate in Hz (responsiveness);
+//    x[n].
+//
+// 1 outputs:
+//    y[n], spectral centroid of x[n] as an index in the [0; 1] range.
+//
 spec_ten(window, in) =  (   (   _ ,
                                 window ,
                                 in : spec_bal) ,
                             (   window ,
                                 in : rms) : m2.div : *(window) : 
-                           f2.int_clip(0, 1) : pow(2)) 
+      f2.int_clip(0, 1) : pow(2)) 
                         ~ *(m2.ny);
+// -----------------------------------------------------------------------------
 
-// spectral tendency (equal-power spectral split-point) with nth-order
-// Butterworth filters xover; improved response and stability through
-// cubic nonlinearity
+// ip.spec_tenN(N, R[n], x[n]); ------------------------------------------------
+//
+// Spectral tendency (we can call it centroid as it finds a balancing
+// point) equal-power spectral split-point. The adaptive algorithm finds
+// the cut-off frequency of a crossover where the RMS difference of its
+// outputs is 0 through a negative feedback mechanism. To be precise, the
+// algorithm minimally oscillates, hence it is in dynamical equilibrium,
+// around the equilibrium point. The input is filtered through an Nth-order 
+// butterworth crossover; the difference of the RMS of the outputs of the
+// filter is integrated; the result is squared and clipped for stability, mapped
+// over Nyquist, and fed back to drive the frequency of the crossover.
+// Spectral tendency (centroid) as equal-power spectral split-point with nth-order
+// This design is improved as it implements a cubic nonlinear function
+// that increases stability and accuracy.
+//
+// 2 inputs:
+//    R[n], RMS analysis rate in Hz (responsiveness);
+//    x[n].
+//
+// 1 outputs
+//    y[n], spectral centroid of x[n] as an index in the [0; 1] range.
+//
+// Compile-time arguments:
+//    N, (integer) order of the crossover.
+//
 spec_tenN(N, window, in) = ((  _ ,
                                window ,
                                in : spec_balN(N)) ,
                             (  window ,
                                in : rms) : m2.div : pow(3) : 
-                               f2.int_eu_clip(0, 1, window) : pow(2))
+      f2.int_eu_clip(0, 1, window) : pow(2))
                            ~ *(m2.ny);
+// -----------------------------------------------------------------------------
 
-// lite spectral tendency algorithm: no responsiveness parameter; less
-// accurate (especially at low frequencies); 0-to-1 output.
+// ip.spec_ten_lite(x[n]); -----------------------------------------------------
+//
+// Lite spectral tendency algorithm: fixed responsiveness parameter; less
+// accurate (especially at low frequencies).
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], spectral centroid of x[n] in the range [0; 1].
+//
 spec_ten_lite(in) = (  _,
                        in : f2.xover1p1zraw : ro.cross(2) : balance : 
-                       (   _ ,
-                           (in : rms) : m2.div) : f2.integrator <: *)
+      (_ ,
+       (in : rms) : m2.div) : f2.integrator <: *)
                     ~ _
-with {
-      a0 = 100 / ma.SR;
-      b1 = 1 - a0;
-      rms(in) = in <: * : *(a0) :  +
-                                   ~ *(b1) : sqrt;
-      balance =    rms ,
-                   rms : -;
-};
+      with {
+           a0 = 100 / ma.SR;
+           b1 = 1 - a0;
+           rms(in) = in <: * : * (a0) :    +
+                                           ~ * (b1) : sqrt;
+           balance =   rms ,
+                       rms : -;
+      };
+// -----------------------------------------------------------------------------
 
-// zero-crossing detection
+// ip.zc(x[n]); ----------------------------------------------------------------
+//
+// Zero-crossing (ZC) indicator function: it returns 1 if a ZC occurs, 
+// 0 otherwise.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], ZC indication.
+//
 zc(x) = x * x' < 0;
+// -----------------------------------------------------------------------------
                        
-// zero-crossing rate
+// ip.zcr(R[n], x[n]); ---------------------------------------------------------
+//
+// Zero-crossing rate (ZCR) using a one-pole lowpass filter for averaging.
+// The ZCR correlates with the noisiness of signals, although it is
+// effective only in specific cases, for example when comparing voiced and
+// unvoiced sounds, or percussive and non-percussive ones. The ZCR also
+// correlates with the spectral centroid of a signal. For sinusoidal
+// signals, the ZCR output of this function can be mapped over Nyquist and
+// can be used effectively as a frequency detector.
+// References: Gouyon et al. 2000; Herrera-Boyer et al. 2006; 
+// Peeters et al. 2011.
+//
+// 2 inputs:
+//    R[n], analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], ZCR as an index in the range [0; 1].
+//
 zcr(window, x) = zc(x) : f2.lp1p(window);
+// -----------------------------------------------------------------------------
 
-// zero-crossing rate with four cascaded 1plp for averaging 
+// ip.zcr4(R[n], x[n]); --------------------------------------------------------
+//
+// Zero-crossing rate with four cascaded one-pole lowpass filters for averaging.
+//
+// 2 inputs:
+//    R[n], analysis rate in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], ZCR as an index in the range [0; 1].
+//
 zcr4(window, x) = zc(x) : seq(i, 4, f2.lp1p(window));
+// -----------------------------------------------------------------------------

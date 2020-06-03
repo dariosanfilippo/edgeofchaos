@@ -1,9 +1,18 @@
-/* Access to all Edge of Chaos libraries from a single point.
- * 
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== alleoc.lib =======================================================
+// =============================================================================
+//
+// Access to all Edge of Chaos library modules from a single point.
+// 
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
+// All rights reserved.
+
+declare name "All Edge of Chaos modules";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 import("auxiliary.lib");
 import("delays2.lib");
