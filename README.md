@@ -89,7 +89,7 @@ sanfilippo.dario at gmail dot com
     indented with the first one.
 
 –   When separating arguments, there should be no spacing between the comma and 
-    the argument on its left to distinguish it from the parallel comporition 
+    the argument on its left to distinguish it from the parallel composition 
     operator (comma).
 
 –   The recursive composition operator and its right-operand should be on a new 
