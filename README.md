@@ -1,7 +1,83 @@
 # Edge of Chaos
 
-This repository contains libraries including some essential building blocks for the implementation of musical complex adaptive systems in the Faust programming environment. (https://faust.grame.fr.)
+## Introduction
 
-It includes a set of time-domain algorithms, some of which are original, for the processing of low-level and high-level information as well as the processing of sound using standard and non-conventional techniques. It also includes functions for the realisation of networks with different topologies, linear and nonlinear mapping strategies to render positive and negative feedback relationships, and different kinds of energy-preserving techniques for the stability of self-oscillating systems.
+This repository contains libraries including some essential building blocks 
+for the implementation of musical complex adaptive systems in the Faust 
+programming environment. (https://faust.grame.fr.)
 
-Edge of Chaos is being developed and maintained by Dario Sanfilippo and it is the library through which he creates his music. (http://dariosanfilippo.tumblr.com - sanfilippo.dario at gmail dot com.)
+It includes a set of time-domain algorithms, some of which are original, for 
+the processing of low-level and high-level information as well as the 
+processing of sound using standard and non-conventional techniques. It also 
+includes functions for the realisation of networks with different topologies, 
+linear and nonlinear mapping strategies to render positive and negative 
+feedback relationships, and different kinds of energy-preserving techniques 
+for the stability of self-oscillating systems.
+
+Edge of Chaos is being developed and maintained by Dario Sanfilippo, and it 
+is the library through which he creates his music. 
+
+http://dariosanfilippo.tumblr.com
+https://scholar.google.com/citations?user=eXSEPWEAAAAJ&hl=en
+sanfilippo.dario at gmail dot com
+
+## Overview of the library modules
+
+    alleoc.lib:         access to all Edge of Chaos library modules from a 
+                        single point.
+
+    auxiliary.lib:      auxiliary functions library for testing, analysis, 
+                        inspection, and debugging.
+
+    delays2.lib:        delay line functions library with 
+                        samplerate-independent delay parameters based on 
+                        aust's delay lines for integer and fractional delays.
+
+    edgeofchaos.lib:    This file provides access to all the Edge of Chaos 
+                        library modules through a series of environments.
+
+    filters2.lib:       Filters library containing bilinear transform and 
+                        topology preserving transform implementations 
+                        (zero-delay feedback) of allpass, lowpass, highpass, 
+                        bandpass, bandstop, shelving, and state-variable 
+                        filters. Furthermore, there are implementations of 
+                        crossovers, comb-integrator circuits, analytic filters, 
+                        and integrators, among others.
+
+    information.lib:    Information processing functions library including 
+                        low-level and high-level algorithms both based on 
+                        hard-coded and adaptive mechanisms. The low-level 
+                        functions provide time-domain techniques for feature 
+                        extraction that are normally based on FFT processing, 
+                        such as spectral centroid and spectral flatness 
+                        (noisiness). The high-level functions provide an 
+                        analysis of the state space of low-level information 
+                        signals to determine, based on notions of complexity 
+                        theory and music perception, characteristics such as 
+                        dynamicity, heterogeneity, and complexity of audio 
+                        streams.
+
+    maths2.lib:         More math functions including matrices, maps, windowing, 
+                        interpolators, statistics.
+
+    oscillators2.lib:   mainly BLIT-based oscillators and self-oscillating 
+                        systems.
+
+    stability.lib:      stability processing functions including standard 
+                        dynamics processing as well as self-regulating designs.
+
+## Coding conventions
+
+–   80 characters per line;
+–   infix syntax should be used when possible to increace conciseness;
+–   spacing should be used between operands and operators to increase readbility;
+–   spacing should be used between operators and arguments for partial 
+    application with infix operators (see the Faust manual for a complete list 
+    of such operators);
+–   no spacing should be used between operators and arguments for partial 
+    application with functions; 
+–   spacing should be used between the first operand and the parallel composition 
+    operator, while the second operand should be on a new line indented with the 
+    first one;
+–   the recursive composition operator and its right-operand should be on a new 
+    line and indented with the operator where the recursion is connected.
