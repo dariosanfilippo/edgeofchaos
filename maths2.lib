@@ -574,7 +574,7 @@ if(cond, then, else) = cond != 0 ,
                        then : select2;
 // -----------------------------------------------------------------------------
 
-// m2.ifN(C1[n], T1[n], ..., CN-1[n], TN-1[n], CN[n], TN[n], E[n]); ------------
+// m2.ifN((C1[n], T1[n], ..., CN-1[n], TN-1[n], CN[n], TN[n], E[n])); ----------
 //
 // If-then-else-if-... with arbitrary number of conditions. 
 // It takes pairs of IF-THEN couples plus a final ELSE. 
