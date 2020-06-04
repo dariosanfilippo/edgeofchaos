@@ -524,7 +524,11 @@ hp_xor(x, y) = x + y - 2 * x * y;
 //    ...
 //    x1N-1[n];
 //    x1N[n];
-//    xM1[n];
+//    ...
+//    xM-11[n];
+//    ...
+//    xM-1N-1[n];
+//    xM-1N[n];
 //    ...
 //    xMN[n].
 //
@@ -552,35 +556,76 @@ interpolate_mn(m, n, index) =  spat(m, index, 1) ,
       };
 // -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
+// m2.if(C[n], T[n], E[n]); ----------------------------------------------------
+//
 // If-then-else – unlike Faust's if-then-else, the condition is true for
 // any value != than 0, whereas Faust gives false for |fractions| < 1.
+//
+// 3 inputs:
+//    C[n], condition;
+//    T[n], "then" signal;
+//    E[n], "else" signal.
+//
+// 1 outputs:
+//    y[n], which is either T[n] or E[n] depending on C[n].
+//
 if(cond, then, else) = cond != 0 , 
                        else , 
                        then : select2;
 // -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
+// m2.ifN(C1[n], T1[n], ..., CN-1[n], TN-1[n], CN[n], TN[n], E[n]); ------------
+//
 // If-then-else-if-... with arbitrary number of conditions. 
 // It takes pairs of IF-THEN couples plus a final ELSE. 
 // These should be given as a list, hence within parentheses.
 // Note that it only works if outputting single values for each
 // condition due to Faust's limitations in list processing.
 // Code by Oleg Nesterov.
-ifN((c, t, e)) = if(c, t, ifN(e));
+//
+// N*2+1 inputs:
+//    C1[n]; 
+//    T1[n]; 
+//    ...; 
+//    CN-1[n]; 
+//    TN-1[n]; 
+//    CN[n]; 
+//    TN[n]; 
+//    E[n].    (Note that the number of inputs depends on the specific
+//             functions of each statement.)
+//
+// 1 outputs:
+//    y[n], one of the T-signals or the E-signal.
+//
+ifN((c, t, e)) = m2.if(c, t, ifN(e));
 ifN(e) = e;
 // -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// NAN-safe inverse
+// m2.inv(x[n]); ---------------------------------------------------------------
+//
+// INF-safe inverse.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    1 / x[n].
+//
 inv(x) = div(1, x);
 // -----------------------------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// line: in signal sets x/y ratio
-line =  _ ,
-        ma.SR : / : +
-                    ~ _;
+// m2.line(A[n]); --------------------------------------------------------------
+//
+// Line function.
+//
+// 1 inputs:
+//    A[n], the slope of the line (y/x ratio).
+//
+// 1 outputs:
+//    y[n], the line function.
+//
+line(s) = s / ma.SR :  +
+                       ~ _;
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
