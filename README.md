@@ -59,7 +59,7 @@ sanfilippo.dario at gmail dot com
                         dynamicity, heterogeneity, and complexity of audio 
                         streams.
 
-    maths2.lib:         Math library containing functions for statistics, 
+    maths2.lib:         math library containing functions for statistics, 
                         linear and nonlinear fuzzy logic, interpolators, 
                         network topologies, matrixes, linear and nonlinear 
                         mapping, windowing functions, hysteresis, angular 
@@ -68,6 +68,15 @@ sanfilippo.dario at gmail dot com
 
     oscillators2.lib:   mainly BLIT-based oscillators and self-oscillating 
                         systems.
+    
+    outformation.lib:   audio processing library containing standard and 
+                        original techniques for audio transformations.
+                        The functions include delay-line granulators with 
+                        non-homogenous windowing, windowless granulation 
+                        through zero-crossing detection, modulations, 
+                        FDN-based processes, and time-variant transfer 
+                        functions.
+
 
     stability.lib:      stability processing functions including standard 
                         dynamics processing as well as self-regulating designs.
