@@ -1017,7 +1017,7 @@ sp = 1 / ma.SR;
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 // 
 // Compile-time arguments:
@@ -1047,7 +1047,7 @@ topologies(r, c, type) =   top_full(r, c) ,
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
@@ -1073,7 +1073,7 @@ top_anti_diag(r, c) = par(i, r, par(j, c, (j % r) != (i % c)));
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
@@ -1100,7 +1100,7 @@ top_diagonal(r, c) = par(i, r, par(j, c, (j % r) == (i % c)));
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
@@ -1128,7 +1128,7 @@ top_diag_shift(r, c, s) =
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
@@ -1154,7 +1154,7 @@ top_full(r, c) = 1 <: si.bus(r * c);
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
@@ -1180,7 +1180,7 @@ top_tri_low(r, c) = par(i, r, par(j, c, (j % r) <= (i % c)));
 // R*C outputs:
 //    y11 y12 … y1C
 //    y21 y22 … y2C
-//    ⋮   ⋮  ⋱  ⋮
+//     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
 // Compile-time arguments:
