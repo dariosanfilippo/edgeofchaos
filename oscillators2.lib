@@ -76,7 +76,7 @@ pulse_train(f, h, d) =
       blit_bp(f, h, d) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale + d
       with {
            lim = floor(ma.SR / f / 2) + 1;
-           scale = min(lim, h) / lim;
+           scale = 2 * min(lim, h) / lim;
       };
 
 // BLIT-based saw
@@ -84,14 +84,14 @@ saw(f, h) = blit_up(f, h) <: _ - f2.lp1p(f / 10) :
       fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
       with {
            lim = floor(ma.SR / f / 2) + 1;
-           scale = min(lim, h) / lim * 2;
+           scale = 2 * min(lim, h) / lim;
       };
 
 // BLIT-based square
 square(f, h) = blit_bp(f, h, .5) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
       with {
-           lim = floor(ma.SR / f / 2) + 1;
-           scale = min(lim, h) / lim * 2;
+           lim = floor(ma.SR / f / 4) + 1;
+           scale = 2 * min(lim, h) / lim;
       };
 
 // BLIT-based triangle
