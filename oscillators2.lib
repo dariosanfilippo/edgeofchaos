@@ -13,7 +13,7 @@ m2 = library("maths2.lib");
 o2 = library("oscillators2.lib");
 
 // bipolar BLIT
-blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, h))
+blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, 2 * h))
       with {
            d1 = d * m2.div(1, f);
       };
@@ -25,6 +25,7 @@ blit_up(f, h) = sinc_m(phase)
       with {
            sinc_m(x) = m2.div(sin(x * M), (sin(x) * M));
            phase = o2.ph(f / 2, 0) * 2 * ma.PI;
+           lim = 
            M = min(h * 2 + 1, 2 * floor(m2.div(ma.SR, f) / 2) + 1);
       };
 
