@@ -5,7 +5,6 @@
  * All rights reserved.
  */
 
-au = library("auxiliary.lib");
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
@@ -15,28 +14,19 @@ o2 = library("oscillators2.lib");
 
 // bipolar BLIT
 blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, h))
-with {
-      d1 = d*( 1,
-               f : m2.div);
-};
+      with {
+           d1 = d * m2.div(1, f);
+      };
 
 // unipolar BLIT
-blit_up(f, h) = ba.if(phase : ==(0), 1, sinc)
-with {
-      sinc =   sin(phase*h_1),
-               sin(phase) : m2.div, 
-                            h_1 : m2.div;
-      phase = ph(f_1, 0)*2*ma.PI;
-      f_1 = f/2;
-      h_1 = m2.diff(phase) : <(0),
-            (h*2+1 : min(lim) : int) : ba.sAndH;
-      lim = ba.if((int((ma.SR,
-                       f : m2.div)) : %(2) : ==(0)), 
-                   int((ma.SR,
-                       f : m2.div))-1, 
-                   int((ma.SR,
-                       f : m2.div)));
-};
+// the phase is mapped over 2PI hence the phasor rate is halved,
+// as the Sinc function has a period of PI
+blit_up(f, h) = sinc_m(phase)
+      with {
+           sinc_m(x) = m2.div(sin(x * M), (sin(x) * M));
+           phase = o2.ph(f / 2, 0) * 2 * ma.PI;
+           M = min(h * 2 + 1, 2 * floor(m2.div(ma.SR, f) / 2) + 1);
+      };
 
 // Lorenz system; ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf
 // arguments are: initial conditions for x, y, z; a, b, r, dt
@@ -44,66 +34,65 @@ with {
 // Try process = lorenz(1.2, 1.3, 1.6, 10, 8/3, 28, .005); for a strange
 // attractor (way out of the -1-to-1 range)
 lorenz(x0, y0, z0, a, b, r, dt) =   iterate
-                                    ~ ( _,
-                                        _,
+                                    ~ ( _ ,
+                                        _ ,
                                         _)
-with {
-    iterate(x, y, z) =  x1+a*(y1-x1)*dt,
-                        y1+(r*x1-y1-x1*z1)*dt,
-                        z1+(x1*y1-b*z1)*dt
-    with {
-        x1 = x+x0-x0';
-        y1 = y+y0-y0';
-        z1 = z+z0-z0';
-    };
-};
+      with {
+           iterate(x, y, z) =  x1 + a * (y1 - x1) * dt,
+                           y1 + (r * x1 - y1 - x1 * z1) * dt,
+                           z1 + (x1 * y1 - b * z1) * dt
+           with {
+               x1 = x + x0 - x0';
+               y1 = y + y0 - y0';
+               z1 = z + z0 - z0';
+           };
+      };
 
 // quadrature oscillator by Martin Vicanek
 osc_quad(f) =  tick 
                ~ ( _ , 
                    _)
-with {
-      init = 1 - 1';
-      k1 = tan(ma.PI * f / ma.SR);
-      k2 = 2 * k1 / (1 + k1 * k1);
-      tick(u, v) = omega - k1 * (v + k2 * omega), 
-                   v + k2 * omega
       with {
-       omega = (u + init) - k1 * v;
+           init = 1 - 1';
+           k1 = tan(ma.PI * f / ma.SR);
+           k2 = 2 * k1 / (1 + k1 * k1);
+           tick(u, v) =    omega - k1 * (v + k2 * omega) , 
+                           v + k2 * omega
+           with {
+               omega = (u + init) - k1 * v;
+           };
       };
-};
 
 // phasor with phase reset
-ph(freq, reset) = incr :   (+ : ma.decimal) * (1-(reset != 0)) 
-                           ~ _
-with {
-      incr = ba.if(ba.time == 0, 0, freq / ma.SR);
-};
+ph(freq, reset) = freq / ma.SR * r :   (+ : ma.decimal)
+                                       ~ * (r)
+      with {
+           r = 1 - (reset != 0);
+      };
 
 // BLIT-based variable width pulse train
-pulse_train(f, h, d) = blit_bp(f, h, d) : fi.pole(1-10/ma.SR) : *(scale) : +(d)
-with {
-      lim =    m2.ny,
-               f : m2.div;
-      scale =  (h : min(lim)), 
-               lim : m2.div;
-};
+pulse_train(f, h, d) = 
+      blit_bp(f, h, d) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale + d
+      with {
+           lim = floor(ma.SR / f / 2) + 1;
+           scale = min(lim, h) / lim;
+      };
 
 // BLIT-based saw
-saw(f, h) = blit_up(f, h) <:   _,
-                               f2.lp1p(f/100) : - : fi.pole(1-10/ma.SR) : *(scale)
-with {
-      lim =    m2.ny,
-               f : m2.div;
-      scale =  (h : min(lim)), 
-               lim : m2.div;
-};
+saw(f, h) = blit_up(f, h) <: _ - f2.lp1p(f / 10) : 
+      fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
+      with {
+           lim = floor(ma.SR / f / 2) + 1;
+           scale = min(lim, h) / lim * 2;
+      };
 
 // BLIT-based square
-square(f, h) = blit_bp(f, h, .5) : fi.pole(1-10/ma.SR) : *(scale)
-with {
-      lim =    m2.ny,
-               f : m2.div;
-      scale =  (h : min(lim)), 
-               lim : m2.div;
-};
+square(f, h) = blit_bp(f, h, .5) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
+      with {
+           lim = floor(ma.SR / f / 2) + 1;
+           scale = min(lim, h) / lim * 2;
+      };
+
+// BLIT-based triangle
+tri(f, h) = square(f, h) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * 
+      (f / (ma.SR / 4));
