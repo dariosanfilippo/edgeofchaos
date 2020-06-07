@@ -25,8 +25,8 @@ blit_up(f, h) = sinc_m(phase)
       with {
            sinc_m(x) = m2.div(sin(x * M), (sin(x) * M));
            phase = o2.ph(f / 2, 0) * 2 * ma.PI;
-           lim = 
-           M = min(h * 2 + 1, 2 * floor(m2.div(ma.SR, f) / 2) + 1);
+           lim = 2 * floor(m2.div(ma.SR, f) / 2) + 1
+           M = min(h * 2 + 1, lim);
       };
 
 // Lorenz system; ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf
