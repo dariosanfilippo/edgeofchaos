@@ -127,23 +127,24 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
       (si.bus(N) :> / (N)) : m2.div : / ((N - 1) * 2);
 // -----------------------------------------------------------------------------
 
-// m2.asinc_bi(H[n], ph[n]) ----------------------------------------------------
+// m2.asinc_bi(H[n], ph[n]); ---------------------------------------------------
 //
 // asinc_bp[n] = sin(2H[n]2π*ph[n])/(sin(2π*ph[n])*2M).
 //
-// Bipolar periodic sinc function with arbitrary number of harmonics. 
-// The bipolar band-limited impulse train (BLIT) has no DC component and the 
-// number of harmonics include the fundamental and its odd multiples. 
-// The amplitude of the BLIT, regardless of the harmonics, is normalised to 
+// Bipolar periodic sinc function with arbitrary number of harmonics for
+// the generation of band-limited impulse trains (BLIT).
+// The bipolar BLIT has no DC component and the number of harmonics include the 
+// fundamental frequency and its odd multiples. 
+// The amplitude of the function, regardless of the harmonics, is normalised to 
 // unit-amplitude peaks.
 //
 // Unlike the technique described in [Stilson and Smith 1996] that
 // discusses an implementation of the bipolar BLIT by summation of a
 // unipolar BLIT with its delayed and inverted copy, the technique
 // showed here uses an even ratio between the frequencies of the sine
-// functions.
+// functions used to generate the sinc.
 //
-// The bipolar BLIT has a period of 2π, although the phase input of the
+// The bipolar sinc has a period of 2π, although the phase input of the
 // function is normalised to the range [0; 1] for a full cycle.
 //
 // 2 inputs:
@@ -166,20 +167,21 @@ asinc_bi(M, x) = ba.if(phase < ma.EPSILON,
       };
 // -----------------------------------------------------------------------------
 
-// m2.asinc_uni(H[n], ph[n]) ---------------------------------------------------
+// m2.asinc_uni(H[n], ph[n]); --------------------------------------------------
 //
 // asinc_uni[n] = sin((2H[n]+1)*2π*ph[n])/(sin(2π*ph[n])*(2M+1)).
 //
-// Unipolar periodic sinc function with arbitrary number of harmonics. 
-// The unipolar band-limited impulse train (BLIT) has a DC component and the 
-// number of harmonics include the fundamental and its multiples (both
-// even and odd). The amplitude of the BLIT, regardless of the harmonics, 
+// Unipolar periodic sinc function with arbitrary number of harmonics
+// for the generation of unipolar band-limited impulse trains.
+// The unipolar BLIT has a DC component and the number of harmonics include the 
+// fundamental frequency and its multiples (both even and odd). 
+// The amplitude of the function, regardless of the harmonics, 
 // is normalised to unit-amplitude peaks.
 //
 // The technique described here is based on the paper
 // [Stilson and Smith 1996].
 //
-// The unipolar BLIT has a period of π, although the phase input of the
+// The unipolar sinc has a period of π, although the phase input of the
 // function is normalised to the range [0; 1] for a full cycle.
 //
 // 2 inputs:
@@ -1278,6 +1280,19 @@ top_tri_up(r, c) = par(i, r, par(j, c, (j % r) >= (i % c)));
 //
 uni(x) = (x + 1) / 2;
 // -----------------------------------------------------------------------------
+
+// m2.twopi --------------------------------------------------------------------
+//
+// 2π constant.
+//
+// 0 inputs.
+//
+// 1 outputs:
+//    y[n], two times π.
+//
+twopi = 2 * ma.PI;
+// -----------------------------------------------------------------------------
+
 
 // m2.unit_log(T[n], x[n]); ----------------------------------------------------
 //
