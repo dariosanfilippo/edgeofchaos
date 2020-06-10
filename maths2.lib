@@ -135,14 +135,9 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
 // the generation of band-limited impulse trains (BLIT).
 // The bipolar BLIT has no DC component and the number of harmonics include the 
 // fundamental frequency and its odd multiples. 
+//
 // The amplitude of the function, regardless of the harmonics, is normalised to 
 // unit-amplitude peaks.
-//
-// Unlike the technique described in [Stilson and Smith 1996] that
-// discusses an implementation of the bipolar BLIT by summation of a
-// unipolar BLIT with its delayed and inverted copy, the technique
-// showed here uses an even ratio between the frequencies of the sine
-// functions used to generate the sinc.
 //
 // The bipolar sinc has a period of 2π, although the phase input of the
 // function is normalised to the range [0; 1] for a full cycle.
@@ -156,13 +151,14 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
 // 1 outputs:
 //    y[n], bipolar sinc function.
 //
-asinc_bi(M, x) = ba.if(phase < ma.EPSILON,
+asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
                        1,
-                       ba.if(  abs(.5 - phase) < ma.EPSILON,
+                       m2.if(  abs(.5 - phase) < ma.EPSILON,
                                -1,
-                               sin(2 * M * 2 * ma.PI * phase) / 
-                                   (sin(2 * ma.PI * phase) * 2 * M)))
+                               sin(2 * M1 * 2 * ma.PI * phase) / 
+                                   (sin(2 * ma.PI * phase) * 2 * M1)))
       with {
+           M1 = rint(M);
            phase = ma.frac(x);
       };
 // -----------------------------------------------------------------------------
@@ -175,6 +171,7 @@ asinc_bi(M, x) = ba.if(phase < ma.EPSILON,
 // for the generation of unipolar band-limited impulse trains.
 // The unipolar BLIT has a DC component and the number of harmonics include the 
 // fundamental frequency and its multiples (both even and odd). 
+//
 // The amplitude of the function, regardless of the harmonics, 
 // is normalised to unit-amplitude peaks.
 //
@@ -193,12 +190,13 @@ asinc_bi(M, x) = ba.if(phase < ma.EPSILON,
 // 1 outputs:
 //    y[n], unipolar sinc function.
 //
-asinc_uni(M, x) = ba.if(phase < ma.EPSILON, 
+asinc_uni(M, x) = m2.if(phase < ma.EPSILON, 
                         1, 
-                        sin((1 + 2 * M) * ma.PI * phase) / 
-                           (sin(ma.PI * phase) * (1 + 2 * M)))
+                        sin((1 + 2 * M1) * ma.PI * phase) / 
+                           (sin(ma.PI * phase) * (1 + 2 * M1)))
     with {
-        phase = ma.frac(x);
+       M1 = rint(M);
+       phase = ma.frac(x);
     };
 // -----------------------------------------------------------------------------
 
@@ -1292,7 +1290,6 @@ uni(x) = (x + 1) / 2;
 //
 twopi = 2 * ma.PI;
 // -----------------------------------------------------------------------------
-
 
 // m2.unit_log(T[n], x[n]); ----------------------------------------------------
 //
