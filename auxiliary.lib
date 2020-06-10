@@ -70,5 +70,5 @@ inspect(i, lower, upper) =
 // Compile-time arguments: 
 //    "m", step size in samples.
 //
-step(m) = 1 <:  _ - _ @(m);
+step(m) = 1 <:  _ - (_ @ m);
 // -----------------------------------------------------------------------------
