@@ -11,79 +11,81 @@
 // 
 // List of functions:
 // 
-//       aad, 
-//       avg_ari, 
-//       avg_ari_w, 
-//       avg_geo, 
-//       avg_geo_w, 
-//       avg_harm, 
-//       avg_harm_w, 
-//       avg_pow, 
-//       avg_quad, 
-//       bip, 
-//       complement, 
-//       delta, 
-//       delta2, 
-//       diff, 
-//       div, 
-//       hp_and, 
-//       hp_imp, 
-//       hp_nand, 
-//       hp_nimp, 
-//       hp_nor, 
-//       hp_nxr, 
-//       hp_or, 
-//       hp_xor, 
-//       interpolate_mn, 
-//       if, 
-//       ifN, 
-//       inv, 
-//       line, 
-//       line_reset, 
-//       map_lin, 
-//       map_par, 
-//       map_pcw, 
-//       map_log, 
-//       map_pow, 
-//       matrix, 
-//       maxN, 
-//       minN, 
-//       ny, 
-//       ph, 
-//       primes, 
-//       prime_base_pow, 
-//       relay_hysteron, 
-//       round_pow2, 
-//       rt9, 
-//       rt19, 
-//       rt55, 
-//       rt60, 
-//       sd, 
-//       sp, 
-//       topologies, 
-//       top_anti_diag, 
-//       top_diagonal, 
-//       top_diag_shift, 
-//       top_full, 
-//       top_tri_low, 
-//       top_tri_up, 
-//       uni, 
-//       unit_log, 
-//       var, 
-//       w, 
-//       window_hann, 
-//       window_sine, 
-//       wrap, 
-//       y_and, 
-//       y_or, 
-//       z_and, 
-//       z_imp, 
-//       z_nand, 
-//       z_nimp, 
-//       z_nor, 
-//       z_nxr, 
-//       z_or, 
-//       z_xor.
+//    aad, 
+//    asinc_bi,
+//    asinc_uni,
+//    avg_ari, 
+//    avg_ari_w, 
+//    avg_geo, 
+//    avg_geo_w, 
+//    avg_harm, 
+//    avg_harm_w, 
+//    avg_pow, 
+//    avg_quad,
+//    bip, 
+//    complement, 
+//    delta, 
+//    delta2, 
+//    diff, 
+//    div, 
+//    hp_and, 
+//    hp_imp, 
+//    hp_nand, 
+//    hp_nimp, 
+//    hp_nor, 
+//    hp_nxr, 
+//    hp_or, 
+//    hp_xor, 
+//    interpolate_mn, 
+//    if, 
+//    ifN, 
+//    inv, 
+//    line, 
+//    line_reset, 
+//    map_lin, 
+//    map_par, 
+//    map_pcw, 
+//    map_log, 
+//    map_pow, 
+//    matrix, 
+//    maxN, 
+//    minN, 
+//    ny, 
+//    ph, 
+//    primes, 
+//    prime_base_pow, 
+//    relay_hysteron, 
+//    round_pow2, 
+//    rt9, 
+//    rt19, 
+//    rt55, 
+//    rt60, 
+//    sd, 
+//    sp, 
+//    topologies, 
+//    top_anti_diag, 
+//    top_diagonal, 
+//    top_diag_shift, 
+//    top_full, 
+//    top_tri_low, 
+//    top_tri_up, 
+//    uni, 
+//    unit_log, 
+//    var, 
+//    w, 
+//    window_hann, 
+//    window_sine, 
+//    wrap, 
+//    y_and, 
+//    y_or, 
+//    z_and, 
+//    z_imp, 
+//    z_nand, 
+//    z_nimp, 
+//    z_nor, 
+//    z_nxr, 
+//    z_or, 
+//    z_xor.
 //
 // Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
 // All rights reserved.
@@ -123,6 +125,43 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
                        (si.bus(N) :> / (N) <: si.bus(N)) : ro.interleave(N, 2) : 
       par(i, N, (- : abs)) :> _) ,
       (si.bus(N) :> / (N)) : m2.div : / ((N - 1) * 2);
+// -----------------------------------------------------------------------------
+
+// m2.asinc_bi(H[n], ph[n]) ----------------------------------------------------
+//
+// Bipolar periodic sinc function with arbitrary number of harmonics. 
+// The bipolar band-limited impulse train (BLIT) has no DC component and the 
+// number of harmonics include the fundamental and its odd multiples. 
+// The amplitude of the BLIT, regardless of the harmonics, is normalised to 
+// unit-amplitude peaks.
+//
+// Unlike the technique described in [Stilson and Smith 1996] that
+// discusses an implementation of the bipolar BLIT by summation of a
+// unipolar BLIT with its delayed and inverted copy, the technique
+// showed here uses an even ratio between the frequencies of the sine
+// functions.
+//
+// The bipolar BLIT has a period of 2pi, although the phase input of the
+// function is normalised to the range [0; 1] for a full cycle.
+//
+// 2 inputs:
+//    H[n], (integer) number of harmonics including the fundamental
+//         frequency and the odd harmonics.
+//    ph[n], phase of the sinc function in the range [0; 1]. Values
+//         outside of that range are allowed as they are wrapped around.
+//
+// 1 outputs:
+//    y[n], bipolar sinc function.
+//
+asinc_bi(M, x) = ba.if(phase < ma.EPSILON,
+                       1,
+                       ba.if(  abs(.5 - phase) < ma.EPSILON,
+                               -1,
+                               sin(2 * M * 2 * ma.PI * phase) / 
+                                   (sin(2 * ma.PI * phase) * 2 * M)))
+      with {
+           phase = ma.frac(x);
+      };
 // -----------------------------------------------------------------------------
 
 // m2.avg_ari(N); --------------------------------------------------------------
