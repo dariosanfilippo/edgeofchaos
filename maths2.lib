@@ -155,10 +155,10 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
                        1,
                        m2.if(  abs(.5 - phase) < ma.EPSILON,
                                -1,
-                               sin(2 * M1 * 2 * ma.PI * phase) / 
-                                   (sin(2 * ma.PI * phase) * 2 * M1)))
+                               sin(M1 * 2 * ma.PI * phase) / 
+                                   (sin(2 * ma.PI * phase) * M1)))
       with {
-           M1 = rint(M);
+           M1 = rint(M) * 2;
            phase = ma.frac(x);
       };
 // -----------------------------------------------------------------------------
@@ -176,7 +176,9 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
 // is normalised to unit-amplitude peaks.
 //
 // The technique described here is based on the paper
-// [Stilson and Smith 1996].
+// [Stilson and Smith 1996]:
+//
+// https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
 //
 // The unipolar sinc has a period of π, although the phase input of the
 // function is normalised to the range [0; 1] for a full cycle.
@@ -192,10 +194,10 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
 //
 asinc_uni(M, x) = m2.if(phase < ma.EPSILON, 
                         1, 
-                        sin((1 + 2 * M1) * ma.PI * phase) / 
-                           (sin(ma.PI * phase) * (1 + 2 * M1)))
+                        sin((M1 * ma.PI * phase) / 
+                           (sin(ma.PI * phase) * M1))
     with {
-       M1 = rint(M);
+       M1 = rint(M) * 2 + 1;
        phase = ma.frac(x);
     };
 // -----------------------------------------------------------------------------
