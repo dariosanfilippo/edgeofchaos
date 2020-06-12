@@ -140,11 +140,29 @@ blit_uni(h, f) = m2.asinc_uni(h1, phase)
       };
 // -----------------------------------------------------------------------------
 
-// Lorenz system; ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf
-// arguments are: initial conditions for x, y, z; a, b, r, dt
-// coeffcients.
-// Try process = lorenz(1.2, 1.3, 1.6, 10, 8/3, 28, .005); for a strange
-// attractor (way out of the -1-to-1 range)
+// o2.lorenz(x0, y0, z0, a[n], b[n], r[n], dt[n]); -----------------------------
+//
+// Lorenz system: chaotic recursive system of differential equations.
+//
+// Ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf.
+//
+// Try process = o2.lorenz(1.2, 1.3, 1.6, 10, 8/3, 28, .005); for a strange
+// attractor (way out of the [-1; 1] range).
+//
+// 7 inputs:
+//    x0, initial condition for the first equation (0 for n != 0);
+//    y0, initial condition for the second equation (0 for n != 0);
+//    z0, initial condition for the third equation (0 for n != 0);
+//    a[n], coefficient in the first equation;
+//    b[n], coefficient in the third equation;
+//    r[n], coefficient in the second equation;
+//    dt[n], discrete time interval.
+//
+// 3 output:
+//    y1[n], first equation;
+//    y2[n], second equation;
+//    y3[n], third equation.
+//
 lorenz(x0, y0, z0, a, b, r, dt) =   iterate
                                     ~ ( _ ,
                                         _ ,
@@ -159,8 +177,21 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
                z1 = z + z0 - z0';
            };
       };
+// -----------------------------------------------------------------------------
 
-// quadrature oscillator by Martin Vicanek
+// o2.osc_quad(F[n]); ----------------------------------------------------------
+//
+// Recursive quadrature oscillator by Martin Vicanek.
+//
+// Ref: https://vicanek.de/articles/QuadOsc.pdf.
+//
+// 1 inputs:
+//    F[n], oscillator frequency in Hz.
+//
+// 2 outputs:
+//    y1[n], cosine (real part);
+//    y2[n], sine (imaginary part).
+//
 osc_quad(f) =  tick 
                ~ ( _ , 
                    _)
@@ -173,41 +204,124 @@ osc_quad(f) =  tick
                omega = (u + au.dirac) - k1 * v;
            };
       };
+// -----------------------------------------------------------------------------
 
-// phasor with phase reset
-ph(freq, reset) = freq / ma.SR * r :   (+ : ma.decimal)
-                                       ~ * (r)
+// o2.ph(F[n], R[n]); ----------------------------------------------------------
+//
+// Phasor with reset input.
+//
+// Note: the arguments of the function should be inverted for
+// consistency, but that requires checking for backward compatibility.
+//
+// 2 inputs:
+//    F[n], frequency in Hz;
+//    R[n], reset phasor to zero if R[n] != 0.
+//
+// 1 outputs:
+//    y[n], phasor output.
+//
+ph(freq, reset) =  (+ (freq / ma.SR * r) : ma.decimal)
+                   ~ * (r)
       with {
-           r = 1 - (reset != 0);
+           r = reset == 0;
       };
+// -----------------------------------------------------------------------------
 
-// BLIT-based variable width pulse train
+// o2.pulse_train(H[n], D[n], F[n]); -------------------------------------------
+//
+// BLIT-based variable width pulse train. Implemented following
+// [Stilson and Smith 1996]:
+//
+// https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
+//
+// 3 inputs:
+//    H[n], number of harmonics, both even and odd, cast to the closest
+//             INT and phase-locked to the beginning of each cycle. The harmonic
+//             content is affected by the duty cycle;
+//    D[n], duty cycle in the range [0; 1];
+//    F[n], pulse train frequency in Hz.
+//
+// 1 outputs:
+//    y[n], band-limited pulse train.
+//
 pulse_train(h, d, f) = blit_bi_duty(h, d, f) : f2.leaky(.1 / m2.twopi) / 
       scale + d
       with {
            lim = rint(ma.SR / f / 2);
            scale = m2.div(lim, min(lim, h)) : si.smooth(ba.tau2pole(.1));
       };
+// -----------------------------------------------------------------------------
 
-// BLIT-based saw
+// o2.saw(H[n], F[n]); ---------------------------------------------------------
+//
+// BLIT-based band-limited sawtooth oscillator.
+//
+// This function is based on [Stilson and Smith 1996], although the
+// scaling factor for a unit-amplitude normalisation has been determined by 
+// the author.
+//
+// Ref: https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
+//
+// 2 inputs:
+//    H[n], number of harmonics (both even and odd), cast to the closest INT;
+//    F[n], frequency of the oscillator in Hz.
+//
+// 1 outputs:
+//    y[n], band-limited sawtooth oscillator.
+//
 saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : f2.leaky(.1 / m2.twopi) / 
       scale : fi.highpass(1, 20)
       with {
            lim = floor(ma.SR / f / 2);
            scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
+// -----------------------------------------------------------------------------
 
-// BLIT-based square
+// o2.square(H[n], F[n]); ------------------------------------------------------
+//
+// BLIT-based band-limited square oscillator. This technique implements
+// the integration of a bipolar BLIT. The bipolar BLIT is based on a sinc
+// function with even ratios between the sine functions used in sinc, which
+// result in a more precise harmonic content throughout the entire
+// frequency range. The scaling factor normalises the output to unit
+// amplitude for all frequencies and harmonics.
+//
+// 2 inputs:
+//    H[n], number of harmonics (odd), cast to the closest
+//             INT and phase-locked to the beginning of each cycle.
+//    F[n], frequency of the oscillator in Hz.
+//
+// 1 outputs:
+//    y[n], band-limited square oscillator.
+//
 square(h, f) = blit_bi(h, f) : f2.leaky(.1 / m2.twopi) / scale : 
       fi.highpass(1, 20)
       with {
            lim = rint(ma.SR / f / 4);
            scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
+// -----------------------------------------------------------------------------
 
-// BLIT-based triangle
-tri(h, f) = square(h, f) : leaky / scale : fi.highpass(1, 20)
+// o2.triangle(H[n], F[n]); ----------------------------------------------------
+//
+// BLIT-based band-limited triangle oscillator. This technique implements
+// the integration of a BLIT-based square wave. The bipolar BLIT in the square 
+// wave is based on a sinc function with even ratios between the sine functions 
+// used in sinc, which result in a more precise harmonic content throughout 
+// the entire frequency range. The scaling factor normalises the output to unit
+// amplitude for all frequencies and harmonics
+//
+// 2 inputs:
+//    H[n], number of harmonics (odd), cast to the closest
+//             INT and phase-locked to the beginning of each cycle.
+//    F[n], frequency of the oscillator in Hz.
+//
+// 1 outputs:
+//    y[n], band-limited triangle oscillator.
+//
+triangle(h, f) = square(h, f) : f2.leaky(.1 / m2.twopi) / scale : 
+      fi.highpass(1, 20)
       with {
-           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
            scale = rint(ma.SR / f / 4) : si.smooth(ba.tau2pole(.1));
       };
+// -----------------------------------------------------------------------------
