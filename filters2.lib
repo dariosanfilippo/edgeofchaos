@@ -33,7 +33,8 @@
 //    int_eu_f, 
 //    int_trap, 
 //    int_trap_clip, 
-//    integrator, 
+//    integrator,
+//    leaky,
 //    lpbi, 
 //    lpblti, 
 //    lp1p, 
@@ -424,8 +425,8 @@ int_clip(lower, upper, in) =   (+ (in / ma.SR) : st.clip(lower, upper))
 // 1 outputs:
 //    y[n], integrated x[n].
 //
-int_eu_b(cf, x) = x * m2.w(cf) :   +
-                                   ~ _;
+int_eu_b(cf, x) =  + (x * m2.w(cf))
+                   ~ _;
 // -----------------------------------------------------------------------------
 
 // f2.int_eu_clip(L[n], H[n], CF[n], x[n]); ------------------------------------
@@ -510,8 +511,25 @@ int_trap_clip(l, u, cf, x) =
 // 1 outputs:
 //    y[n], integrated x[n].
 //
-integrator(x) = x / ma.SR :    + 
-                               ~ _;
+integrator(x) =    + (x / ma.SR) 
+                   ~ _;
+// -----------------------------------------------------------------------------
+
+// f2.leaky(R[n], x[n]); -------------------------------------------------------
+//
+// Leaky integrator based on the tau constant, that is, an integrator
+// with decay specified in seconds. Also special case of backward Euler's 
+// integration with CF = SR / (2PI).
+//
+// 2 inputs:
+//    R[n], decay of about 9 dB in a desired time specified in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], (leakly) integrated x[n].
+//
+leaky(t, x) =  + (x) 
+               ~ * (ba.tau2pole(t));
 // -----------------------------------------------------------------------------
 
 // f2.lpbi(CF[n], x[n]); -------------------------------------------------------
