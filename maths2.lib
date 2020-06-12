@@ -465,21 +465,18 @@ diff(x) = x - x';
 
 // m2.div(x1[n], x2[n]); -------------------------------------------------------
 //
-// Divider that avoids INF with division by zero, as it can sometimes
-// cause crashes.
+// Divider that avoids NANs in case of 0/0 but allows INF when a non-zero 
+// quantity is divided by zero.
 //
 // 2 inputs:
 //    x1[n];
 //    x2[n].
 //
 // 1 outputs:
-//    y[n], x1[n] / x2[n], if x2[n] != 0.
+//    y[n], x1[n] / x2[n], if x1[n] != x2[n].
 //
-div(x1, x2) = m2.if(x2 == 0, 0, x1 / x2);
+div(x1, x2) = m2.if(x1 == x2, 1, x1 / x2);
 //
-// Note: this could only guard against NANs
-//    div(x1, x2) = m2.if(x1 == 0 & x2 == 0, 0, x1 / x2);
-// allowing INF. It would also make sense to output 1 for 0/0 instead of 0.
 // -----------------------------------------------------------------------------
 
 // m2.hp_and(x1[n], x2[n]); ----------------------------------------------------
