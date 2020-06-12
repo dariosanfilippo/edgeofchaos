@@ -68,7 +68,8 @@
 //    top_diag_shift, 
 //    top_full, 
 //    top_tri_low, 
-//    top_tri_up, 
+//    top_tri_up,
+//    twopi
 //    uni, 
 //    unit_log, 
 //    var, 
@@ -129,7 +130,7 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
 
 // m2.asinc_bi(H[n], ph[n]); ---------------------------------------------------
 //
-// asinc_bp[n] = sin(2H[n]2π*ph[n])/(sin(2π*ph[n])*2M).
+// asinc_bp[n] = sin(2H[n]2π*ph[n])/(sin(2π*ph[n])*2H[n]).
 //
 // Bipolar periodic sinc function with arbitrary number of harmonics for
 // the generation of band-limited impulse trains (BLIT).
@@ -141,6 +142,11 @@ aad(N) = si.bus(N) <:  (si.bus(N) ,
 //
 // The bipolar sinc has a period of 2π, although the phase input of the
 // function is normalised to the range [0; 1] for a full cycle.
+//
+// Unlike the technique described in [Stilson and Smith 1996], the
+// bipolar sinc function is realised by having an even ratio between the
+// frequencies of the sine functions, which results in a precise harmonic
+// content throughout the entire frequency range when deployed in BLITs.
 //
 // 2 inputs:
 //    H[n], (integer) number of harmonics including the fundamental
@@ -155,8 +161,8 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
                        1,
                        m2.if(  abs(.5 - phase) < ma.EPSILON,
                                -1,
-                               sin(M1 * 2 * ma.PI * phase) / 
-                                   (sin(2 * ma.PI * phase) * M1)))
+                               sin(M1 * m2.twopi * phase) / 
+                                   (sin(m2.twopi * phase) * M1)))
       with {
            M1 = rint(M) * 2;
            phase = ma.frac(x);
@@ -165,7 +171,7 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
 
 // m2.asinc_uni(H[n], ph[n]); --------------------------------------------------
 //
-// asinc_uni[n] = sin((2H[n]+1)*2π*ph[n])/(sin(2π*ph[n])*(2M+1)).
+// asinc_uni[n] = sin((2H[n]+1)*2π*ph[n])/(sin(2π*ph[n])*(2H[n]+1)).
 //
 // Unipolar periodic sinc function with arbitrary number of harmonics
 // for the generation of unipolar band-limited impulse trains.
@@ -194,7 +200,7 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
 //
 asinc_uni(M, x) = m2.if(phase < ma.EPSILON, 
                         1, 
-                        sin((M1 * ma.PI * phase) / 
+                        sin(M1 * ma.PI * phase) / 
                            (sin(ma.PI * phase) * M1))
     with {
        M1 = rint(M) * 2 + 1;
@@ -470,6 +476,10 @@ diff(x) = x - x';
 //    y[n], x1[n] / x2[n], if x2[n] != 0.
 //
 div(x1, x2) = m2.if(x2 == 0, 0, x1 / x2);
+//
+// Note: this could only guard against NANs
+//    div(x1, x2) = m2.if(x1 == 0 & x2 == 0, 0, x1 / x2);
+// allowing INF. It would also make sense to output 1 for 0/0 instead of 0.
 // -----------------------------------------------------------------------------
 
 // m2.hp_and(x1[n], x2[n]); ----------------------------------------------------
@@ -698,7 +708,7 @@ inv(x) = div(1, x);
 //
 // Line function. Note that the function does not start from 0. If you
 // require a precise behaviour, you can use the following:
-//    m2.line(ba.select2(1', 0, A[n]));
+//    m2.line(ba.select2(1', 0, S[n]));
 //
 // 1 inputs:
 //    S[n], the slope of the line (y/x ratio).
@@ -706,8 +716,8 @@ inv(x) = div(1, x);
 // 1 outputs:
 //    y[n], the line function.
 //
-line(s) = select2(1', 0, s) / ma.SR :  +
-                                       ~ _;
+line(s) =  + (s / ma.SR)
+           ~ _;
 // -----------------------------------------------------------------------------
 
 // m2.line_reset(S[n], reset[n]); ----------------------------------------------
@@ -724,8 +734,8 @@ line(s) = select2(1', 0, s) / ma.SR :  +
 // 1 outputs:
 //    y[n], the line function.
 //
-line_reset(rate, reset) =  rate / ma.SR * r :  +
-                                               ~ * (r)
+line_reset(rate, reset) =  + (rate / ma.SR * r)
+                           ~ * (r)
       with {
            r = 1 - (reset != 0);
       };
@@ -763,7 +773,7 @@ map_lin(lower, upper, x) = x * (upper - lower) + lower;
 // 1 outputs:
 //    y[n], mapped x[n].
 //
-map_par(t, vertex, sides, x) = x * 2 - 1 : pow(t_1) : map_lin(vertex, sides)
+map_par(t, vertex, sides, x) = x * 2 - 1 : pow(t_1) : m2.map_lin(vertex, sides)
       with {
            t_1 = int(t) * 2;
       };
@@ -790,7 +800,9 @@ map_par(t, vertex, sides, x) = x * 2 - 1 : pow(t_1) : map_lin(vertex, sides)
 //    y[n], mapped x[n].
 //
 map_pcw(split, exp1, l1, u1, exp2, l2, u2, x) = 
-      m2.if(x <= split, map_pow(exp1, l1, u1, x), map_pow(exp2, l2, u2, x));
+      m2.if(   x <= split, 
+               map_pow(exp1, l1, u1, x), 
+               m2.map_pow(exp2, l2, u2, x));
 // -----------------------------------------------------------------------------
 
 // m2.map_log(T[n], L[n], H[n], x[n]); -----------------------------------------
@@ -808,7 +820,7 @@ map_pcw(split, exp1, l1, u1, exp2, l2, u2, x) =
 //    y[n], mapped x[n].
 //
 map_log(t, lower, upper, x) = log(x * (t - 1) + 1) / log(t) : 
-      map_lin(lower, upper);
+      m2.map_lin(lower, upper);
 // -----------------------------------------------------------------------------
 
 // m2.map_pow(T[n], L[n], H[n], x[n]); -----------------------------------------
@@ -825,7 +837,7 @@ map_log(t, lower, upper, x) = log(x * (t - 1) + 1) / log(t) :
 // 1 outputs:
 //    y[n], mapped x[n].
 //
-map_pow(t, lower, upper, x) = x : pow(t) : map_lin(lower, upper);
+map_pow(t, lower, upper, x) = pow(x, t) : m2.map_lin(lower, upper);
 // -----------------------------------------------------------------------------
 
 // m2.matrix(R, C); ------------------------------------------------------------
@@ -948,8 +960,7 @@ primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
 // Compile-time arguments:
 //    N, (integer) N-th prime number up to 64.
 //
-prime_base_pow(N, exponent) =  ba.take(N, primes) ,
-                               exponent : pow;
+prime_base_pow(N, exponent) = pow(ba.take(N, primes), exponent);
 // -----------------------------------------------------------------------------
 
 // m2.relay_hysteron(A[n], B[n], x[n]); ----------------------------------------
@@ -967,7 +978,10 @@ prime_base_pow(N, exponent) =  ba.take(N, primes) ,
 relay_hysteron(alpha, beta, x) =   loop 
                                    ~ _
 with {
-    loop(fb) = m2.if(x <= alpha, 0, m2.if(x >= beta, 1, fb));
+    loop(fb) = m2.if(  x <= alpha, 
+                       0, m2.if(   x >= beta, 
+                                   1, 
+                                   fb));
 };
 // -----------------------------------------------------------------------------
 
@@ -1027,7 +1041,7 @@ rt19(t) = ba.tau2pole(t / 2.2);
 // 1 outputs:
 //    y[n], pole position.
 //
-rt55(t) = ba.tau2pole(t / (2 * ma.PI));
+rt55(t) = ba.tau2pole(t / m2.twopi);
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
@@ -1336,7 +1350,7 @@ var(N) = si.bus(N) <:  si.bus(N) ,
 //    y[n], angular frequency between 0 and π, assuming an input between
 //             0 and Nyquist.
 //
-w(x) = x * 2 * ma.PI / ma.SR;
+w(x) = x * m2.twopi / ma.SR;
 // -----------------------------------------------------------------------------
 
 // m2.window_hann(ph[n]); -------------------------------------------------------

@@ -1,33 +1,139 @@
-/* Mainly BLIT-based oscillators and self-oscillating systems
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== oscillators2.lib =================================================
+// =============================================================================
+//
+// This library contains band-limited oscillators with arbitrary harmonic 
+// contentfor classic analogue waveforms such as sawtooth, square, and triangle 
+// waves, as well as band-limited pulse-trains with arbitrary
+// duty-cycles. The library includes a quadrature oscillator based on,
+// arguably, the best recursive design available in the literature, and
+// self-oscillating systems based on chaotic functions.
+//
+// The environment prefix is "o2".
+//
+// List of functions:
+//
+//    blit_bi,
+//    blit_bi_duty,
+//    blit_uni,
+//    lorenz,
+//    osc_quad,
+//    ph,
+//    pulse_train,
+//    saw,
+//    square,
+//    tri.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Oscillators Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
 ma = library("maths.lib");
 m2 = library("maths2.lib");
+os = library("oscillators.lib");
 o2 = library("oscillators2.lib");
 
-// bipolar BLIT
-blit_bp(f, h, d) = m2.delta(10, d1, blit_up(f, 2 * h))
+// o2.blit_bi(H[n], F[n]); -----------------------------------------------------
+//
+// Bipolar band-limited impulse train (BLIT) based on period sinc function. 
+//
+// The maximum harmonic number is given by:
+//
+//    rint(SR/frequency/4).
+//
+// The bipolar BLIT has no DC component and the number of harmonics include 
+// the fundamental frequency and its odd multiples. Variations in the harmonic 
+// content take place at the beginning of each cycle to avoid clicks. Hence, 
+// changes will take place after a time that is the period of the BLIT or less.
+//
+// Unlike the technique described in [Stilson and Smith 1996] where the 
+// bipolar BLIT is implemented by summation of a unipolar BLIT with its 
+// delayed and inverted copy, the technique showed here uses an even ratio 
+// between the frequencies of the sine functions used to generate the sinc, 
+// which shows a correct harmonic content (odd harmonics) for any given 
+// BLIT frequencies.
+//
+// The amplitude of the function, regardless of the harmonics, 
+// is normalised to unit-amplitude peaks.
+//
+// 2 inputs:
+//    H[n], (rounded to rint inside the asinc function) number of harmonics;
+//    F[n], BLIT frequency in Hz.
+//
+// 1 outputs:
+//    y[n], bipolar band-limited impulse train.
+//
+blit_bi(h, f) = m2.asinc_bi(h1, phase)
+      with {
+           lim = rint(ma.SR / f / 4);
+           h1 = ba.sAndH(trigger, min(lim, h));
+           trigger = (ma.signum(f) * (phase - phase') < 0);
+           // add a Dirac to "trigger" is you require the initial value
+           // of H[n] to be triggered immediately
+           phase = os.phasor(1, f);
+      };
+// -----------------------------------------------------------------------------
+
+// o2.blit_bi_duty(H[n], D[n], F[n]); ------------------------------------------
+//
+// Bipolar band-limited impulse train with arbitrary duty cycle
+// following the paper by [Stilson and Smith 1996]:
+//
+// https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
+//
+// 3 inputs:
+//    H[n], (rounded to rint) number of harmonics;
+//    D[n], duty cycle in the range [0; 1];
+//    F[n], frequency of the BLIT in Hz.
+//
+// 1 outputs:
+//    y[n], bipolar BLIT with arbitrary duty cycle.
+//
+blit_bi_duty(h, d, f) = m2.delta(10, d1, o2.blit_uni(h, f))
       with {
            d1 = d * m2.div(1, f);
       };
+// -----------------------------------------------------------------------------
 
-// unipolar BLIT
-// the phase is mapped over 2PI hence the phasor rate is halved,
-// as the Sinc function has a period of PI
-blit_up(f, h) = sinc_m(phase)
+// o2.blit_uni(H[n], F[n]); ----------------------------------------------------
+//
+// The unipolar BLIT has a DC component and the number of harmonics include the 
+// fundamental frequency and its multiples (both even and odd). 
+//
+// The technique described here is based on the paper by
+// [Stilson and Smith 1996]:
+//
+// https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
+//
+// The amplitude of the function, regardless of the harmonics, 
+// is normalised to unit-amplitude peaks.
+//
+// 2 inputs:
+//    H[n], (rounded to rint inside the asinc function) number of harmonics;
+//    F[n], BLIT frequency in Hz.
+//
+// 1 outputs:
+//    y[n], unipolar band-limited impulse train.
+//
+blit_uni(h, f) = m2.asinc_uni(h1, phase)
       with {
-           sinc_m(x) = m2.div(sin(x * M), (sin(x) * M));
-           phase = o2.ph(f / 2, 0) * 2 * ma.PI;
-           lim = 2 * floor(m2.div(ma.SR, f) / 2) + 1;
-           M = min(h * 2 + 1, lim);
+           lim = floor(ma.SR / f / 2);
+           h1 = ba.sAndH(trigger, min(lim, h));
+           trigger = (ma.signum(f) * (phase - phase') < 0);
+           // add a Dirac to "trigger" is you require the initial value
+           // of H[n] to be triggered immediately
+           phase = os.phasor(1, f);
       };
+// -----------------------------------------------------------------------------
 
 // Lorenz system; ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf
 // arguments are: initial conditions for x, y, z; a, b, r, dt
@@ -40,8 +146,8 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
                                         _)
       with {
            iterate(x, y, z) =  x1 + a * (y1 - x1) * dt,
-                           y1 + (r * x1 - y1 - x1 * z1) * dt,
-                           z1 + (x1 * y1 - b * z1) * dt
+                               y1 + (r * x1 - y1 - x1 * z1) * dt,
+                               z1 + (x1 * y1 - b * z1) * dt
            with {
                x1 = x + x0 - x0';
                y1 = y + y0 - y0';
@@ -72,28 +178,33 @@ ph(freq, reset) = freq / ma.SR * r :   (+ : ma.decimal)
       };
 
 // BLIT-based variable width pulse train
-pulse_train(f, h, d) = 
-      blit_bp(f, h, d) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale + d
+pulse_train(h, d, f) = blit_bi_duty(h, d, f) : leaky / scale + d
       with {
-           lim = floor(ma.SR / f / 2) + 1;
-           scale = 2 * min(lim, h) / lim;
+           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
+           lim = rint(ma.SR / f / 2);
+           scale = lim / min(lim, h) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based saw
-saw(f, h) = blit_up(f, h) <: _ - f2.lp1p(f / 10) : 
-      fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
+saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : leaky / scale :
+      fi.highpass(1, 20)
       with {
-           lim = floor(ma.SR / f / 2) + 1;
-           scale = 2 * min(lim, h) / lim;
+           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
+           lim = floor(ma.SR / f / 2);
+           scale = lim / (2 * min(lim, h)) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based square
-square(f, h) = blit_bp(f, h, .5) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * scale
+square(h, f) = blit_bi(h, f) : leaky / scale : fi.highpass(1, 20)
       with {
-           lim = floor(ma.SR / f / 4) + 1;
-           scale = 2 * min(lim, h) / lim;
+           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
+           lim = rint(ma.SR / f / 4);
+           scale = lim / (2 * min(lim, h)) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based triangle
-tri(f, h) = square(f, h) : fi.pole(ba.tau2pole(1 / (2 * ma.PI))) * 
-      (f / (ma.SR / 4));
+tri(h, f) = square(h, f) : leaky / scale : fi.highpass(1, 20)
+      with {
+           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
+           scale = rint(ma.SR / f / 4) : si.smooth(ba.tau2pole(.1));
+      };
