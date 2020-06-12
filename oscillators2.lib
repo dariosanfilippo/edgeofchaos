@@ -3,8 +3,8 @@
 // =============================================================================
 //
 // This library contains band-limited oscillators with arbitrary harmonic 
-// contentfor classic analogue waveforms such as sawtooth, square, and triangle 
-// waves, as well as band-limited pulse-trains with arbitrary
+// content for classic analogue waveforms such as sawtooth, square, 
+// and triangle waves, as well as band-limited pulse-trains with arbitrary
 // duty-cycles. The library includes a quadrature oscillator based on,
 // arguably, the best recursive design available in the literature, and
 // self-oscillating systems based on chaotic functions.
@@ -34,6 +34,7 @@ declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
 declare version "1.0.0";
 declare license "GPLv2.0";
 
+au = library("auxiliary.lib");
 ba = library("basics.lib");
 fi = library("filters.lib");
 f2 = library("filters2.lib");
@@ -59,7 +60,7 @@ o2 = library("oscillators2.lib");
 // bipolar BLIT is implemented by summation of a unipolar BLIT with its 
 // delayed and inverted copy, the technique showed here uses an even ratio 
 // between the frequencies of the sine functions used to generate the sinc, 
-// which shows a correct harmonic content (odd harmonics) for any given 
+// which results in a correct harmonic content (odd harmonics) for any given 
 // BLIT frequencies.
 //
 // The amplitude of the function, regardless of the harmonics, 
@@ -77,8 +78,8 @@ blit_bi(h, f) = m2.asinc_bi(h1, phase)
            lim = rint(ma.SR / f / 4);
            h1 = ba.sAndH(trigger, min(lim, h));
            trigger = (ma.signum(f) * (phase - phase') < 0);
-           // add a Dirac to "trigger" is you require the initial value
-           // of H[n] to be triggered immediately
+           // Add au.dirac to "trigger" if you require the initial value
+           // of H[n] to be triggered initially at n = 0.
            phase = os.phasor(1, f);
       };
 // -----------------------------------------------------------------------------
@@ -90,6 +91,10 @@ blit_bi(h, f) = m2.asinc_bi(h1, phase)
 //
 // https://ccrma.stanford.edu/~stilti/papers/blit.pdf.
 //
+// The lowest frequency at which an entire duty cycle can be explored is
+// 1 Hz. If lower frequencies are required, the first argument of
+// m2.delta should be changed.
+//
 // 3 inputs:
 //    H[n], (rounded to rint) number of harmonics;
 //    D[n], duty cycle in the range [0; 1];
@@ -98,7 +103,7 @@ blit_bi(h, f) = m2.asinc_bi(h1, phase)
 // 1 outputs:
 //    y[n], bipolar BLIT with arbitrary duty cycle.
 //
-blit_bi_duty(h, d, f) = m2.delta(10, d1, o2.blit_uni(h, f))
+blit_bi_duty(h, d, f) = m2.delta(1, d1, o2.blit_uni(h, f))
       with {
            d1 = d * m2.div(1, f);
       };
@@ -129,8 +134,8 @@ blit_uni(h, f) = m2.asinc_uni(h1, phase)
            lim = floor(ma.SR / f / 2);
            h1 = ba.sAndH(trigger, min(lim, h));
            trigger = (ma.signum(f) * (phase - phase') < 0);
-           // add a Dirac to "trigger" is you require the initial value
-           // of H[n] to be triggered immediately
+           // Add au.dirac to "trigger" if you require the initial value
+           // of H[n] to be triggered initially at n = 0.
            phase = os.phasor(1, f);
       };
 // -----------------------------------------------------------------------------
@@ -160,13 +165,12 @@ osc_quad(f) =  tick
                ~ ( _ , 
                    _)
       with {
-           init = 1 - 1';
            k1 = tan(ma.PI * f / ma.SR);
            k2 = 2 * k1 / (1 + k1 * k1);
            tick(u, v) =    omega - k1 * (v + k2 * omega) , 
                            v + k2 * omega
            with {
-               omega = (u + init) - k1 * v;
+               omega = (u + au.dirac) - k1 * v;
            };
       };
 
@@ -178,28 +182,27 @@ ph(freq, reset) = freq / ma.SR * r :   (+ : ma.decimal)
       };
 
 // BLIT-based variable width pulse train
-pulse_train(h, d, f) = blit_bi_duty(h, d, f) : leaky / scale + d
+pulse_train(h, d, f) = blit_bi_duty(h, d, f) : f2.leaky(.1 / m2.twopi) / 
+      scale + d
       with {
-           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
            lim = rint(ma.SR / f / 2);
-           scale = lim / min(lim, h) : si.smooth(ba.tau2pole(.1));
+           scale = m2.div(lim, min(lim, h)) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based saw
-saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : leaky / scale :
-      fi.highpass(1, 20)
+saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : f2.leaky(.1 / m2.twopi) / 
+      scale : fi.highpass(1, 20)
       with {
-           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
            lim = floor(ma.SR / f / 2);
-           scale = lim / (2 * min(lim, h)) : si.smooth(ba.tau2pole(.1));
+           scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based square
-square(h, f) = blit_bi(h, f) : leaky / scale : fi.highpass(1, 20)
+square(h, f) = blit_bi(h, f) : f2.leaky(.1 / m2.twopi) / scale : 
+      fi.highpass(1, 20)
       with {
-           leaky = fi.pole(ba.tau2pole(.1 / m2.twopi));
            lim = rint(ma.SR / f / 4);
-           scale = lim / (2 * min(lim, h)) : si.smooth(ba.tau2pole(.1));
+           scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
 
 // BLIT-based triangle
