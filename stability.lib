@@ -102,8 +102,7 @@ limiter_lookaheadN(N, lag, threshold, attack, hold, release) =
       si.bus(N) <: par(i, N, @ (lag * ma.SR)) ,
                    (scaling <: si.bus(N)) : ro.interleave(N, 2) : par(i, N, *)
 with {
-      scaling =    threshold ,
-                   amp_profile : / : min(1);
+      scaling = m2.div(threshold, amp_profile) : min(1);
       amp_profile = par(i, N, abs) : m2.maxN(N) : ip.peak_hold(hold) : 
        att_smooth(attack) : rel_smooth(release);
       att_smooth(time, in) = f2.lp1p(1 / time, in);
