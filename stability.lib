@@ -89,7 +89,7 @@ hyperbolic(x) = x/(1+abs(x));
 limiter_lookahead(lag, threshold, attack, hold, release, x) =
       x @ (lag * ma.SR) * scaling
 with {
-      scaling = threshold / amp_profile : min(1);
+      scaling = m2.div(threshold, amp_profile) : min(1);
       amp_profile = ip.peak_hold(hold, x) : att_smooth(attack) :
        rel_smooth(release);
       att_smooth(time, in) = f2.lp1p(1 / time, in);
