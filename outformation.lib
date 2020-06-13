@@ -50,8 +50,29 @@ ro = library("routes.lib");
 si = library("signals.lib");
 st = library("stability.lib");
 
-// granulator based on DL with overlap-add to 1 but non-homogeneous windowing 
-// and transposition
+// op.grains_dl_nhw(S, P[n], R[n], pos[n], E[n], x[n]); ------------------------
+//
+// Granulator based on delay lines with overlap-add to 1 and non-homogeneous 
+// windowing and transposition. Hence, for nonlinear factors other than 1 
+// (the exponent), the windowing function is asymmetrical and the
+// reading of each grain includes a pitch modulation.
+//
+// 5 inputs:
+//    P[n], linear pitch factor (1 for no transposition; 2 for an octave
+//         up; .5 for an octave down);
+//    R[n], amount of grains per second;
+//    pos[n], position of the grain in the buffer in the range [0; S],
+//         where "S" is the size of the buffer in seconds;
+//    E[n], exponent, nonlinearity for the windowing and pitch modulation;
+//    x[n].
+//
+// 1 ouputs:
+//    y[n], granulated x[n].
+//
+// 1 compile-time arguments:
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
 grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1 + head2
       with {
            s = size * ma.SR : m2.round_pow2 / ma.SR;
@@ -77,53 +98,93 @@ grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1 + head2
                            sah(ph2, rate) : m2.div) * ph2;
                };
       };
+// -----------------------------------------------------------------------------
 
-// DL-based ZC granulator
+// op.grains_dl_zc(V, S, P[n], R[n], pos[n], x[n]); ----------------------------
+//
+// Delay-line-based windowless (rectangular window) granulator that
+// handles discontinuities through zero-crossing detection.
+//
+// Ref:    https://tmblr.co/Zhtq9xYAy2bPee00;
+//         https://tmblr.co/Zhtq9x2i76aPG.
+//
+// 4 inputs:
+//    P[n], linear pitch factor (1 for no transposition; 2 for an octave
+//         up; .5 for an octave down);
+//    R[n], amount of grains per second;
+//    pos[n], position of the grain in the buffer in the range [0; S],
+//         where "S" is the size of the buffer in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], granulated x[n].
+//
+// 2 compile-time arguments:
+//    V, number of voices;
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
 grains_dl_zc(voices, size1) = par(i, voices,    loop
                                                 ~ _) :> / (voices)
-with {
-    loop(out, pitch1, rate1, position1, input) =
-        (ba.sAndH(trigger(out), zc_index(position, input, out)) 
-            + shift(trigger(out))) : m2.wrap(0, size) - 1 ,
-        input : grain
-    with {
-        trigger(y) =    loop
-                        ~ _
-        with {
-            loop(ready) =   
-               ip.zc(y) ,
-               (m2.line_reset(ba.sAndH(au.dirac + ready, rate), ready) >= 1) : 
-                   &;
-        };
-        shift(reset) = m2.div((1 - pitch), rate) *
-            m2.line_reset(rate, reset) * ma.SR;
-        zc_index(recall, x, y) = 
-           index - m2.if(m2.diff(y) >= 0, zc_up, zc_down) : m2.wrap(0, size)
-        with {
-            zc_up = ba.sAndH(store, index), recall : dl
-            with {
-                store = ip.zc(x) ,
-                        (m2.diff(x) > 0) : &;
-            };
-            zc_down = ba.sAndH(store, index), recall : dl
-            with { 
-                store = ip.zc(x) ,
-                        (m2.diff(x) < 0) : &;
-            };
-        };
-        size = size1 * ma.SR : m2.round_pow2;
-        rate = abs(rate1);
-        pitch = ba.sAndH(trigger(out), pitch1);
-        position = position1 * ma.SR : m2.wrap(0, size);
-        index = ba.period(size);
-        grain(del, in) = de.fdelayltv(4, size, del, in);
-        dl(in, del) = de.delay(size, del, in);
-    };
+      with {
+           loop(out, pitch1, rate1, position1, input) =
+               (ba.sAndH(trigger(out), zc_index(position, input, out)) 
+                   + shift(trigger(out))) : m2.wrap(0, size) - 1 ,
+               input : grain
+           with {
+               trigger(y) =    loop
+                               ~ _
+               with {
+                   loop(ready) =   
+                       ip.zc(y) ,
+                       (m2.line_reset(ba.sAndH(au.dirac + ready, rate), 
+                                               ready) >= 1) : &;
+               };
+               shift(reset) = m2.div((1 - pitch), rate) *
+                   m2.line_reset(rate, reset) * ma.SR;
+               zc_index(recall, x, y) = 
+                   index - m2.if(m2.diff(y) >= 0, zc_up, zc_down) : 
+                       m2.wrap(0, size)
+                   with {
+                       zc_up = ba.sAndH(store, index), recall : dl
+                           with {
+                               store = ip.zc(x) ,
+                                       (m2.diff(x) > 0) : &;
+                           };
+                       zc_down = ba.sAndH(store, index), recall : dl
+                           with { 
+                               store = ip.zc(x) ,
+                                       (m2.diff(x) < 0) : &;
+                           };
+                   };
+           size = size1 * ma.SR : m2.round_pow2;
+           rate = abs(rate1);
+           pitch = ba.sAndH(trigger(out), pitch1);
+           position = position1 * ma.SR : m2.wrap(0, size);
+           index = ba.period(size);
+           grain(del, in) = de.fdelayltv(4, size, del, in);
+           dl(in, del) = de.delay(size, del, in);
+      };
 };
-
 // -----------------------------------------------------------------------------
-// table-based ZC granulator, i.e., discontinuities are handled through ZC 
-// detection
+
+// op.grains_zc(pos[n], size[n], x[n]); ----------------------------------------
+//
+// Table-based windowless (rectangular window) granulator that
+// handles discontinuities through zero-crossing detection.
+//
+// Ref:    https://tmblr.co/Zhtq9xYAy2bPee00;
+//         https://tmblr.co/Zhtq9x2i76aPG.
+//
+// 3 inputs:
+//    pos[n], position of the grain in the buffer in the range [0; S],
+//         where "S" is the size of the buffer in seconds;
+//    size[n], size of grains in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], granulated x[n].
+//
 grains_zc(position, g_size, x) =    grains
                                     ~ _
       with {
@@ -131,8 +192,7 @@ grains_zc(position, g_size, x) =    grains
            l = g_size * ma.SR;
            p = position * ma.SR;
            input = x;
-           rec_index = % (s) 
-                       ~ + (1);
+           rec_index = ba.period(s);
            grains(fb) =    int(s) ,
                            0.0 ,
                            int(rec_index) ,
@@ -175,15 +235,32 @@ grains_zc(position, g_size, x) =    grains
                                int(p % s) : rwtable;
            };
       };
+// -----------------------------------------------------------------------------
 
-// real-time pitch-shifter with 4th-order pol. delay lines
-pitch_shift(buff_size, frame, factor, x) = 
+// op.pitch_shift(S, P[n], size[n], x[n]); -------------------------------------
+//
+// Real-time pitch-shifter using 4th-order Lagrange polynomial fractional 
+// delay lines.
+//
+// 3 inputs:
+//    P[n], linear pitch factor (1 for no transposition; 2 for an octave
+//         up; .5 for an octave down);
+//    size[n], size of frames in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], pitch-shifted x[n].
+//
+// 1 compile-time arguments:
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
+pitch_shift(buff_size, factor, frame, x) = 
       d2.del_pol(buff_size, del1, x) * w1 , 
       d2.del_pol(buff_size, del2, x) * w2 :> _
       with {
-           frame_1 = frame : abs;
-           rate =  1 ,
-                   frame_1 : m2.div;
+           frame_1 = abs(frame);
+           rate = m2.div(1, frame_1);
            shift = (1 - factor) * frame_1;
            offset = m2.if(shift < 0, -shift, 0);
            limit = m2.round_pow2(buff_size * ma.SR) / ma.SR; 
@@ -194,53 +271,129 @@ pitch_shift(buff_size, frame, factor, x) =
            del1 = shift * ph1 + offset : m2.wrap(0, limit);
            del2 = shift * ph2 + offset : m2.wrap(0, limit); 
       };
+// -----------------------------------------------------------------------------
 
-// pole modulation of normalised 1-pole systems, hence oscillating
-// between low-pass and high-pass. The modulator has a shaping parameter
-// going from -1 to 1 where the we have square at -1, sine at 0, pulses at 1
+// op.pole_mod(R[n], E[n], x[n]); ----------------------------------------------
+//
+// Pole modulation of normalised one-pole system, hence oscillating
+// between lowpass and highpass. The modulator has a shaping parameter
+// going from -1 to 1 where the we have squarewave at -1, a sinewave at 0, 
+// and impulses at 1.
+//
+// 3 inputs:
+//    R[n], modulation rate in Hz;
+//    E[n], shaping parameter in the range [-1; 1];
+//    x[n].
+//
+// 1 outputs:
+//    y[n], pole-modulated x[n].
+//
 pole_mod(rate, shaping, x) = x * norm : fi.pole(mod)
       with {
            norm = 1 - abs(mod);
-           mod = os.oscsin(rate) <: ma.signum * (abs : pow(shaping1))
+           mod = os.osc(rate) <: ma.signum * (abs : pow(shaping1))
            with {
                shaping1 = pow(1000, st.clip(-1, 1, shaping));
            };
       };
+// -----------------------------------------------------------------------------
 
-// Feedback delay network reverb with non-transposing variable DL;
-// n must be a power of 2; FB coeffients are stable up to a magnitude of 1
-rev_fdn_smo(n, max_size, it, size, fb_coeff, cf, in) = 
+// op.rev_fdn_smo(N, S, IT[n], size[n], FB[n], CF[n], x[n]); -------------------
+//
+// Elementary Nth-order feedback delay network reverb with non-transposing 
+// variable delay lines.
+//
+// 5 inputs:
+//    IT[n], interpolation time in seconds to transition between
+//         different delays;
+//    size[n], exponent for as many prime numbers as the order of the
+//         network, the result of which determines the length of the
+//         delay lines in seconds;
+//    FB[n], feedback coefficient, whose magnitude should be less or
+//         equal to 1 for stability;
+//    CF[n], cut-off frequency in Hz, of lowpass filters within the
+//         feedback loop that model the dampening of high freqiencies.
+//
+// 1 outputs:
+//    y[n], normalised sum of the N signals in the network.
+//
+// 2 compile-time arguments:
+//    N, order of the network (INT);
+//    S, max size of the delay lines in seconds.
+//
+rev_fdn_smo(N, max_size, it, size, fb_coeff, cf, in) = 
       (summing : delays : filters : matrix : fb) 
-      ~ si.bus(n) :> / (n)
+      ~ si.bus(N) :> / (N)
+      with {
+           st = 1 / sqrt(N);
+           summing = par(i, N, + (in));
+           delays = par(i, N,  max_size , 
+                               it ,
+                               (   size : m2.prime_base_pow(i + 1)) ,
+                                   _) : par(i, N, d2.del_smo);
+           filters = par(i, N, f2.lp1p(cf));
+           matrix = ro.hadamard(N);
+           fb = par(i, N, * (fb_coeff * st));
+      };
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Feedback delay network reverb with variable DL;
+// n must be a power of 2; FB coeffients are stable up to a magnitude of 1
+// op.rev_fdn_pol(N, S, size[n], FB[n], CF[n], x[n]); --------------------------
+//
+// Elementary Nth-order feedback delay network reverb with transposing 
+// variable delay lines (4th-order Lagrange interpolation).
+//
+// 5 inputs:
+//    size[n], exponent for as many prime numbers as the order of the
+//         network, the result of which determines the length of the
+//         delay lines in seconds;
+//    FB[n], feedback coefficient, whose magnitude should be less or
+//         equal to 1 for stability;
+//    CF[n], cut-off frequency in Hz, of lowpass filters within the
+//         feedback loop that model the dampening of high freqiencies.
+//
+// 1 outputs:
+//    y[n], normalised sum of the N signals in the network.
+//
+// 2 compile-time arguments:
+//    N, order of the network (INT);
+//    S, max size of the delay lines in seconds.
+//
+rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = 
+      (summing : delays : filters : matrix : fb) 
+      ~ si.bus(n) :> /(n)
       with {
            st = 1 / sqrt(n);
            summing = par(i, n, + (in));
-           delays = par(i, n,  max_size , 
-                               it ,
-                               (   size : m2.prime_base_pow(i + 1)) ,
-                                   _) : par(i, n, d2.del_smo);
+           delays = par(i, n,  max_size ,
+                               (   size : m2.prime_base_pow(i + 1)),
+                                   _) : par(i, n, d2.del_pol);
            filters = par(i, n, f2.lp1p(cf));
            matrix = ro.hadamard(n);
            fb = par(i, n, * (fb_coeff * st));
       };
+// -----------------------------------------------------------------------------
 
-// Feedback delay network reverb with variable DL;
-// n must be a power of 2; FB coeffients are stable up to a magnitude of 1
-rev_fdn_pol(n, max_size, size, fb_coeff, cf, in) = 
-      (summing : delays : filters : matrix : fb) 
-      ~ si.bus(n) :> /(n)
-with {
-      st = 1 / sqrt(n);
-      summing = par(i, n, + (in));
-      delays = par(i, n,   max_size ,
-                           (   size : m2.prime_base_pow(i + 1)),
-                               _) : par(i, n, d2.del_pol);
-      filters = par(i, n, f2.lp1p(cf));
-      matrix = ro.hadamard(n);
-      fb = par(i, n, * (fb_coeff * st));
-};
-
-// sampler with speed, frame size, and buffer position control
+// op.sampler(S, size[n], pos[n], P[n], x[n]); ---------------------------------
+//
+// Sampler with pitch, frame size, and buffer position control.
+//
+// 4 inputs:
+//    size[n], frame size in seconds;
+//    pos[n], position of the frame in the buffer in the range [0; S],
+//         where S is the size of the buffer in seconds;
+//    P[n], pitch factor;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], sampled x[n].
+//
+// 1 compile-time arguments:
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
 sampler(buff_size, frame, position, factor, x) = d2.del_pol(buff_size, del, x)
       with {
            frame_1 = abs(frame) : f2.lp1p(20);
@@ -252,13 +405,40 @@ sampler(buff_size, frame, position, factor, x) = d2.del_pol(buff_size, del, x)
            ph = m2.ph(rate, 0);
            del = shift * ph + offset+position_1 : m2.wrap(0, limit);
       }; 
+// -----------------------------------------------------------------------------
 
-// single-sideband modulation (positive side)
+// op.ssbm(F[n], x[n]); --------------------------------------------------------
+//
+// Single-sideband modulation (positive side).
+//
+// 2 inputs:
+//    F[n], frequency shift in Hz;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], frequency-shifted x[n].
+//
 ssbm(shift, in) =  f2.analytic(in) ,
                    o2.osc_quad(shift) : si.cmul :  _ ,
                                                    !;
+// -----------------------------------------------------------------------------
 
-// real-time time-stretcher with delay lines
+// op.time_stretch(S, size[n], T[n], x[n]); ------------------------------------
+//
+// Real-time time stretcher with delay lines.
+//
+// 3 inputs:
+//    size[n], frame size in seconds;
+//    T[n], time stretching factor;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], time-stretched x[n].
+//
+// 1 compile-time arguments:
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
 time_stretch(buff_size, frame, factor, x) =    
       d2.del_pol(buff_size, del1, x) * w1 , 
       d2.del_pol(buff_size, del2, x) * w2 :> _
@@ -274,14 +454,40 @@ time_stretch(buff_size, frame, factor, x) =
            del1 = position : ba.sAndH(m2.diff(ph1) < 0);
            del2 = position : ba.sAndH(m2.diff(ph2) < 0);
       };
+// -----------------------------------------------------------------------------
 
-// time-variant transfer function
+// op.tvtf(S, ZCR[n], TF[n], x[n]); --------------------------------------------
+//
+// Time-variant transfer function: the transfer function is determined
+// by an incoming signal. The input signal is wrapped around in the
+// range [-1; 1]; -1 corresponds to the beginning of the transfer
+// function, 0 is the centre of the buffer, whereas 1 is the upper edge.
+//
+// The input signal that determines the transfer function is lowpassed
+// to control the number of zero-crossings in the transfer function, which
+// correlates to the number added partials, and normalised to unit-amplitude
+// peaks.
+//
+// Ref: [Roads 1979] "A tutorial on non-linear distortion or waveshaping 
+//         synthesis." Computer Music Journal, pages 29–34.
+//
+// 3 inputs:
+//    ZCR[n], (roughly) number of zero-crossings in the transfer
+//         function;
+//    TF[n], signal writing the transfer function;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], x[n] processed through the transfer function.
+//
+// 1 compile-time arguments:
+//    S, size of the buffer in seconds, which is converted into the
+//         closest power-of-two samples that represent such length.
+//
 tvtf(s, zcr, f, in) = d2.del_pol(s, in1, f1)
       with {
            in1 = in : m2.wrap(-1, 1) : m2.uni * s1;
            s1 = s * ma.SR : m2.round_pow2 / ma.SR;
            f1 = f : seq(i, 4, f2.lp1p(zcr / s1)) : st.dyn_norm_peak(1 / s1, 1);
       };
-
-
-
+// -----------------------------------------------------------------------------
