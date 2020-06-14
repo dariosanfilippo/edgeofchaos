@@ -122,6 +122,7 @@ dyn_comp_peak(release, curve, in) = in * agc
 dyn_comp_rms(window, curve, in) = in * agc
       with {
            agc = 1 - min(ip.rms(window, in), 1) : pow(curve);
+      };
 // -----------------------------------------------------------------------------
 
 // st.dyn_norm_peak(R[n], T[n], x[n]); -----------------------------------------
