@@ -1,10 +1,47 @@
-/* Stability processing functions including standard dynamics processing as well as 
- * self-regulating designs.
- *
- * Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com> 
- *
- * All rights reserved.
- */
+// =============================================================================
+// ========== stability.lib ====================================================
+// =============================================================================
+//
+// This library module includes a set of functions for stability processing 
+// that can be deployed in self-oscillating systems or any other systems
+// that require control over the boundaries of amplitude values. Depending 
+// on the specific applications, it is possible to use different designs
+// ranging from bounded saturators, lookahead limiters, and adaptive
+// self-regulating dynamic processing.
+//
+// The filters for the amplitude analysis are based on a time constant
+// that is tau * 2π.
+//
+// The bounded saturators are taken from [Zavalishin 2012], "The art of
+// VA filter design".
+//
+// The environment prefix is "st".
+//
+// List of functions:
+//
+//    clip,
+//    cubic,
+//    dyn_comp_peak,
+//    dyn_comp_rms,
+//    dyn_norm_peak,
+//    dyn_norm_rms,
+//    hyperbolic,
+//    limiter,
+//    limiter_lookahead,
+//    limiter_lookaheadN,
+//    parabolic,
+//    sinatan,
+//    tanh.
+//
+// Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
+// All rights reserved.
+
+declare name "Stability Processing Library";
+declare author "Dario Sanfilippo";
+declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
+      at gmail dot com>";
+declare version "1.0.0";
+declare license "GPLv2.0";
 
 ba = library("basics.lib");
 d2 = library("delays2.lib");
@@ -16,109 +53,280 @@ ro = library("routes.lib");
 si = library("signals.lib");
 st = library("stability.lib");
 
-// hard clipping
-clip(lower, upper, in) = in : max(lower) : min(upper);
+// st.clip(L[n], H[n], x[n]); --------------------------------------------------
+//
+// Hard clipping function.
+//
+// 3 inputs:
+//    L[n], lower limit;
+//    H[n], upper limit;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], hard-limited x[n].
+//
+clip(lower, upper, in) = min(max(lower, in), upper);
+// -----------------------------------------------------------------------------
 
-// cubic nonlinear distortion
-cubic(x) = select3( cond,   -2/3,
-                            x-(x*x*x/3),
-                            2/3)
-with {
-    cond =  (   (x : >(-1)),
-                (x : <(1)) : &),
-            (x : >=(1))*2 :> _;
-};
+// st.cubic(x[n]); -------------------------------------------------------------
+//
+// Cubic saturator.
+//
+// 1 inputs:
+//    x[n].
+//
+// 1 outputs:
+//    y[n], soft-clipped x[n] in the range [-2/3; 2/3].
+//
+cubic(x) = select3(cond, -2 / 3, x - x^3 / 3, 2 / 3)
+      with {
+           cond = (    (x > -1) ,
+                       (x < 1) : &) + (x >= 1) * 2;
+      };
+// -----------------------------------------------------------------------------
 
-// dynamical compression based on peak
-dyn_comp_peak(release, curve, in) =    in,
-                                       (1-min(ip.peak_env(release, in), 1) 
-                                           : pow(curve)) : *;
+// st.dyn_comp_peak(R[n], E[n], x[n]); -----------------------------------------
+//
+// Adaptive compression based on peak envelope analysis.
+//
+// 3 inputs:
+//    R[n], release time in seconds for the peak envelope analysis;
+//    E[n], exponential curve, exponent to the complement of the peak
+//         envelope curve: higher gain reductions for exponents > 1,
+//         lower gain reductions for exponents between 0 and 1;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], compressed x[n].
+//
+dyn_comp_peak(release, curve, in) = in * agc
+      with {
+           agc = 1 - min(ip.peak_env(release, in), 1) : pow(curve);
+      };
+// -----------------------------------------------------------------------------
 
-// dynamical compression based on RMS
-dyn_comp_rms(window, curve, in) =  in,
-                                   (1-min(ip.rms(window, in), 1)
-                                       : pow(curve)) : *;
+// st.dyn_comp_rms(R[n], E[n], x[n]); ------------------------------------------
+//
+// Adaptive compression based on RMS analysis.
+//
+// 3 inputs:
+//    R[n], response time in seconds for the RMS envelope analysis;
+//    E[n], exponential curve, exponent to the complement of the peak
+//         envelope curve: higher gain reductions for exponents > 1,
+//         lower gain reductions for exponents between 0 and 1;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], compressed x[n].
+//
+dyn_comp_rms(window, curve, in) = in * agc
+      with {
+           agc = 1 - min(ip.rms(window, in), 1) : pow(curve);
+// -----------------------------------------------------------------------------
 
-// dynamical normalisation based on peak
-dyn_norm_peak(release, target, input) = input*ratio
-with {
-      ratio =  ip.peak_env(release, target),
-               ip.peak_env(release, input) : m2.div;
-};
+// st.dyn_norm_peak(R[n], T[n], x[n]); -----------------------------------------
+//
+// Adaptive normalisation based on peak envelope analysis.
+//
+// 3 inputs:
+//    R[n], release time in seconds for the peak envelope analysis;
+//    T[n], target linear amplitude for the normalisation process;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], normalised x[n].
+//
+dyn_norm_peak(release, target, input) = input * agc
+      with {
+           agc =   ip.peak_env(release, target) ,
+                   ip.peak_env(release, input) : m2.div;
+      };
+// -----------------------------------------------------------------------------
 
-// dynamical normalisation based on RMS
-dyn_norm_rms(window, target, input) = input*ratio
-with {
-      ratio =  ip.rms(window, target),
-               ip.rms(window, input) : m2.div;
-};
+// st.dyn_norm_rms(R[n], T[n], x[n]); ------------------------------------------
+//
+// Adaptive normalisation based on RMS analysis.
+//
+// 3 inputs:
+//    R[n], response time in seconds for the RMS analysis;
+//    T[n], target linear amplitude for the normalisation process;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], normalised x[n].
+//
+dyn_norm_rms(window, target, input) = input * agc
+      with {
+           agc =   ip.rms(window, target) ,
+                   ip.rms(window, input) : m2.div;
+      };
+// -----------------------------------------------------------------------------
 
-// hyperbolic saturator
-hyperbolic(x) = x/(1+abs(x));
+// st.hyperbolic(L[n], x[n]); --------------------------------------------------
+//
+// Hyperbolic saturator.
+//
+// 2 inputs:
+//    L[n], saturation limit.
+//    x[n].
+//
+// 1 outputs:
+//    y[n], soft-clipped x[n] in the range [-L[n]; L[n]].
+//
+hyperbolic(l, x1) = l * (x / (1 + abs(x)))
+      with {
+           x = m2.div(x1, l);
+      };
+// -----------------------------------------------------------------------------
 
-// Simple lookahead limiter based on IOhannes Zmölnig post, which is in
+// st.limiter(L[n], x[n]); -----------------------------------------------------
+//
+// Mono lookahead limiter. Special case of st.limiter_lookahead. (See below.)
+//
+// 2 inputs:
+//    L[n], linear amplitude limiting threshold;
+//    x[n].
+//
+// 1 outputs:
+//    lookahead-limited x[n] in the range [-L[n]; L[n]].
+//
+limiter(lim, in) = limiter_lookahead(.002, 1, .002, .1, 1, in);
+// -----------------------------------------------------------------------------
+
+// st.limiter_lookahead(D, L[n], A[n], H[n], R[n], x[n]); ----------------------
+//
+// Mono lookahead limiter inspired by IOhannes Zmölnig post, which is in
 // turn based on the thesis by Peter Falkner "Entwicklung eines digitalen 
 // Stereo-Limiters mit Hilfe des Signalprozessors DSP56001".
-// This version of the limiter simply uses a peak-holder with smoothed
-// attack and release based on e^(-2pi) time constant filters.
-// This time constant allows for the amplitude profile to reach 1 -
-// e^(-2pi) of the final peak after the attack time. The input path
-// can be delayed by the same amount as attack time to synchronise input and
-// amplitude profile, or by any other lookahead time specified by the user.
-//
-// #### Usage
-//
-// ```
-// _ : limiter_basic_mono(lag, threshold, attack, hold, release) : _;
-// ```
-//
-// Where:
-//
-// * `lag` lookahead delay in seconds.
-// * `threshold` is the linear amplitude limiting threshold.
-// * `attack` is the attack time in seconds. 
-// * `hold` is hold time in seconds.
-// * `release` is release time in seconds.
-//
-// Example: limiter_basic_mono(.01, 1, .01, .1, 1);
-//
-// #### Reference:
-//
+// 
 // http://iem.at/~zmoelnig/publications/limiter/.
-//-----------------------------------------------------------------------------
+//
+// This version of the limiter uses a peak-holder with smoothed
+// attack and release based on tau * 2π time constant filters.
+// This time constant allows for the amplitude profile to reach 
+// 1 - e^(-2pi) of the final peak after the attack time. The input path
+// can be delayed by the same amount as the attack time to synchronise input 
+// and amplitude profile, or by any other lookahead time specified by the user.
+//
+// Note that rather than using two switching filter sections for the
+// attack and release smoothing, two independent filters are cascaded, a
+// one-pole lowpass to smooth out the attack, and a peak envelope to smooth
+// out the release. Since the filters are cascaded, the release time is
+// slightly delayed by the lowpass filter, although that will also smooth
+// out the attack-release transition knee resulting in a cleaner signal.
+//
+// 5 inputs:
+//    L[n], linear amplitude limiting threshold;
+//    A[n], attack time in seconds;
+//    H[n], hold time in seconds;
+//    R[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], lookahead-limited x[n] in the range [-L[n]; L[n]].
+//
+// 1 compile-time arguments:
+//    D, lookahead delay in seconds.
+//
 limiter_lookahead(lag, threshold, attack, hold, release, x) =
-      x @ (lag * ma.SR) * scaling
-with {
-      scaling = m2.div(threshold, amp_profile) : min(1);
-      amp_profile = ip.peak_hold(hold, x) : att_smooth(attack) :
-       rel_smooth(release);
-      att_smooth(time, in) = f2.lp1p(1 / time, in);
-      rel_smooth(time, in) = ip.peak_env(time, in);
-};
+      x @ (lag * ma.SR) * agc
+      with {
+           agc = m2.div(threshold, amp_profile) : min(1);
+           amp_profile = ip.peak_hold(hold, x) : att_smooth(attack) :
+               rel_smooth(release);
+           att_smooth(time, in) = f2.lp1p(1 / time, in);
+           rel_smooth(time, in) = ip.peak_env(time, in);
+      };
+// -----------------------------------------------------------------------------
 
-// N-channel limiter based on the above algorithm. The scaling factor
-// applied to all channels is based on the peak between them all.
+// st.limiter_lookaheadN(N, D, L[n], A[n], H[n], R[n]); ------------------------
+//
+// N-channel limiter based on the mono lookahead limiter. See above for a full 
+// description of the algorithm. 
+//
+// The amplitude profile is calculated based on the peak between all of
+// the signals and the same scaling factor is applied to all of the
+// channels to preserve their amplitude ratios.
+//
+// N+4 inputs:
+//    L[n], linear amplitude limiting threshold;
+//    A[n], attack time in seconds;
+//    H[n], hold time in seconds;
+//    R[n], release time in seconds;
+//    x1[n];
+//    ...;
+//    xN-1[n];
+//    xN[n], input channels.
+//
+// N outputs:
+//    y1[n]; 
+//    ...;
+//    yN-1[n];
+//    yN[n], lookahead-limited input channels in the range [-L[n]; L[n]].
+//
+// 2 compile-time arguments:
+//    N, (integer) number of input channels;
+//    D, lookahead delay in seconds.
+//
 limiter_lookaheadN(N, lag, threshold, attack, hold, release) =
       si.bus(N) <: par(i, N, @ (lag * ma.SR)) ,
-                   (scaling <: si.bus(N)) : ro.interleave(N, 2) : par(i, N, *)
-with {
-      scaling = m2.div(threshold, amp_profile) : min(1);
-      amp_profile = par(i, N, abs) : m2.maxN(N) : ip.peak_hold(hold) : 
-       att_smooth(attack) : rel_smooth(release);
-      att_smooth(time, in) = f2.lp1p(1 / time, in);
-      rel_smooth(time, in) = ip.peak_env(time, in);
-};
+                   (agc <: si.bus(N)) : ro.interleave(N, 2) : par(i, N, *)
+      with {
+           agc = m2.div(threshold, amp_profile) : min(1);
+           amp_profile = par(i, N, abs) : m2.maxN(N) : ip.peak_hold(hold) : 
+               att_smooth(attack) : rel_smooth(release);
+           att_smooth(time, in) = f2.lp1p(1 / time, in);
+           rel_smooth(time, in) = ip.peak_env(time, in);
+      };
+// -----------------------------------------------------------------------------
 
-// Lookahead limiter special case (mono).
-limiter(lim, in) = limiter_lookahead(.002, 1, .002, .1, 1, in);
+// st.parabolic(L[n], x[n]); ---------------------------------------------------
+//
+// Parabolic saturator.
+//
+// 2 inputs:
+//    L[n], saturation limit;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], soft-clipped x[n] in the range [-L[n]; L[n]].
+//
+parabolic(l, x1) = l * (m2.if(abs(x) >= 2, ma.signum(x), x * (1 - abs(x / 4))))
+      with {
+           x = m2.div(x1, l);
+      };
+// -----------------------------------------------------------------------------
 
-// parabolic saturator
-parabolic(x) = ba.if(abs(x) : >=(2),    ma.signum(x),
-                                        x*(1-abs(x/4)));
+// st.sinatan(L[n], x[n]); -----------------------------------------------------
+//
+// Sin(arctan(x)) saturator.
+//
+// 2 inputs:
+//    L[n], saturation limit;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], soft-clipped x[n] in the range [-L[n]; L[n]].
+//
+sinatan(l, x1) = l * (x / sqrt(1 + x * x))
+      with {
+           x = m2.div(x1, l);
+      };
+// -----------------------------------------------------------------------------
 
-// sin(arctan(x))
-sinatan(x) = x/sqrt(1+x*x);
-
-// hyperbolic tangent (I mainly needed this for a test on the web editor; 
-// you may want to use ma.tanh)
-tanh(x) = (exp(2*x)-1)/(exp(2*x)+1);
+// st.tanh(L[n], x[n]); --------------------------------------------------------
+//
+// Hyperbolic tangent. 
+//
+// 2 inputs:
+//    L[n], saturation limit;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], soft-clipped x[n] in the range [-L[n]; L[n]].
+//
+tanh(l, x1) = l * ((exp(2 * x) - 1) / (exp(2 * x) + 1))
+      with {
+           x = m2.div(x1, l);
+      };
+// -----------------------------------------------------------------------------   
