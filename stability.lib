@@ -80,8 +80,8 @@ clip(lower, upper, in) = min(max(lower, in), upper);
 //
 cubic(x) = select3(cond, -2 / 3, x - x^3 / 3, 2 / 3)
       with {
-           cond = (    (x > -1) ,
-                       (x < 1) : &) + (x >= 1) * 2;
+           cond = ((x > -1) ,
+                   (x < 1) : &) + (x >= 1) * 2;
       };
 // -----------------------------------------------------------------------------
 
@@ -190,7 +190,7 @@ hyperbolic(l, x1) = l * (x / (1 + abs(x)))
 // 1 outputs:
 //    lookahead-limited x[n] in the range [-L[n]; L[n]].
 //
-limiter(lim, in) = limiter_lookahead(.002, 1, .002, .1, 1, in);
+limiter(lim, in) = limiter_lookahead(.002, lim, .002, .1, 1, in);
 // -----------------------------------------------------------------------------
 
 // st.limiter_lookahead(D, L[n], A[n], H[n], R[n], x[n]); ----------------------
