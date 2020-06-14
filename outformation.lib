@@ -465,11 +465,8 @@ time_stretch(buff_size, frame, factor, x) =
 //
 // The input signal that determines the transfer function is lowpassed
 // to control the number of zero-crossings in the transfer function, which
-// correlates to the number added partials, and normalised to unit-amplitude
-// peaks.
-//
-// Ref: [Roads 1979] "A tutorial on non-linear distortion or waveshaping 
-//         synthesis." Computer Music Journal, pages 29–34.
+// correlates to the number added partials, [Roads 1979] and normalised to 
+// unit-amplitude peaks.
 //
 // 3 inputs:
 //    ZCR[n], (roughly) number of zero-crossings in the transfer

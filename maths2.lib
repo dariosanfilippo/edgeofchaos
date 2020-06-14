@@ -119,7 +119,7 @@ si = library("signals.lib");
 // 1 outputs:
 //    y[n], average absolute deviation in the range [0; 1] of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 aad(N) = si.bus(N) <:  (si.bus(N) ,
@@ -221,7 +221,7 @@ asinc_uni(M, x) = m2.if(phase < ma.EPSILON,
 // 1 outputs:
 //    y[n], arithmetic mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 avg_ari(N) = si.bus(N) :> / (N);
@@ -244,7 +244,7 @@ avg_ari(N) = si.bus(N) :> / (N);
 // 1 outputs:
 //    y[n], weighted arithmetic mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals and corresponding weighting
 //         signals.
 //
@@ -268,7 +268,7 @@ avg_ari_w(N) = si.bus(N) ,
 // 1 outputs:
 //    y[n], geometric mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 avg_geo(N) = prod(i, N, _) : pow(1 / N);
@@ -291,7 +291,7 @@ avg_geo(N) = prod(i, N, _) : pow(1 / N);
 // 1 outputs:
 //    y[n], weighted geometric mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals and corresponding weighting
 //         signals.
 //
@@ -315,7 +315,7 @@ avg_geo_w(N) = (si.bus(N) : par(i, N, log)) ,
 // 1 outputs:
 //    y[n], harmonic mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 avg_harm(N) = si.bus(N) : par(i, N, ma.inv) :> N / _;
@@ -337,7 +337,7 @@ avg_harm(N) = si.bus(N) : par(i, N, ma.inv) :> N / _;
 // 1 outputs:
 //    y[n], weighted harmonic mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals and corresponding weighting
 //         signals.
 //
@@ -362,7 +362,7 @@ avg_harm_w(N) =    (si.bus(N) : par(i, N, ma.inv)) ,
 // 1 outputs:
 //    y[n], generalised mean of a set of N elements.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integere) number of input signals.
 //
 avg_pow(N, m) = si.bus(N) : par(i, N, pow(m)) :> / (N) : pow(1 / m);
@@ -381,7 +381,7 @@ avg_pow(N, m) = si.bus(N) : par(i, N, pow(m)) :> / (N) : pow(1 / m);
 // 1 outputs:
 //    y[n], quadratic mean of the input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 avg_quad(N) = si.bus(N) : par(i, N, _ <: *) :> / (N) : sqrt;
@@ -425,7 +425,7 @@ complement(x) = 1 - x;
 // 1 outputs:
 //    y[n], first derivative of x[n].
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    S, maximum differentiation period in seconds.
 //
 delta(s, t, in) =  in - d2.del_lin(s, t, in);
@@ -443,7 +443,7 @@ delta(s, t, in) =  in - d2.del_lin(s, t, in);
 // 1 outputs:
 //    y[n], second derivative of x[n].
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    S, maximum differentiation period in seconds.
 //
 delta2(s, t, in) = delta(s, t, in) : delta(s, t);
@@ -625,7 +625,7 @@ hp_xor(x, y) = x + y - 2 * x * y;
 //    yN-1[n];
 //    yN[n], interpolated N-signal block.
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    M, (integer) number of blocks;
 //    N, integer number of signals in each block.
 //
@@ -852,7 +852,7 @@ map_pow(t, lower, upper, x) = pow(x, t) : m2.map_lin(lower, upper);
 //
 // C outputs.
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -870,7 +870,7 @@ matrix(r, c) = (si.bus(r), ro.interleave(c, r)) : ro.interleave(r, c + 1) :
 // 1 outputs:
 //    y[n], max value between the N signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 maxN(1) = _;
@@ -887,7 +887,7 @@ maxN(N) = max(maxN(N - 1));
 // 1 outputs:
 //    y[n], min value between the N signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 minN(1) = _;
@@ -954,7 +954,7 @@ primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
 // 1 outputs:
 //    y[n], N-th prime number raised to a power.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) N-th prime number up to 64.
 //
 prime_base_pow(N, exponent) = pow(ba.take(N, primes), exponent);
@@ -1068,7 +1068,7 @@ rt60(t) = ba.tau2pole(t / 6.907755279);
 // 1 outputs:
 //    y[n], standard deviation between the N input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, input signals.
 //
 sd(N) = sqrt(var(N));
@@ -1108,7 +1108,7 @@ sp = 1 / ma.SR;
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 // 
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 // 
@@ -1138,7 +1138,7 @@ topologies(r, c, type) =   top_full(r, c) ,
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 // 
@@ -1164,7 +1164,7 @@ top_anti_diag(r, c) = par(i, r, par(j, c, (j % r) != (i % c)));
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -1191,7 +1191,7 @@ top_diagonal(r, c) = par(i, r, par(j, c, (j % r) == (i % c)));
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -1219,7 +1219,7 @@ top_diag_shift(r, c, s) =
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -1245,7 +1245,7 @@ top_full(r, c) = 1 <: si.bus(r * c);
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -1271,7 +1271,7 @@ top_tri_low(r, c) = par(i, r, par(j, c, (j % r) <= (i % c)));
 //     ⋮   ⋮  ⋱  ⋮
 //    yR1 yR2 … yRC
 //
-// Compile-time arguments:
+// 2 compile-time arguments:
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
@@ -1328,7 +1328,7 @@ unit_log(t, x) = log(x * (t - 1) + 1) / log(t);
 // 1 outputs:
 //    y[n], variance of the N input signals.
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    N, (integer) number of input signals.
 //
 var(N) = si.bus(N) <:  si.bus(N) ,

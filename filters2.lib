@@ -261,7 +261,7 @@ bsbi(cf, q, in) = f2.biquad(a0, a1, a2, b1, b2, in)
 // 1 outputs:
 //    y[n], lowpassed x[n].
 //
-// Compile-time arguments: 
+// 1 compile-time arguments: 
 //    "N", (integer) order of the filter.
 //
 cic(N, cf, x) = x : seq(i, N, m2.delta(1, .5 / cf) : 
@@ -846,7 +846,7 @@ svf2blti(cf, q, k, in) =   tick
 //    y1[n], lowpassed x[n];
 //    y2[n], highpassed x[n].
 //
-// Compile-time arguments:
+// 1 compile-time arguments:
 //    "N", (integer) crossover order.
 //
 xover_butt(N, cf, x) = low ,

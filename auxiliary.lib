@@ -47,7 +47,7 @@ dirac = 1 - 1';
 // 1 outputs: 
 //    x[n].
 //
-// Compile-time arguments: 
+// 3 compile-time arguments: 
 //    "i", integer identifier;
 //    "lower", lower display limit; 
 //    "upper", upper display limit.
@@ -57,18 +57,18 @@ inspect(i, lower, upper) =
            vbargraph("sig_%i [style:numerical]", lower, upper) : attach;
 // -----------------------------------------------------------------------------
 
-// au.step(m); -----------------------------------------------------------------
+// au.step(M); -----------------------------------------------------------------
 //
-// Step function: full-amplitude, m-sample step.
-// y[n] = 1 if 0 <= n < m; 0 otherwise.
+// Step function: full-amplitude, M-sample step.
+// y[n] = 1 if 0 <= n < M; 0 otherwise.
 //
 // 0 inputs.
 //
 // 1 outputs: 
 //    Step().
 //
-// Compile-time arguments: 
-//    "m", step size in samples.
+// 1 compile-time arguments: 
+//    "M", step size in samples.
 //
-step(m) = 1 <:  _ - (_ @ m);
+step(M) = 1 <:  _ - (_ @ M);
 // -----------------------------------------------------------------------------
