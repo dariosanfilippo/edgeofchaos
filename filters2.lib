@@ -305,9 +305,7 @@ hpbi(cf, in) = f2.biquad(a0, a1, a2, b1, b2, in)
 // 1 outputs:
 //    y[n], highpassed x[n].
 //
-hpblti(cf, in) =   in ,
-                   (   cf ,
-                       in : f2.lpblti) : -;
+hpblti(cf, in) = in - f2.lpblti(cf, in);
 // -----------------------------------------------------------------------------
 
 // f2.hp1p(CF[n], x[n]); -------------------------------------------------------
@@ -321,8 +319,8 @@ hpblti(cf, in) =   in ,
 // 1 outputs:
 //    y[n], highpassed x[n].
 //
-hp1p(cf, in) = in * a0 :   + 
-                           ~ * (b1)
+hp1p(cf, in) = + (in * a0) 
+               ~ * (b1)
       with {
            a0 = 1 + b1;
            b1 = exp((.5 - cf / ma.SR) * -2 * ma.PI) * -1;
@@ -356,8 +354,8 @@ hp1pint(cf, in) = in - f2.lp1pint(cf, in);
 // 1 outputs:
 //    y[n], highpassed x[n].
 //
-hp1praw(cf, in) = (1 - cf) * in :  +
-                                   ~ * (-cf);
+hp1praw(cf, in) =  + ((1 - cf) * in)
+                   ~ * (-cf);
 // -----------------------------------------------------------------------------
 
 // f2.hp1p1z(CF[n], x[n]); -----------------------------------------------------
@@ -371,13 +369,12 @@ hp1praw(cf, in) = (1 - cf) * in :  +
 // 1 outputs:
 //    y[n], highpassed x[n].
 //
-hp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
-                                           ~ * (b1)
+hp1p1z(cf, in) =   + (in * a0 <: _ + _' * a1)
+                   ~ * (b1)
       with {
            a0 = (1 + b1) / 2;
            a1 = -1;
-           b1 =    (1 - sin(m2.w(cf))) ,
-                   cos(m2.w(cf)) : m2.div;
+           b1 = m2.div((1 - sin(m2.w(cf))), cos(m2.w(cf)));
       };
 // -----------------------------------------------------------------------------
 
@@ -393,9 +390,8 @@ hp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
 // 1 outputs:
 //    y[n], highpassed x[n].
 //
-hp1p1zraw(cf, in) = in * (1 - cf) <: ( _ ,
-                                       _' : -) :   +
-                                                   ~ * (cf * -2 + 1);
+hp1p1zraw(cf, in) =    + (in * (1 - cf) <: _ - _')
+                       ~ * (cf * -2 + 1);
 // -----------------------------------------------------------------------------
 
 // f2.int_clip(L[n], H[n], x[n]); ----------------------------------------------
@@ -477,9 +473,8 @@ int_eu_f(cf, x) =  perform
 // 1 outputs:
 //    y[n], integrated x[n].
 //
-int_trap(cf, x) = x * m2.w(cf) / 2 <:  _ , 
-                                       _' :>   + 
-                                               ~ _;
+int_trap(cf, x) =  + (x * m2.w(cf) / 2 <: _ + _') 
+                   ~ _;
 // -----------------------------------------------------------------------------
 
 // f2.int_trap_clip(L[n], H[n], CF[n], x[n]); ----------------------------------
@@ -593,10 +588,10 @@ lpblti(cf, in) =   tick
 // 1 outputs:
 //    y[n], lowpassed x[n].
 //
-lp1p(cf, in) = in * a0 :   + 
-                           ~ * (b1)
+lp1p(cf, in) = + (in * a0) 
+               ~ * (b1)
       with {
-           a0 = 1 - (b1);
+           a0 = 1 - b1;
            b1 = exp(m2.w(cf) * -1);
       };
 // -----------------------------------------------------------------------------
@@ -630,8 +625,8 @@ lp1pint(cf, in) =  (in ,
 // 1 outputs:
 //    y[n], lowpassed x[n].
 //
-lp1praw(cf, in) = in * cf :    +
-                               ~ * (1 - cf);
+lp1praw(cf, in) =  + (in * cf)
+                   ~ * (1 - cf);
 // -----------------------------------------------------------------------------
 
 // f2.lp1p1z(CF[n], x[n]); -----------------------------------------------------
@@ -645,13 +640,12 @@ lp1praw(cf, in) = in * cf :    +
 // 1 outputs:
 //    y[n], lowpassed x[n].
 //
-lp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
-                                           ~ * (b1)
+lp1p1z(cf, in) =   + (in * a0 <: _ + _' * a1)
+                   ~ * (b1)
       with {
            a0 = (1 - b1) / 2;
            a1 = 1;
-           b1 =    (1 - sin(m2.w(cf))) ,
-                   cos(m2.w(cf)) : m2.div;
+           b1 = m2.div((1 - sin(m2.w(cf))), cos(m2.w(cf)));
       };
 // -----------------------------------------------------------------------------
 
@@ -667,8 +661,8 @@ lp1p1z(cf, in) = in * a0 <: _ + _' * a1 :  +
 // 1 outputs:
 //    y[n], lowpassed x[n].
 //
-lp1p1zraw(cf, in) = in * cf <: _ + _' :    +
-                                           ~ * (cf * -2 + 1);
+lp1p1zraw(cf, in) =    + (in * cf <: _ + _')
+                       ~ * (cf * -2 + 1);
 // -----------------------------------------------------------------------------
 
 // f2.sah_dc(T[n], x[n]); ------------------------------------------------------
@@ -682,8 +676,7 @@ lp1p1zraw(cf, in) = in * cf <: _ + _' :    +
 // 1 outputs:
 //    y[n], sample-and-held stationary values in x[n].
 //
-sah_dc(t, in) =    m2.delta(t, in) == 0 ,
-                   in : ba.sAndH;
+sah_dc(t, in) = ba.sAndH(abs(m2.delta(t, in)) < ma.EPSILON, in);
 // -----------------------------------------------------------------------------
 
 // f2.sah_inv(x[n]); -----------------------------------------------------------
@@ -723,7 +716,7 @@ slew_limiter(in1, in2, in3) =  tick
                    min_plus_fb = min(in2, in3) + fb;
                    cond1 = in1 > max_plus_fb;
                    cond2 = in1 < min_plus_fb;
-                   cond3 = ba.if(cond2, max0, in1);
+                   cond3 = m2.if(cond2, max0, in1);
                    max0 = max(0, min_plus_fb);
                };
       };
@@ -749,7 +742,7 @@ svfblti(cf, in) =  tick
                            _ ,
                            _
       with {
-           g = tan(m2.w(cf) / 2) / (1 + tan(m2.w(cf) / 2));
+           g = m2.div(tan(m2.w(cf) / 2), (1 + tan(m2.w(cf) / 2)));
            tick(s) =   y + v , 
                        y , 
                        in - (v + s) , 
@@ -799,7 +792,7 @@ svf2blti(cf, q, k, in) =   tick
                                        _ ,
                                        _)
       with {
-           r = 1 / (2 * q);
+           r = m2.div(1, (2 * q));
            wa = (2 * ma.SR) * tan(m2.w(cf) / 2);
            g = wa / ma.SR / 2;
            tick(s1, s2) =  u1 ,
@@ -819,8 +812,8 @@ svf2blti(cf, q, k, in) =   tick
                    u2 = v2 + lp;
                    v1 = hp * g;
                    v2 = bp * g;
-                   hp = (in - 2 * r * s1 - g * s1 - s2) / 
-                       (1 + 2 * r * g + g * g);
+                   hp = m2.div((in - 2 * r * s1 - g * s1 - s2),
+                               (1 + 2 * r * g + g * g));
                    bp = s1 + v1;
                    lp = s2 + v2;
                    bp_norm = bp * 2 * r;
@@ -894,8 +887,8 @@ xover1p1z(cf, in) =    low ,
 xover1p1z_ada(window, in) = (  (   _ , 
                                    in) : f2.xover1p1z <:   (   ip.rms(window) , 
                                                                ip.rms(window) : 
-      ro.cross(2) : - : / (ip.rms(window, in)) : * (window) : / (ma.SR) : 
-          f2.int_clip(0, 1) : pow(2) : * (m2.ny)) ,
+      ro.cross(2) : - : / max(ma.EPSILON, (ip.rms(window, in))) * (window) / 
+           (ma.SR) : pow(f2.int_clip(0, 1), 2) * (m2.ny)) ,
                                                            (   _ ,
                                                                _)) 
                                ~ ( _ , 
