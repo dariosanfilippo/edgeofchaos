@@ -101,7 +101,7 @@ cubic(x) = select3(cond, -2 / 3, x - x^3 / 3, 2 / 3)
 //
 dyn_comp_peak(release, curve, in) = in * agc
       with {
-           agc = 1 - min(ip.peak_env(release, in), 1) : pow(curve);
+           agc = max(0, 1 - min(ip.peak_env(release, in), 1)) : pow(curve);
       };
 // -----------------------------------------------------------------------------
 
@@ -121,7 +121,7 @@ dyn_comp_peak(release, curve, in) = in * agc
 //
 dyn_comp_rms(window, curve, in) = in * agc
       with {
-           agc = 1 - min(ip.rms(window, in), 1) : pow(curve);
+           agc = max(0, 1 - min(ip.rms(window, in), 1)) : pow(curve);
       };
 // -----------------------------------------------------------------------------
 
@@ -235,7 +235,7 @@ limiter_lookahead(lag, threshold, attack, hold, release, x) =
            agc = m2.div(threshold, amp_profile) : min(1);
            amp_profile = ip.peak_hold(hold, x) : att_smooth(attack) :
                rel_smooth(release);
-           att_smooth(time, in) = f2.lp1p(1 / time, in);
+           att_smooth(time, in) = f2.lp1p(m2.div(1, time), in);
            rel_smooth(time, in) = ip.peak_env(time, in);
       };
 // -----------------------------------------------------------------------------
@@ -276,7 +276,7 @@ limiter_lookaheadN(N, lag, threshold, attack, hold, release) =
            agc = m2.div(threshold, amp_profile) : min(1);
            amp_profile = par(i, N, abs) : m2.maxN(N) : ip.peak_hold(hold) : 
                att_smooth(attack) : rel_smooth(release);
-           att_smooth(time, in) = f2.lp1p(1 / time, in);
+           att_smooth(time, in) = f2.lp1p(m2.div(1, time), in);
            rel_smooth(time, in) = ip.peak_env(time, in);
       };
 // -----------------------------------------------------------------------------
