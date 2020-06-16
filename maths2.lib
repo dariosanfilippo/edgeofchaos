@@ -465,20 +465,31 @@ diff(x) = x - x';
 
 // m2.div(x1[n], x2[n]); -------------------------------------------------------
 //
-// Divider that avoids NANs in case of 0/0 but allows INF when a non-zero 
-// quantity is divided by zero. If it is advisable to also avoid INF for
-// a specific application, then the following can be used:
+// Divider that avoids divide-by-zero by limiting the denominator to the
+// smallest representable value. Essentially, the values of the
+// denominator between -epsilon and epsilon are excluded. The corner
+// case of x2 = 0 is clipped to positive epsilon.
 //
-//    div(x1, x2) = m2.if(abs(x2) < ma.EPSILON, 0, x1 / x2);
+// For efficiency, for positive denominators the divide-by-zero can
+// simply be dealt with as:
+//    x1 / max(ma.EPSILON, x2);
+//
+// while for negative denominators we can use:
+//
+//    x1 / min(ma.EPSILON * -1, x2);
+//
+// m2.div covers both cases.
 //
 // 2 inputs:
 //    x1[n];
 //    x2[n].
 //
 // 1 outputs:
-//    y[n], x1[n] / x2[n] if x1[n] != x2[n], 1 otherwise.
+//    y[n], division safe from divide-by-zero.
 //
-div(x1, x2) = m2.if(abs(x1 - x2) < ma.EPSILON, 1, x1 / x2);
+div(x1, x2) = x1 / m2.if(  x2 < 0, 
+                           min(ma.EPSILON * -1, x2), 
+                           max(ma.EPSILON, x2));         
 // -----------------------------------------------------------------------------
 
 // m2.hp_and(x1[n], x2[n]); ----------------------------------------------------
