@@ -75,7 +75,7 @@ o2 = library("oscillators2.lib");
 //
 blit_bi(h, f) = m2.asinc_bi(h1, phase)
       with {
-           lim = rint(ma.SR / f / 4);
+           lim = rint(m2.div(ma.SR, f) / 4);
            h1 = ba.sAndH(trigger, min(lim, h));
            trigger = (ma.signum(f) * (phase - phase') < 0);
            // Add au.dirac to "trigger" if you require the initial value
@@ -131,7 +131,7 @@ blit_bi_duty(h, d, f) = m2.delta(1, d1, o2.blit_uni(h, f))
 //
 blit_uni(h, f) = m2.asinc_uni(h1, phase)
       with {
-           lim = floor(ma.SR / f / 2);
+           lim = floor(m2.div(ma.SR, f) / 2);
            h1 = ba.sAndH(trigger, min(lim, h));
            trigger = (ma.signum(f) * (phase - phase') < 0);
            // Add au.dirac to "trigger" if you require the initial value
@@ -181,7 +181,10 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
 
 // o2.osc_quad(F[n]); ----------------------------------------------------------
 //
-// Recursive quadrature oscillator by Martin Vicanek.
+// Recursive quadrature oscillator by Martin Vicanek. This design is
+// arguably the best recursive quadrature oscillator available in the
+// literature. The system shows long-term stability as well as accuracy at
+// low frequencies. 
 //
 // Ref: https://vicanek.de/articles/QuadOsc.pdf.
 //
@@ -244,10 +247,10 @@ ph(freq, reset) =  (+ (freq / ma.SR * r) : ma.decimal)
 // 1 outputs:
 //    y[n], band-limited pulse train.
 //
-pulse_train(h, d, f) = blit_bi_duty(h, d, f) : f2.leaky(.1 / m2.twopi) / 
-      scale + d
+pulse_train(h, d, f) = 
+      blit_bi_duty(h, d, f) : m2.div(f2.leaky(.1 / m2.twopi), scale) + d
       with {
-           lim = rint(ma.SR / f / 2);
+           lim = rint(m2.div(ma.SR, f) / 2);
            scale = m2.div(lim, min(lim, h)) : si.smooth(ba.tau2pole(.1));
       };
 // -----------------------------------------------------------------------------
@@ -269,10 +272,10 @@ pulse_train(h, d, f) = blit_bi_duty(h, d, f) : f2.leaky(.1 / m2.twopi) /
 // 1 outputs:
 //    y[n], band-limited sawtooth oscillator.
 //
-saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : f2.leaky(.1 / m2.twopi) / 
-      scale : fi.highpass(1, 20)
+saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : 
+      m2.div(f2.leaky(.1 / m2.twopi), scale) : fi.highpass(1, 20)
       with {
-           lim = floor(ma.SR / f / 2);
+           lim = floor(m2.div(ma.SR, f) / 2);
            scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
 // -----------------------------------------------------------------------------
@@ -294,10 +297,10 @@ saw(h, f) = blit_uni(h, f) <: _ - f2.lp1p(f / 100) : f2.leaky(.1 / m2.twopi) /
 // 1 outputs:
 //    y[n], band-limited square oscillator.
 //
-square(h, f) = blit_bi(h, f) : f2.leaky(.1 / m2.twopi) / scale : 
+square(h, f) = blit_bi(h, f) : m2.div(f2.leaky(.1 / m2.twopi), scale) : 
       fi.highpass(1, 20)
       with {
-           lim = rint(ma.SR / f / 4);
+           lim = rint(m2.div(ma.SR, f) / 4);
            scale = m2.div(lim, (2 * min(lim, h))) : si.smooth(ba.tau2pole(.1));
       };
 // -----------------------------------------------------------------------------
@@ -319,9 +322,9 @@ square(h, f) = blit_bi(h, f) : f2.leaky(.1 / m2.twopi) / scale :
 // 1 outputs:
 //    y[n], band-limited triangle oscillator.
 //
-triangle(h, f) = square(h, f) : f2.leaky(.1 / m2.twopi) / scale : 
+triangle(h, f) = square(h, f) : m2.div(f2.leaky(.1 / m2.twopi), scale) : 
       fi.highpass(1, 20)
       with {
-           scale = rint(ma.SR / f / 4) : si.smooth(ba.tau2pole(.1));
+           scale = rint(m2.div(ma.SR, f) / 4) : si.smooth(ba.tau2pole(.1));
       };
 // -----------------------------------------------------------------------------
