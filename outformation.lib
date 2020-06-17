@@ -76,26 +76,23 @@ st = library("stability.lib");
 grains_dl_nhw(size, pitch, rate, position, exponent, x) = head1 + head2
       with {
            s = size * ma.SR : m2.round_pow2 / ma.SR;
-           sah(t, in) =    (m2.diff(t) < 0) ,
-                           in : ba.sAndH;
+           sah(t, in) = ba.sAndH(m2.diff(t) < 0, in);
            ph0 = o2.ph(rate, 0);
-           ph1 = pow(ph0, exponent) : ma.decimal;
-           ph2 = ph1 + .5 : ma.decimal;
+           ph1 = ma.decimal(pow(ph0, exponent));
+           ph2 = ma.decimal(ph1 + .5);
            w1 = m2.window_hann(ph1);
            w2 = m2.window_hann(ph2);
            head1 = d2.del_pol(s, del1, x) * w1
                with {
                    del1 = sah(ph1, position) + shift1 : m2.wrap(0, s);
                    shift1 = (1 - sah(ph1, pitch)) * 
-                       (   1,
-                           sah(ph1, rate) : m2.div) * ph1;
+                       m2.div(1, sah(ph1, rate)) * ph1;
                };
            head2 = d2.del_pol(s, del2, x) * w2
                with {
                    del2 = sah(ph2, position) + shift2 : m2.wrap(0, s);
                    shift2 = (1 - sah(ph2, pitch)) * 
-                       (   1,
-                           sah(ph2, rate) : m2.div) * ph2;
+                       m2.div(1, sah(ph2, rate)) * ph2;
                };
       };
 // -----------------------------------------------------------------------------
@@ -140,7 +137,7 @@ grains_dl_zc(voices, size1) = par(i, voices,    loop
                        (m2.line_reset(ba.sAndH(au.dirac + ready, rate), 
                                                ready) >= 1) : &;
                };
-               shift(reset) = m2.div((1 - pitch), rate) *
+               shift(reset) = m2.div(1 - pitch, rate) *
                    m2.line_reset(rate, reset) * ma.SR;
                zc_index(recall, x, y) = 
                    index - m2.if(m2.diff(y) >= 0, zc_up, zc_down) : 

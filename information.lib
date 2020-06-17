@@ -105,7 +105,7 @@ a_weighting(f) = (12194 ^ 2 * f ^ 4) / ((f ^ 2 + 20.6 ^ 2) *
 //    max_dt, maximum differentiation period in seconds.
 //
 complexity(max_dt, dt, window, x) = ip.heterogeneity10(window, x) :
-      m2.delta(max_dt, dt) : abs : f2.lp1p(1 / window);
+      m2.delta(max_dt, dt) : abs : f2.lp1p(1 / max(ma.EPSILON, window));
 // -----------------------------------------------------------------------------
 
 // ip.dynamicity(max_dt, dt[n], R[t], x[n]); -----------------------------------
@@ -126,7 +126,7 @@ complexity(max_dt, dt, window, x) = ip.heterogeneity10(window, x) :
 // 1 compile-time arguments:
 //    max_dt, maximum differentiation period in seconds.
 //
-dynamicity(max_dt, dt, window, in) = m2.delta(max_dt, dt, in) : abs : 
+dynamicity(max_dt, dt, window, in) = abs(m2.delta(max_dt, dt, in)) :
       f2.lp1p(window);
 // -----------------------------------------------------------------------------
 
@@ -141,7 +141,7 @@ dynamicity(max_dt, dt, window, in) = m2.delta(max_dt, dt, in) : abs :
 // 1 outputs:
 //    y[n], amplitude envelope of x[n].
 //
-env_fol(window, in) = in : abs : f2.lp1p(window);
+env_fol(window, in) = f2.lp1p(window, abs(in));
 // -----------------------------------------------------------------------------
 
 // ip.highest_partial(R[n], x[n]); ---------------------------------------------
@@ -165,9 +165,8 @@ highest_partial(window, in) =
       (_ <:    _ ,
                (   _ , 
                    in : hp1p1z2 <: _ ,
-                                   _) : (  specbal , 
-                                           ip.rms(window) 
-           : m2.div : / (ma.SR) : * (window) : f2.int_clip(0, 1) <: *)) 
+                                   _) : (m2.div(specbal, ip.rms(window)) / 
+      ma.SR * window : f2.int_clip(0, 1) ^ 2)) 
       ~ * (m2.ny)
       with {
            specbal = f2.xover1p1z :    ip.rms(window) + .000001 , 
@@ -247,8 +246,7 @@ heterogeneity10(t, in) = ip.heterogeneity(10, 0, 1, t, in);
 // 1 outputs:
 //    y[n], instantaneous amplitude of x[n], sqrt(re^2 + im^2).
 //
-instant_amp(x) = f2.analytic(x) :  (_ <: *) ,
-                                   (_ <: *) : + : sqrt;
+instant_amp(x) = f2.analytic(x) : sqrt(pow(2) + pow(2));
 // -----------------------------------------------------------------------------
 
 // ip.instant_freq(x[n]); ------------------------------------------------------
@@ -262,7 +260,7 @@ instant_amp(x) = f2.analytic(x) :  (_ <: *) ,
 //    y[n], instantaneous frequency of x[n] as derivative of the instantaneous
 //    phase.
 //
-instant_freq(x) = instant_ph(x) : m2.diff / (2 * ma.PI) * ma.SR;
+instant_freq(x) = m2.diff(instant_ph(x)) / (2 * ma.PI) * ma.SR;
 // -----------------------------------------------------------------------------
 
 // ip.instant_ph(x[n]); --------------------------------------------------------
@@ -406,8 +404,8 @@ peakAR(AT, RT, x) =    loop
       with {
            loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
                with {
-                   attack = (1 - AT_coeff) * abs : +
-                                                   ~ * (AT_coeff);
+                   attack =    + (abs * (1 - AT_coeff))
+                               ~ * (AT_coeff);
                    release = * (RT_coeff);
                    AT_coeff = m2.rt55(AT);
                    RT_coeff = m2.rt55(RT);
