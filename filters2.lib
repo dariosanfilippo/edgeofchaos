@@ -887,8 +887,8 @@ xover1p1z(cf, in) =    low ,
 xover1p1z_ada(window, in) = (  (   _ , 
                                    in) : f2.xover1p1z <:   (   ip.rms(window) , 
                                                                ip.rms(window) : 
-      ro.cross(2) : - : / max(ma.EPSILON, (ip.rms(window, in))) * (window) / 
-           (ma.SR) : pow(f2.int_clip(0, 1), 2) * (m2.ny)) ,
+      ro.cross(2) : - : / (max(ma.EPSILON, (ip.rms(window, in)))) * window / 
+           ma.SR : f2.int_clip(0, 1) ^ 2 * m2.ny) ,        
                                                            (   _ ,
                                                                _)) 
                                ~ ( _ , 
