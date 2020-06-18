@@ -105,7 +105,7 @@ a_weighting(f) = (12194 ^ 2 * f ^ 4) / ((f ^ 2 + 20.6 ^ 2) *
 //    max_dt, maximum differentiation period in seconds.
 //
 complexity(max_dt, dt, window, x) = ip.heterogeneity10(window, x) :
-      m2.delta(max_dt, dt) : abs : f2.lp1p(1 / max(ma.EPSILON, window));
+      abs(m2.delta(max_dt, dt)) : f2.lp1p(1 / max(ma.EPSILON, window));
 // -----------------------------------------------------------------------------
 
 // ip.dynamicity(max_dt, dt[n], R[t], x[n]); -----------------------------------
@@ -288,8 +288,9 @@ instant_ph(x) = f2.analytic(x) : ro.cross(2) : atan2;
 // 1 outputs:
 //    y[n], loudness of x[n] as linear amplitude.
 //
-loudness(window, in) = in <:   peak_env(m2.div(1, window)) ,
-                               (spec_ten(window) * m2.ny : a_weighting) : *;
+loudness(window, in) = 
+      peak_env(1 / max(ma.EPSILON, window), in) * 
+           (spec_ten(window, in) * m2.ny : a_weighting);
 // -----------------------------------------------------------------------------
 
 // ip.lowest_partial(R[n], x[n]); ----------------------------------------------
@@ -313,9 +314,9 @@ lowest_partial(window, in) =
       (_ <:    _ ,
                (   _ , 
                    in : lp1p1z2 <: _ ,
-                                   _) : (  specbal , 
-                                           rms(window) 
-           : m2.div : /(ma.SR) : *(window) : f2.int_clip(0, 1) <: *)) 
+                                   _) : 
+      (specbal / max(ma.EPSILON, rms(window)) / ma.SR * window : 
+           f2.int_clip(0, 1) ^ 2)) 
       ~ (* (m2.ny) : max(10))
       with {
            specbal = f2.xover1p1z :    rms(window) , 
@@ -341,11 +342,11 @@ lowest_partial(window, in) =
 // 1 outputs:
 //    y[n], noisiness index of x[n] in the [0; 1] range.
 // 
-noisiness(window, in) = spec_ten(window, in) : * (m2.ny) : max(1) <:  
+noisiness(window, in) = spec_ten(window, in) *  m2.ny : max(1) <:  
       m2.inv ,
-      (    _, 
-           in : zcr4 : m2.unit_log(10)) : m2.delta(1) : abs : f2.lp1p(window)
-           : / (.266) <: * : min(1);
+      (    _ , 
+           in : zcr4 : m2.unit_log(10)) : abs(m2.delta(1)) : f2.lp1p(window) / 
+               .266 <: * : min(1);
 // -----------------------------------------------------------------------------
 
 // ip.peak_env(R[n], x[n]); ----------------------------------------------------
@@ -359,8 +360,8 @@ noisiness(window, in) = spec_ten(window, in) : * (m2.ny) : max(1) <:
 // 1 outputs:
 //    y[n], peak envelope of x[n].
 //
-peak_env(release, in) = abs(in) :   max
-                                    ~ * (m2.rt55(release));
+peak_env(release, in) =    max(abs(in))
+                           ~ * (m2.rt55(release));
 // -----------------------------------------------------------------------------
 
 // ip.peak_hold(R[n], x[n]); ---------------------------------------------------
@@ -377,7 +378,7 @@ peak_env(release, in) = abs(in) :   max
 // 1 outputs:
 //    y[n], peak of |x[n]|.
 //
-peak_hold(release, in) = in : ba.peakholder(release * ma.SR);
+peak_hold(release, in) = ba.peakholder(release * ma.SR, in);
 // -----------------------------------------------------------------------------
 
 // ip.peakAR(AT[n], RT[n], x[n]); ----------------------------------------------
@@ -509,10 +510,9 @@ rms4(window, in) = in <: * : seq(i, 4, f2.lp1p(window)) : sqrt;
 // 1 outputs:
 //    y[n], roughness index of x[n] in the range [0; 1].
 //
-roughness(window, in) = instant_amp(in) <: m2.delta(.001, .001) ,
-                                           rms(1) : m2.div : 
-                           rms4(75) : m2.delta(1/150, 1/150) : 
-                               rms4(window)/.807242;
+roughness(window, in) = 
+      instant_amp(in) <: m2.div(m2.delta(.001, .001), rms(1)) : 
+           rms4(75) : m2.delta(1 / 150, 1 / 150) : rms4(window) / .807242;
 // -----------------------------------------------------------------------------
 
 // ip.spec_bal(CF[n], R[n], x[n]); ---------------------------------------------
@@ -530,8 +530,7 @@ roughness(window, in) = instant_amp(in) <: m2.delta(.001, .001) ,
 // 1 outputs:
 //    y[n], RMS difference of the crossover outputs.
 //
-spec_bal(cf, window, in) =  cf ,
-                            in : f2.xover1p1z <:   rms(window) ,
+spec_bal(cf, window, in) = f2.xover1p1z(cf, in) :  rms(window) ,
                                                    rms(window) : 
       ro.cross(2) : -;
 // -----------------------------------------------------------------------------
@@ -554,8 +553,7 @@ spec_bal(cf, window, in) =  cf ,
 // 1 compile-time arguments:
 //    N, (integer) order of the crossover.
 //
-spec_balN(N, cf, window, in) = cf ,
-                               in : f2.xover_butt(N) <:    rms(window) ,
+spec_balN(N, cf, window, in) = f2.xover_butt(N, cf, in) :  rms(window) ,
                                                            rms(window) : 
       ro.cross(2) : -;
 // -----------------------------------------------------------------------------
@@ -607,11 +605,10 @@ spec_peakN(N, window, in) = ((max(10), 1, in) : f2.bp2blti :
 //    N, (integer) order of the Butterworth crossover in the spectral
 //         centroid analysis.
 //
-spec_sprN(N, q, window, in) = (    spec_tenN(N, window, in) * m2.ny ,
+spec_sprN(N, q, window, in) =  (   spec_tenN(N, window, in) * m2.ny ,
                                    q ,
-                                   in) :   f2.bpbi : ip.rms(window) ,
-                                           (in : ip.rms(window)) : 
-      m2.div : m2.complement;
+                                   in : f2.bpbi :  ip.rms(window)) ,
+                               ip.rms(window, in) : m2.div : m2.complement;
 // -----------------------------------------------------------------------------
 
 // ip.spec_ten(R[n], x[n]); ----------------------------------------------------
@@ -637,9 +634,9 @@ spec_ten(window, in) =  (   (   _ ,
                                 window ,
                                 in : spec_bal) ,
                             (   window ,
-                                in : rms) : m2.div : *(window) : 
-      f2.int_clip(0, 1) : pow(2)) 
-                        ~ *(m2.ny);
+                                in : rms) : m2.div * window : 
+      f2.int_clip(0, 1) ^ 2) 
+                        ~ * (m2.ny);
 // -----------------------------------------------------------------------------
 
 // ip.spec_tenN(N, R[n], x[n]); ------------------------------------------------
@@ -671,9 +668,9 @@ spec_tenN(N, window, in) = ((  _ ,
                                window ,
                                in : spec_balN(N)) ,
                             (  window ,
-                               in : rms) : m2.div : pow(3) : 
-      f2.int_eu_clip(0, 1, window) : pow(2))
-                           ~ *(m2.ny);
+                               in : rms) : m2.div ^ 3 : 
+      f2.int_eu_clip(0, 1, window) ^ 2)
+                           ~ * (m2.ny);
 // -----------------------------------------------------------------------------
 
 // ip.spec_ten_lite(x[n]); -----------------------------------------------------
@@ -735,7 +732,7 @@ zc(x) = x * x' < 0;
 // 1 outputs:
 //    y[n], ZCR as an index in the range [0; 1].
 //
-zcr(window, x) = zc(x) : f2.lp1p(window);
+zcr(window, x) = f2.lp1p(window, zc(x));
 // -----------------------------------------------------------------------------
 
 // ip.zcr4(R[n], x[n]); --------------------------------------------------------
