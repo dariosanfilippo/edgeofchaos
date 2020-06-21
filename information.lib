@@ -32,10 +32,11 @@
 //    loudness, 
 //    lowest_partial, 
 //    noisiness, 
-//    peak_env, 
-//    peak_hold, 
-//    peakAR, 
 //    peaks, 
+//    peak_env, 
+//    peak_env_ARcascade, 
+//    peak_env_ARswitch, 
+//    peak_hold, 
 //    recurrence, 
 //    rms, 
 //    rms4, 
@@ -349,71 +350,6 @@ noisiness(window, in) = spec_ten(window, in) *  m2.ny : max(1) <:
                .266 <: * : min(1);
 // -----------------------------------------------------------------------------
 
-// ip.peak_env(R[n], x[n]); ----------------------------------------------------
-//
-// Peak envelope function: infinitely fast attack and adjustable release.
-//
-// 2 inputs:
-//    R[n], release time in seconds;
-//    x[n].
-//
-// 1 outputs:
-//    y[n], peak envelope of x[n].
-//
-peak_env(release, in) =    max(abs(in))
-                           ~ * (m2.rt55(release));
-// -----------------------------------------------------------------------------
-
-// ip.peak_hold(R[n], x[n]); ---------------------------------------------------
-//
-// Peak holder: it holds the peak of the absolute value of the input
-// signal for a time specified in seconds. If no new peak occurs before
-// the specified time, the peak will reset to whatever the absolute value
-// of the input is.
-//
-// 2 inputs:
-//    R[n], release time in seconds;
-//    x[n].
-//
-// 1 outputs:
-//    y[n], peak of |x[n]|.
-//
-peak_hold(release, in) = ba.peakholder(release * ma.SR, in);
-// -----------------------------------------------------------------------------
-
-// ip.peakAR(AT[n], RT[n], x[n]); ----------------------------------------------
-//
-// Peak envelope function with independent attack and release times. The
-// function applies two independent filter sections depending on whether 
-// the input is in the attack or release phase, which is determined by 
-// comparing the absolute value of the input signal with the output. 
-// The attack-smoothing filter is a one-pole lowpass: a leaky integrator
-// whose input is scaled down with the complement of the pole position.
-// The release-smoothing filter, on the other hand, is simply an
-// exponential decay of the detected peak.
-//
-// 3 inputs:
-//    AT[n], attack time in seconds;
-//    RT[n], release time in seconds;
-//    x[n].
-//
-// 1 outputs:
-//    y[n], peak envelope of x[n].
-//
-peakAR(AT, RT, x) =    loop
-                       ~ _
-      with {
-           loop(fb) = m2.if(abs(x) > fb, attack(x), release(fb))
-               with {
-                   attack =    + (abs * (1 - AT_coeff))
-                               ~ * (AT_coeff);
-                   release = * (RT_coeff);
-                   AT_coeff = m2.rt55(AT);
-                   RT_coeff = m2.rt55(RT);
-               };
-      };
-// -----------------------------------------------------------------------------
-
 // ip.peaks(R[n], x[n]); -------------------------------------------------------
 //
 // It detects lower and upper peaks and, if no new peaks are detected,
@@ -445,6 +381,116 @@ peaks(release, in) =   (   check_low
                            in : select2;
       };
 // -----------------------------------------------------------------------------
+
+// ip.peak_env(R[n], x[n]); ----------------------------------------------------
+//
+// Peak envelope function: infinitely fast attack and adjustable release.
+// This function outputs the absolute value of the input if the
+// magnitude of the signal is greater or equal than the output, 
+// or it performs an exponential decay of the last detected peak 
+// when the input is smaller than the output.
+//
+// 2 inputs:
+//    R[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak envelope of x[n].
+//
+peak_env(release, in) =    max(abs(in))
+                           ~ * (m2.rt55(release));
+// -----------------------------------------------------------------------------
+
+// ip.peak_env_ARcascade(AT[n], RT[n], x[n]); ----------------------------------
+//
+// Peak envelope function with dependent attack and release times. The
+// function applies two cascaded filter sections regardless of the
+// attack or release phases of the input signal: a peak envelope filter feeding 
+// into a one-pole lowpass filter. The attack time is assumed to be <<
+// than the release time for best behaviour. Since the sections are
+// cascaded, the effective release time will always be greater than the
+// desired one. The difference will be less noticeable when attack and
+// release times are far apart. This function provides a smoother
+// transition between attack and release phases.
+//
+// 3 inputs:
+//    AT[n], attack time in seconds;
+//    RT[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak envelope of x[n].
+//
+peak_env_ARcascade(AT, RT, x) = ip.peak_env(RT, x) : si.smooth(m2.rt55(AT));
+// -----------------------------------------------------------------------------
+
+// ip.peak_AR_switch(AT[n], RT[n], x[n]); --------------------------------------
+//
+// Peak envelope function with independent attack and release times. The
+// function applies two independent filter sections based on whether 
+// the input is in the attack or release phase, which is determined by 
+// comparing the absolute value of the input signal with the output. 
+// The attack-smoothing filter is a one-pole lowpass: a leaky integrator
+// whose input is scaled down with the complement of the pole position.
+// The release-smoothing filter, on the other hand, is simply an
+// exponential decay of the detected peak.
+//
+// Ref: (2008) Udo Zölzer – Digital Audio Signal Processing 2nd Edition.
+//
+// 3 inputs:
+//    AT[n], attack time in seconds;
+//    RT[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak envelope of x[n].
+//
+peak_AR_switch(AT, RT, x) =    loop
+                               ~ _
+      with {
+           loop(fb) = m2.if(abs(x) > fb, attack, release)
+               with {
+                   attack = abs(x) * (1 - AT_coeff) + fb * AT_coeff;
+                   release = fb * RT_coeff;
+                   AT_coeff = m2.rt55(AT);
+                   RT_coeff = m2.rt55(RT);
+               };
+      };
+// -----------------------------------------------------------------------------
+
+// ip.peak_hold(HT[n], x[n]); ---------------------------------------------------
+//
+// Peak holder: it holds the peak of the absolute value of the input
+// signal for a time specified in seconds. If no new peak occurs before
+// the specified time, the peak will reset to whatever the absolute value
+// of the input is. A new peak is detected if the input is greater or
+// equal to the output.
+//
+// Note that the hold time is one sample behind when it is reset by a
+// new peak, whereas it behaves correctly when the timer cycles around. It
+// needs to be fixed.
+//
+// 2 inputs:
+//    HT[n], hold time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], peak of |x[n]|.
+//
+peak_hold(HT, x) = loop 
+                   ~ _ 
+      with {
+           loop(fb) = ba.sAndH(reset | (timer == 0), abs(x))
+               with {
+                   reset = abs(x) >= fb;
+                   timer = % (rint(HT * ma.SR)) ~ (+ (1) * (1 - reset));
+               };
+      };
+// -----------------------------------------------------------------------------
+
+// ip.peak_hold_AHRcascade(AT[n], HT[n], RT[n], x[n]); -------------------------
+//
+// Peak holder function 
 
 // ip.recurrence(L[n], H[n], T[n], x[n]); --------------------------------------
 //
