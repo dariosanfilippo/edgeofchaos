@@ -435,8 +435,8 @@ peak_env_AHR_switch(AT, HT, RT, x) =   loop
                                     release))
                with {
                    cond1 = abs(x) >= fb;
-                   cond2 = fi.pole(notcond, notcond) <= rint(HT * ma.SR);
-                   notcond = 1 - cond;
+                   cond2 = fi.pole(notcond1, notcond1) <= rint(HT * ma.SR);
+                   notcond1 = 1 - cond1;
                    attack = abs(x) * (1 - AT_coeff) + fb * AT_coeff;
                    hold = fb;
                    release = RT_coeff * fb;
