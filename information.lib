@@ -374,7 +374,7 @@ peak_env(RT, x) =  max(abs(x))
                    ~ * (m2.rt55(RT));
 // -----------------------------------------------------------------------------
 
-// ip.peak_env_AHRcascade(AT[n], HT[n], RT[n], x[n]); --------------------------
+// ip.peak_env_AHR_cascade(AT[n], HT[n], RT[n], x[n]); -------------------------
 //
 // Peak envelope function with attack, hold, and release times in
 // seconds. The effective attack, hold, and release times are
@@ -402,7 +402,7 @@ peak_env_AHR_cascade(AT, HT, RT, x) =
       ip.peak_hold(HT, x) : ip.peak_env_AR_cascade(AT, RT);
 // -----------------------------------------------------------------------------
 
-// ip.peak_env_AHRswitch(AT[n], HT[n], RT[n], x[n]); ---------------------------
+// ip.peak_env_AHR_switch(AT[n], HT[n], RT[n], x[n]); --------------------------
 //
 // Envelope function with attack, hold, and release times in seconds.
 // This design is based on switching filter sections depending on the
@@ -446,7 +446,7 @@ peak_env_AHR_switch(AT, HT, RT, x) =   loop
       };
 // -----------------------------------------------------------------------------
 
-// ip.peak_env_ARcascade(AT[n], RT[n], x[n]); ----------------------------------
+// ip.peak_env_AR_cascade(AT[n], RT[n], x[n]); ---------------------------------
 //
 // Peak envelope function with dependent attack and release times. The
 // function applies two cascaded filter sections regardless of the
@@ -469,7 +469,7 @@ peak_env_AHR_switch(AT, HT, RT, x) =   loop
 peak_env_AR_cascade(AT, RT, x) = ip.peak_env(RT, x) : si.smooth(m2.rt55(AT));
 // -----------------------------------------------------------------------------
 
-// ip.peak_env_ARswitch(AT[n], RT[n], x[n]); -----------------------------------
+// ip.peak_env_AR_switch(AT[n], RT[n], x[n]); ----------------------------------
 //
 // Peak envelope function with independent attack and release times. The
 // function applies two independent filter sections based on whether 
@@ -519,7 +519,8 @@ peak_env_AR_switch(AT, RT, x) =    loop
 // then be 0 from sample n = 68.
 //
 // 2 inputs:
-//    HT[n], hold time in seconds;
+//    HT[n], hold time in seconds (resulting in the closest integer
+//         number of samples representing that length);
 //    x[n].
 //
 // 1 outputs:
@@ -618,7 +619,8 @@ peak_hold_L(HT, x) =   loop_peak
 // to the new ones given by the incoming input.
 //
 // 2 inputs:
-//    HT[n], release time in seconds;
+//    HT[n], hold time in seconds (resulting in the closest integer
+//         number of samples representing that length);
 //    x[n].
 //
 // 2 outputs:
