@@ -33,10 +33,15 @@
 //    lowest_partial, 
 //    noisiness, 
 //    peaks, 
-//    peak_env, 
-//    peak_env_ARcascade, 
-//    peak_env_ARswitch, 
-//    peak_hold, 
+//    peak_env,
+//    peak_env_AHR_cascade,
+//    peak_env_AHR_switch,
+//    peak_env_AR_cascade, 
+//    peak_env_AR_switch, 
+//    peak_hold,
+//    peak_hold_H,
+//    peak_hold_L,
+//    peak_hold_LH,
 //    recurrence, 
 //    rms, 
 //    rms4, 
@@ -350,38 +355,6 @@ noisiness(window, in) = spec_ten(window, in) *  m2.ny : max(1) <:
                .266 <: * : min(1);
 // -----------------------------------------------------------------------------
 
-// ip.peaks(R[n], x[n]); -------------------------------------------------------
-//
-// It detects lower and upper peaks and, if no new peaks are detected,
-// it holds them for a specified time in seconds before resetting the peaks
-// to the new ones given by the incoming input.
-//
-// 2 inputs:
-//    R[n], release time in seconds;
-//    x[n].
-//
-// 2 outputs:
-//    y1[n], lowwer peak in x[n],
-//    y2[n], upper peak in x[n].
-//
-peaks(release, in) =   (   check_low 
-                           ~ _) ,
-                       (   check_high
-                           ~ _)
-      with {
-           check_low(s) =  (in <= s <: _ , 
-                                       (   m2.div(1, release) ,
-                                           _ : m2.ph : m2.diff < 0) : |) ,
-                           s ,
-                           in : select2;
-           check_high(s) = (in >= s <: _ , 
-                                       (   m2.div(1, release) ,
-                                           _ : m2.ph : m2.diff < 0) : |) ,
-  		           s ,
-                           in : select2;
-      };
-// -----------------------------------------------------------------------------
-
 // ip.peak_env(R[n], x[n]); ----------------------------------------------------
 //
 // Peak envelope function: infinitely fast attack and adjustable release.
@@ -397,17 +370,89 @@ peaks(release, in) =   (   check_low
 // 1 outputs:
 //    y[n], peak envelope of x[n].
 //
-peak_env(release, in) =    max(abs(in))
-                           ~ * (m2.rt55(release));
+peak_env(RT, x) =  max(abs(x))
+                   ~ * (m2.rt55(RT));
+// -----------------------------------------------------------------------------
+
+// ip.peak_env_AHRcascade(AT[n], HT[n], RT[n], x[n]); --------------------------
+//
+// Peak envelope function with attack, hold, and release times in
+// seconds. The effective attack, hold, and release times are
+// interrelated as this design is based on cascaded filters, particularly,
+// a peak holder (peak_hold) feeding into a peak_envelope (peak_env) feeding 
+// into a one-pole lowpass (smooth). Considering the tau*2π time constant
+// where most of the final value is reached after the attack time, we will
+// only have a hold segment in the resulting envelope function if the hold
+// time is greater than the hold time, and the hold segment will be
+// approximately hold_time minus attack_time. Alternatively, only attack
+// and release segments will result from this cascaded design. Furthermore,
+// the attack time should still be << than the release time to minimally
+// affect the decay.
+//
+// 4 inputs:
+//    AT[n], attack time in seconds;
+//    HT[n], hold time in seconds;
+//    RT[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], envelope profile of x[n].
+//
+peak_env_AHR_cascade(AT, HT, RT, x) = 
+      ip.peak_hold(HT, x) : ip.peak_env_AR_cascade(AT, RT);
+// -----------------------------------------------------------------------------
+
+// ip.peak_env_AHRswitch(AT[n], HT[n], RT[n], x[n]); ---------------------------
+//
+// Envelope function with attack, hold, and release times in seconds.
+// This design is based on switching filter sections depending on the
+// attack or release phases of the input signal, which is determined by
+// comparison between the output and the input. When the input is greater
+// than the output, the system switches to a one-pole lowpass. Otherwise,
+// the system switches to a peak holder (peak_hold) section, and finally
+// into a peak envelope (peak_env) section when the hold time has passed and 
+// no new peaks have been detected. This way, the resulting envelope curve
+// will always include attack, hold, and release segments at the specified
+// times, where the hold value is dependent on the value that has been reached 
+// in the attack section.
+//
+// 4 inputs:
+//    AT[n], attack time in seconds;
+//    HT[n], hold time in seconds;
+//    RT[n], release time in seconds;
+//    x[n].
+//
+// 1 outputs:
+//    y[n], envelope profile of x[n].
+//
+peak_env_AHR_switch(AT, HT, RT, x) =   loop
+                                       ~ _
+      with {
+           loop(fb) = m2.if(cond1, 
+                            attack, 
+                            m2.if(  cond2,
+                                    hold, 
+                                    release))
+               with {
+                   cond1 = abs(x) >= fb;
+                   cond2 = fi.pole(notcond, notcond) <= rint(HT * ma.SR);
+                   notcond = 1 - cond;
+                   attack = abs(x) * (1 - AT_coeff) + fb * AT_coeff;
+                   hold = fb;
+                   release = RT_coeff * fb;
+                   AT_coeff = m2.rt55(AT);
+                   RT_coeff = m2.rt55(RT);
+               };
+      };
 // -----------------------------------------------------------------------------
 
 // ip.peak_env_ARcascade(AT[n], RT[n], x[n]); ----------------------------------
 //
 // Peak envelope function with dependent attack and release times. The
 // function applies two cascaded filter sections regardless of the
-// attack or release phases of the input signal: a peak envelope filter feeding 
-// into a one-pole lowpass filter. The attack time is assumed to be <<
-// than the release time for best behaviour. Since the sections are
+// attack or release phases of the input signal: a peak envelope filter 
+// feeding into a one-pole lowpass filter. The attack time is assumed to 
+// be << than the release time for best behaviour. Since the sections are
 // cascaded, the effective release time will always be greater than the
 // desired one. The difference will be less noticeable when attack and
 // release times are far apart. This function provides a smoother
@@ -421,10 +466,10 @@ peak_env(release, in) =    max(abs(in))
 // 1 outputs:
 //    y[n], peak envelope of x[n].
 //
-peak_env_ARcascade(AT, RT, x) = ip.peak_env(RT, x) : si.smooth(m2.rt55(AT));
+peak_env_AR_cascade(AT, RT, x) = ip.peak_env(RT, x) : si.smooth(m2.rt55(AT));
 // -----------------------------------------------------------------------------
 
-// ip.peak_AR_switch(AT[n], RT[n], x[n]); --------------------------------------
+// ip.peak_env_ARswitch(AT[n], RT[n], x[n]); -----------------------------------
 //
 // Peak envelope function with independent attack and release times. The
 // function applies two independent filter sections based on whether 
@@ -445,8 +490,8 @@ peak_env_ARcascade(AT, RT, x) = ip.peak_env(RT, x) : si.smooth(m2.rt55(AT));
 // 1 outputs:
 //    y[n], peak envelope of x[n].
 //
-peak_AR_switch(AT, RT, x) =    loop
-                               ~ _
+peak_env_AR_switch(AT, RT, x) =    loop
+                                   ~ _
       with {
            loop(fb) = m2.if(abs(x) > fb, attack, release)
                with {
@@ -458,7 +503,7 @@ peak_AR_switch(AT, RT, x) =    loop
       };
 // -----------------------------------------------------------------------------
 
-// ip.peak_hold(HT[n], x[n]); ---------------------------------------------------
+// ip.peak_hold(HT[n], x[n]); --------------------------------------------------
 //
 // Peak holder: it holds the peak of the absolute value of the input
 // signal for a time specified in seconds. If no new peak occurs before
@@ -466,31 +511,123 @@ peak_AR_switch(AT, RT, x) =    loop
 // of the input is. A new peak is detected if the input is greater or
 // equal to the output.
 //
-// Note that the hold time is one sample behind when it is reset by a
-// new peak, whereas it behaves correctly when the timer cycles around. It
-// needs to be fixed.
+// Note that the countdown for the hold time starts after a peak
+// disappears. For example, if the function is tested with a step response
+// of 20 samples, if the hold time is set to 48 samples (.001 seconds at
+// SR = 48 kHz), we will have 1s from sample  n = 0 to n = 19 from the step
+// function, 1s from n = 20 to n = 67 from the hold time, and the output will
+// then be 0 from sample n = 68.
 //
 // 2 inputs:
 //    HT[n], hold time in seconds;
 //    x[n].
 //
 // 1 outputs:
-//    y[n], peak of |x[n]|.
+//    y[n], high peak of |x[n]|.
 //
-peak_hold(HT, x) = loop 
-                   ~ _ 
+peak_hold(HT, x) = ip.peak_hold_H(HT, abs(x));
+// -----------------------------------------------------------------------------
+
+// ip.peak_hold_H(HT[n], x[n]); ------------------------------------------------
+//
+// High peak holder: it holds the highest peak of the input signal for a time 
+// specified in seconds. If no new peak occurs before the specified time, 
+// the peak will reset to whatever the value of the input is. A new peak is 
+// detected if the input is greater or equal to the output.
+//
+// Note that the countdown for the hold time starts after a peak
+// disappears. For example, if the function is tested with a step response
+// of 20 samples, if the hold time is set to 48 samples (.001 seconds at
+// SR = 48 kHz), we will have 1s from sample  n = 0 to n = 19 from the step
+// function, 1s from n = 20 to n = 67 from the hold time, and the output will
+// then be 0 from sample n = 68.
+//
+// 2 inputs:
+//    HT[n], hold time in seconds (resulting in the closest integer 
+//         number of samples representing that length);
+//    x[n].
+//
+// 1 outputs:
+//    y[n], high peak of x[n].
+//
+peak_hold_H(HT, x) =   loop_peak 
+                       ~ _
       with {
-           loop(fb) = ba.sAndH(reset | (timer == 0), abs(x))
+           l = rint(HT * ma.SR);
+           loop_peak(fb_p) = m2.if(cond1 | notcond2, x, fb_p)
                with {
-                   reset = abs(x) >= fb;
-                   timer = % (rint(HT * ma.SR)) ~ (+ (1) * (1 - reset));
+                   cond1 = x >= fb_p;
+                   cond2 = loop_timer <= l 
+                           ~ _
+                       with {
+                           loop_timer(fb_t) = notcond1 & fb_t <: fi.pole;
+                       };
+                   notcond1 = 1 - cond1;
+                   notcond2 = 1 - cond2;
+
                };
       };
 // -----------------------------------------------------------------------------
 
-// ip.peak_hold_AHRcascade(AT[n], HT[n], RT[n], x[n]); -------------------------
+// ip.peak_hold_L(HT[n], x[n]); ------------------------------------------------
 //
-// Peak holder function 
+// Low peak holder: it holds the lowest peak of the input signal for a time 
+// specified in seconds. If no new peak occurs before the specified time, 
+// the peak will reset to whatever the value of the input is. A new peak is 
+// detected if the input is less or equal to the output.
+//
+// Note that the countdown for the hold time starts after a peak
+// disappears. For example, if the function is tested with a step response
+// of 20 samples, if the hold time is set to 48 samples (.001 seconds at
+// SR = 48 kHz), we will have 1s from sample  n = 0 to n = 19 from the step
+// function, 1s from n = 20 to n = 67 from the hold time, and the output will
+// then be 0 from sample n = 68.
+//
+// 2 inputs:
+//    HT[n], hold time in seconds (resulting in the closest integer
+//         number of samples representing that length);
+//    x[n].
+//
+// 1 outputs:
+//    y[n], low peak of x[n].
+//
+peak_hold_L(HT, x) =   loop_peak
+                       ~ _
+      with {
+           l = rint(HT * ma.SR);
+           loop_peak(fb_p) = m2.if(cond1 | notcond2, x, fb_p)
+               with {
+                   cond1 = x <= fb_p;
+                   cond2 = loop_timer <= l
+                           ~ _
+                       with {
+                           loop_timer(fb_t) = notcond1 & fb_t <: fi.pole;
+                       };
+                   notcond1 = 1 - cond1;
+                   notcond2 = 1 - cond2;
+
+               };
+      };
+
+// -----------------------------------------------------------------------------
+
+// ip.peak_hold_LH(HT[n], x[n]); -----------------------------------------------
+//
+// It detects lower and upper peaks and, if no new peaks are detected,
+// it holds them for a specified time in seconds before resetting the peaks
+// to the new ones given by the incoming input.
+//
+// 2 inputs:
+//    HT[n], release time in seconds;
+//    x[n].
+//
+// 2 outputs:
+//    y1[n], lower peak in x[n],
+//    y2[n], upper peak in x[n].
+//
+peak_hold_LH(HT, x) =  peak_hold_L(HT, x) ,
+                       peak_hold_H(HT, x);
+// -----------------------------------------------------------------------------
 
 // ip.recurrence(L[n], H[n], T[n], x[n]); --------------------------------------
 //
