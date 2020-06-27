@@ -23,7 +23,8 @@
 //    avg_pow, 
 //    avg_quad,
 //    bip, 
-//    complement, 
+//    complement,
+//    dec2bin,
 //    delta, 
 //    delta2, 
 //    diff, 
@@ -420,6 +421,27 @@ bip(x) = x * 2 - 1;
 //    y[n], 1 - x[n].
 //
 complement(x) = 1 - x;
+// -----------------------------------------------------------------------------
+
+// m2.dec2bin(N); --------------------------------------------------------------
+//
+// It converts a decimal integer (N) into a Faust list containing the binary
+// digits, that is, the binary digits in parallel.
+//
+// 0 inputs.
+//
+// M = ceil(ma.log2(N)) output:
+//    y1[n],
+//    y2[n],
+//    ...,
+//    yM[n], binary digits representing N.
+//
+// 1 compile-time arguments:
+//    N, decimal integer number.
+//
+dec2bin(0) = !;
+dec2bin(N) =   dec2bin(int(N / 2)) , 
+               N % 2;
 // -----------------------------------------------------------------------------
 
 // m2.delta(S, dt[n], x[n]); ---------------------------------------------------
