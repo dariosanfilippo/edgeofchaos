@@ -492,31 +492,21 @@ div(x1, x2) = x1 / m2.if(  x2 < 0,
                            max(ma.EPSILON, x2));         
 // -----------------------------------------------------------------------------
 
-// m2.fibonacci_seq(N); --------------------------------------------------------
+// m2.factorial(N); ------------------------------------------------------------
 //
-// First N numbers of the Fibonacci sequence.
+// N! – factorial of N.
 //
 // 0 inputs.
 //
-// N outputs:
-//    y1[n];
-//    y2[n];
-//    ...;
-//    yN-1[n];
-//    y[N], the first N Fibonacci numbers in the sequence.
+// 1 outputs:
+//    y[n], N!.
 //
 // 1 compile-time arguments:
-//    N, the first N numbers in the Fibonacci sequence.
-//
-fibonacci_seq(1) = 0;
-fibonacci_seq(2) = 0 , 
-                   1;
-fibonacci_seq(3) = 0 ,
-                   1 ,
-                   1;
-fibonacci_seq(N) = fibonacci_seq(N - 1) <: si.bus(N - 1) ,
-                                           (   par(i, N - 3, !) ,
-                                               si.bus(2) :> _);
+//    N, positive integer, number to factorialise.
+factorial(0) = 0;
+factorial(1) = 1;
+factorial(N) = N * factorial(N - 1);
+// -----------------------------------------------------------------------------
 
 // m2.hp_and(x1[n], x2[n]); ----------------------------------------------------
 //
@@ -1111,6 +1101,191 @@ rt60(t) = ba.tau2pole(t / 6.907755279);
 //    N, input signals.
 //
 sd(N) = sqrt(var(N));
+// -----------------------------------------------------------------------------
+
+// m2.seq_catalan(N); ----------------------------------------------------------
+//
+// First N numbers in the Catalan sequence:
+//    1, 1, 2, 5, 14, 42, 132, 429, 1430, 4862, ...
+//
+// Note that, in single-precision, the function is correct only up to
+// the 7th element.
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the Catalan sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the Catalan sequence.
+//
+seq_catalan(1) = 1;
+seq_catalan(N) =   1 , 
+                   par(i, N - 1, factorial(2 * (i + 1)) / 
+                       (factorial(i + 1 + 1) * factorial(i + 1)));
+// -----------------------------------------------------------------------------
+
+// m2.seq_fibonacci(N); --------------------------------------------------------
+//
+// First N numbers of the Fibonacci sequence:
+//    0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the Fibonacci sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the Fibonacci sequence.
+//
+seq_fibonacci(1) = 0;
+seq_fibonacci(2) = 0 , 
+                   1;
+seq_fibonacci(3) = 0 ,
+                   1 ,
+                   1;
+seq_fibonacci(N) = fibonacci_seq(N - 1) <: si.bus(N - 1) ,
+                                           (   par(i, N - 3, !) ,
+                                               si.bus(2) :> _);
+// -----------------------------------------------------------------------------
+
+// m2.seq_hexagonal(N); --------------------------------------------------------
+//
+// First N numbers of the hexagonal sequence:
+//    1, 6, 15, 28, 45, 66, 91, 120, 153, 190, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the hexagonal sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the hexagonal sequence.
+//
+seq_hexagonal(N) = par(i, N, 2 * (i + 1) * (2 * (i + 1) - 1) / 2);
+// -----------------------------------------------------------------------------
+
+// m2.seq_lazy_caterer(N); -----------------------------------------------------
+//
+// First N numbers of the Lazy Caterer sequence:
+//    1, 2, 4, 7, 11, 16, 22, 29, 37, 46, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the Lazy Caterer sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the Lazy Caterer sequence.
+//
+seq_lazy_caterer(N) = par(i, N, (i ^ 2 + i + 2) / 2);
+// -----------------------------------------------------------------------------
+
+// m2.seq_magic_number(N); -----------------------------------------------------
+//
+// First N numbers of the Magic Number sequence: 
+//    15, 34, 65, 111, 175, 260, 369, 505, 671, 870, ...
+//
+// The Magic Number is a constant for an Mth-order square matrix, 
+// assuming M > 2, of integer values, with the max value being M^2, 
+// where the constant corresponds to the sum of the numbers in any 
+// of its rows, columns, or diagonals.
+//
+// Example of order-3 magic square (constant 15):
+//
+//    4 9 2
+//    3 5 7
+//    8 1 6
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the Magic Number sequence.
+//
+// 1 compile-time arguments:
+//    N, first N numbers in the Magic Number sequence.
+//
+seq_magic_number(N) = par(i, N, (i + 3) * ((i + 3) ^ 2 + 1) / 2);
+// -----------------------------------------------------------------------------
+
+// m2.seq_pentagonal(N); -------------------------------------------------------
+//
+// First N numbers of the pentagonal sequence:
+//    1, 5, 12, 22, 35, 51, 70, 92, 117, 145, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the pentagonal sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the pentagonal sequence.
+//
+seq_pentagonal(N) = par(i, N, (3 * (i + 1) ^ 2 - (i + 1)) / 2);
+// -----------------------------------------------------------------------------
+
+// m2.seq_square(N); -----------------------------------------------------------
+//
+// First N numbers of the square sequence:
+//    1, 4, 9, 16, 25, 36, 49, 64, 81, 100, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the square sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the square sequence.
+//
+seq_square(N) = par(i, N, (i + 1) ^ 2);
+// -----------------------------------------------------------------------------
+
+// m2.seq_triangular(N); -------------------------------------------------------
+//
+// First N numbers of the triangular sequence:
+//    1, 3, 6, 10, 15, 21, 28, 36, 45, 55, ...
+//
+// 0 inputs.
+//
+// N outputs:
+//    y1[n];
+//    y2[n];
+//    ...;
+//    yN-1[n];
+//    y[N], the first N numbers in the triangular sequence.
+//
+// 1 compile-time arguments:
+//    N, the first N numbers in the triangular sequence.
+//
+seq_triangular(N) = par(i, N, (i + 1) * (i + 1 + 1) / 2);
 // -----------------------------------------------------------------------------
 
 // m2.sp; ----------------------------------------------------------------------
