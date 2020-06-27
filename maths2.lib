@@ -1161,7 +1161,7 @@ seq_fibonacci(2) = 0 ,
 seq_fibonacci(3) = 0 ,
                    1 ,
                    1;
-seq_fibonacci(N) = fibonacci_seq(N - 1) <: si.bus(N - 1) ,
+seq_fibonacci(N) = seq_fibonacci(N - 1) <: si.bus(N - 1) ,
                                            (   par(i, N - 3, !) ,
                                                si.bus(2) :> _);
 // -----------------------------------------------------------------------------
