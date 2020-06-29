@@ -430,7 +430,7 @@ complement(x) = 1 - x;
 //
 // 0 inputs.
 //
-// M = ceil(ma.log2(N)) output:
+// M = ceil(ma.log2(N)) outputs:
 //    y1[n],
 //    y2[n],
 //    ...,
@@ -439,7 +439,7 @@ complement(x) = 1 - x;
 // 1 compile-time arguments:
 //    N, decimal integer number.
 //
-dec2bin(0) = !;
+dec2bin(0) = 0:!;
 dec2bin(N) =   dec2bin(int(N / 2)) , 
                N % 2;
 // -----------------------------------------------------------------------------
