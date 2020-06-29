@@ -143,12 +143,12 @@ blit_uni(h, f) = m2.asinc_uni(h1, phase)
 
 // o2.eca(L, R, I, rate[n]); ---------------------------------------------------
 //
-// One-dimension, two-state, elementary cellular automata. The function
-// is defined by the length of the lattice, a rule, and an initial
-// condition. Additionally, the function has a "rate" parameter that
-// determinse the interval between iterations. The rule and the initial
+// One-dimension, two-state, elementary cellular automata with circular
+// lattice. The function is defined by the length of the lattice, a rule, and 
+// an initial condition. Additionally, the function has a "rate" parameter 
+// that determines the interval between iterations. The rule and the initial
 // condition are positive INTs that are converted into binary numbers and
-// accordingly zero-padded or limited to reach a binary string of
+// accordingly zero-padded or limited to reach a binary string of 
 // appropriate length.
 //
 // Ref: 
