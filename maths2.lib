@@ -1665,6 +1665,36 @@ y_and(x, y) = 1 - min(1, sqrt((1 - x) ^ 2 + (1 - y) ^ 2));
 y_or(x, y) = min(1, (x ^ 2 + y ^ 2) ^ 2);
 // -----------------------------------------------------------------------------
 
+// m2.zeropad_up(N, list); -----------------------------------------------------
+//
+// This function adds N zeros at the beginning of a list.
+//
+// 0 inputs.
+//
+// N+ba.count(list) outputs.
+//
+// 1 compile-time arguments:
+//    N, number of zeros to be added.
+//
+zeropad_up(0, x) = x;
+zeropad_up(N, x) = par(i, N, 0) , x;
+// -----------------------------------------------------------------------------
+
+// m2.zeropad_down(N, list); ---------------------------------------------------
+//
+// This function adds N zeros at the end of a list.
+//
+// 0 inputs.
+//
+// N+ba.count(list) outputs.
+//
+// 1 compile-time arguments:
+//    N, number of zeros to be added.
+//
+zeropad_down(0, x) = x;
+zeropad_down(N, x) = par(i, N, 0) , x;
+// -----------------------------------------------------------------------------
+
 // m2.z_and(x1[n], x2[n]); -----------------------------------------------------
 //
 // Zadeh AND.
