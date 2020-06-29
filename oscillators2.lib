@@ -6,8 +6,9 @@
 // content for classic analogue waveforms such as sawtooth, square, 
 // and triangle waves, as well as band-limited pulse-trains with arbitrary
 // duty-cycles. The library includes a quadrature oscillator based on,
-// arguably, the best recursive design available in the literature, and
-// self-oscillating systems based on chaotic functions.
+// arguably, the best recursive design available in the literature,
+// self-oscillating systems based on chaotic functions, and iterative
+// systems for complex patterns such as cellular automata.
 //
 // The environment prefix is "o2".
 //
@@ -183,7 +184,7 @@ eca(L, R, I, rate) =   (   si.bus(L) ,
                with {
                    R1 = min(255, R);
                };
-           init(N) = zeropad(int(L - ceil(ma.log2(N1))), dec2bin(N1)) : 
+           init(N) = m2.zeropad_up(int(L - ceil(ma.log2(N1))), m2.dec2bin(N1)) :
                par(i, L, _ <: _ - mem)
                with {
                    N1 = min(N, 2 ^ L - 1);
@@ -211,7 +212,7 @@ eca(L, R, I, rate) =   (   si.bus(L) ,
             par(i, L, route(L, 3,   wrap(L, i - 1) + 1, 1,
                                     i + 1, 2,
                                     wrap(L, i + 1) + 1, 3) : int(rule));
-    };
+      };
 // -----------------------------------------------------------------------------
 
 // o2.lorenz(x0, y0, z0, a[n], b[n], r[n], dt[n]); -----------------------------
