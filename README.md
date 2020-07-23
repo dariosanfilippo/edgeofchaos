@@ -61,7 +61,7 @@ sanfilippo.dario at gmail dot com
 
     maths2.lib:         math library containing functions for statistics, 
                         linear and nonlinear fuzzy logic, interpolators, 
-                        network topologies, matrixes, linear and nonlinear 
+                        network topologies, matrices, linear and nonlinear 
                         mapping, windowing functions, hysteresis, angular 
                         frequency, and several time constants for exponential 
                         decays in one-pole systems.
