@@ -185,8 +185,8 @@ eca(L, R, I, rate) =   (   si.bus(L) ,
                with {
                    R1 = min(255, R);
                };
-           init(N) = m2.zeropad_up(int(L - ceil(ma.log2(N1))), m2.dec2bin(N1)) :
-               par(i, L, _ <: _ - mem)
+           init(N) = m2.zeropad_up(int(L - (floor(ma.log2(N1)) + 1)), 
+               m2.dec2bin(N1)) : par(i, L, _ <: _ - mem)
                with {
                    N1 = min(N, 2 ^ L - 1);
                };

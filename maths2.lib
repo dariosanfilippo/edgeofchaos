@@ -203,7 +203,7 @@ asinc_bi(M, x) = m2.if(phase < ma.EPSILON,
 //
 // 2 inputs:
 //    H[n], (integer) number of harmonics including the fundamental
-//         frequency and both even and odd multiples.
+//         frequency and both even and odd multiples;
 //    ph[n], phase of the sinc function in the range [0; 1]. Values
 //         outside of that range are allowed as they are wrapped around.
 //
@@ -226,7 +226,7 @@ asinc_uni(M, x) = m2.if(phase < ma.EPSILON,
 //
 // N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n];
 //    xN[n].
 //
@@ -273,7 +273,7 @@ avg_ari_w(N) = si.bus(N) ,
 //
 // N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n];
 //    xN[n].
 //
@@ -292,7 +292,7 @@ avg_geo(N) = prod(i, N, _) : pow(1 / N);
 //
 // 2N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n]; 
 //    xN[n], input signals;
 //    w1[n];
@@ -320,7 +320,7 @@ avg_geo_w(N) = (si.bus(N) : par(i, N, log)) ,
 //
 // N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n];
 //    xN[n].
 //
@@ -338,7 +338,7 @@ avg_harm(N) = si.bus(N) : par(i, N, ma.inv) :> N / _;
 //
 // 2N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n]; 
 //    xN[n], input signals;
 //    w1[n];
@@ -367,7 +367,7 @@ avg_harm_w(N) =    (si.bus(N) : par(i, N, ma.inv)) ,
 // N+1 inputs:
 //    E[n], exponent for each element in the set;
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n];
 //    xN[n].
 //
@@ -386,7 +386,7 @@ avg_pow(N, m) = si.bus(N) : par(i, N, pow(m)) :> / (N) : pow(1 / m);
 //
 // N inputs:
 //    x1[n];
-//    ...
+//    ...;
 //    xN-1[n];
 //    xN[n].
 //
@@ -433,9 +433,9 @@ complement(x) = 1 - x;
 // 0 inputs.
 //
 // M = ceil(ma.log2(N)) outputs:
-//    y1[n],
-//    y2[n],
-//    ...,
+//    y1[n];
+//    y2[n];
+//    ...;
 //    yM[n], binary digits representing N.
 //
 // 1 compile-time arguments:
@@ -464,7 +464,7 @@ dec2bin(N) =   dec2bin(int(N / 2)) ,
 delta(s, t, in) =  in - d2.del_lin(s, t, in);
 // -----------------------------------------------------------------------------
 
-// m2.delta2(S, dt[n], x[n]); ---------------------------------------------------
+// m2.delta2(S, dt[n], x[n]); --------------------------------------------------
 //
 // Second derivative using linear interpolation delay lines, hence
 // allowing fractional differentiation periods.

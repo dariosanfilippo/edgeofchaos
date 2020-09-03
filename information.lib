@@ -383,11 +383,11 @@ peak_env(RT, x) =  max(abs(x))
 // into a one-pole lowpass (smooth). Considering the tau*2π time constant
 // where most of the final value is reached after the attack time, we will
 // only have a hold segment in the resulting envelope function if the hold
-// time is greater than the hold time, and the hold segment will be
-// approximately hold_time minus attack_time. Alternatively, only attack
-// and release segments will result from this cascaded design. Furthermore,
-// the attack time should still be << than the release time to minimally
-// affect the decay.
+// time is greater than the attack time, and the hold segment will be
+// approximately the hold time minus the attacktime. Alternatively, only 
+// attack and release segments will result from this cascaded design. 
+// Furthermore, the attack time should still be << than the release time to 
+// minimally affect the decay.
 //
 // 4 inputs:
 //    AT[n], attack time in seconds;
