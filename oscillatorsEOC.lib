@@ -44,6 +44,7 @@ ma = library("maths.lib");
 m2 = library("mathsEOC.lib");
 os = library("oscillators.lib");
 o2 = library("oscillatorsEOC.lib");
+ro = library("routes.lib");
 si = library("signals.lib");
 
 // o2.blit_bi(H[n], F[n]); -----------------------------------------------------
@@ -174,12 +175,11 @@ blit_uni(h, f) = m2.asinc_uni(h1, phase)
 //    R, (positive INT up to 255) rule applied to the 8 possible cases;
 //    I, (positive INT) initial condition for the cells.
 //
-eca(L, R, I, rate) =   (   si.bus(L) , 
-                           init(I) : ro.interleave(L, 2) : par(i, L, +) : 
-      iterate : par(i, L, ba.sAndH(trigger))) 
-                       ~ si.bus(L)
+eca(L, R, I) = (   si.bus(L) , 
+                   init(I) : ro.interleave(L, 2) : 
+                       par(i, L, +) : iterate) 
+               ~ si.bus(L)
       with {
-           trigger = ba.period(ma.SR / max(ma.EPSILON, rate)) == 0;
            wrap(M, N) = int(ma.frac(N / M) * M);
            w_num = m2.zeropad_up(int(8 - ceil(ma.log2(R1))), m2.dec2bin(R1))
                with {
