@@ -25,20 +25,20 @@ sanfilippo.dario at gmail dot com
 
 ## Overview of the library modules
 
-    alleoc.lib:         access to all Edge of Chaos library modules from a 
+    allEOC.lib:         access to all Edge of Chaos library modules from a 
                         single point.
 
-    auxiliary.lib:      auxiliary functions library for testing, analysis, 
+    auxiliaryEOC.lib:   auxiliary functions library for testing, analysis, 
                         inspection, and debugging.
 
-    delays2.lib:        delay line functions library with 
+    delaysEOC.lib:      delay line functions library with 
                         samplerate-independent delay parameters based on 
                         aust's delay lines for integer and fractional delays.
 
     edgeofchaos.lib:    this file provides access to all the Edge of Chaos 
                         library modules through a series of environments.
 
-    filters2.lib:       filters library containing bilinear transform and 
+    filtersEOC.lib:     filters library containing bilinear transform and 
                         topology preserving transform implementations 
                         (zero-delay feedback) of allpass, lowpass, highpass, 
                         bandpass, bandstop, shelving, and state-variable 
@@ -46,7 +46,7 @@ sanfilippo.dario at gmail dot com
                         crossovers, comb-integrator circuits, analytic filters, 
                         and integrators, among others.
 
-    information.lib:    information processing functions library including 
+    informationEOC.lib: information processing functions library including 
                         low-level and high-level algorithms both based on 
                         hard-coded and adaptive mechanisms. The low-level 
                         functions provide time-domain techniques for feature 
@@ -59,17 +59,17 @@ sanfilippo.dario at gmail dot com
                         dynamicity, heterogeneity, and complexity of audio 
                         streams.
 
-    maths2.lib:         math library containing functions for statistics, 
+    mathsEOC.lib:       math library containing functions for statistics, 
                         linear and nonlinear fuzzy logic, interpolators, 
                         network topologies, matrices, linear and nonlinear 
                         mapping, windowing functions, hysteresis, angular 
                         frequency, and several time constants for exponential 
                         decays in one-pole systems.
 
-    oscillators2.lib:   mainly BLIT-based oscillators and self-oscillating 
+    oscillatorsEOC.lib: mainly BLIT-based oscillators and self-oscillating 
                         systems.
     
-    outformation.lib:   audio processing library containing standard and 
+    outformationEOC.lib:audio processing library containing standard and 
                         original techniques for audio transformations.
                         The functions include delay-line granulators with 
                         non-homogenous windowing, windowless granulation 
@@ -78,7 +78,7 @@ sanfilippo.dario at gmail dot com
                         functions.
 
 
-    stability.lib:      stability processing functions including standard 
+    stabilityEOC.lib:   stability processing functions including standard 
                         dynamics processing as well as self-regulating designs.
 
 ## Coding conventions
