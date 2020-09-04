@@ -66,8 +66,9 @@ sanfilippo.dario at gmail dot com
                         frequency, and several time constants for exponential 
                         decays in one-pole systems.
 
-    oscillatorsEOC.lib: mainly BLIT-based oscillators and self-oscillating 
-                        systems.
+    oscillatorsEOC.lib: mainly oscillators based on band-limited impulse 
+                        trains and an excellent recursive quadrature
+                        oscillator.
     
     outformationEOC.lib:audio processing library containing standard and 
                         original techniques for audio transformations.
@@ -75,8 +76,9 @@ sanfilippo.dario at gmail dot com
                         non-homogenous windowing, windowless granulation 
                         through zero-crossing detection, modulations, 
                         FDN-based processes, and time-variant transfer 
-                        functions.
-
+                        functions. The library also includes dynamical
+                        systems such as chaotic systems and cellular
+                        automata.
 
     stabilityEOC.lib:   stability processing functions including standard 
                         dynamics processing as well as self-regulating designs.
