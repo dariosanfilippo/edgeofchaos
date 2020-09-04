@@ -31,7 +31,7 @@ declare name "Outformation Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "1.0.0";
+declare version "2.0.0";
 declare license "GPLv2.0";
 
 au = library("auxiliaryEOC.lib");
