@@ -14,7 +14,7 @@ declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
 declare version "1.0.0";
 declare license "GPLv2.0";
 
-import("auxiliary.EOClib");
+import("auxiliaryEOC.lib");
 import("delaysEOC.lib");
 import("filtersEOC.lib");
 import("informationEOC.lib");
