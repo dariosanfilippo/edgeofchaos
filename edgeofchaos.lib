@@ -15,12 +15,12 @@ declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
 declare version "1.0.0";
 declare license "GPLv2.0";
 
-au = library("auxiliary.lib");
-d2 = library("delays2.lib");
-f2 = library("filters2.lib");
-ip = library("information.lib");
-m2 = library("maths2.lib");
-st = library("stability.lib");
-o2 = library("oscillators2.lib");
-op = library("outformation.lib");
-ed = library("alleoc.lib");
+au = library("auxiliaryEOC.lib");
+d2 = library("delaysEOC.lib");
+f2 = library("filtersEOC.lib");
+ip = library("informationEOC.lib");
+m2 = library("mathsEOC.lib");
+st = library("stabilityEOC.lib");
+o2 = library("oscillatorsEOC.lib");
+op = library("outformationEOC.lib");
+ed = library("allEOC.lib");

@@ -66,13 +66,13 @@ declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
 declare version "1.0.0";
 declare license "GPLv2.0";
 
-au = library("auxiliary.lib");
+au = library("auxiliary.EOClib");
 ba = library("basics.lib");
 fi = library("filters.lib");
-f2 = library("filters2.lib");
-ip = library("information.lib");
+f2 = library("filtersEOC.lib");
+ip = library("informationEOC.lib");
 ma = library("maths.lib");
-m2 = library("maths2.lib");
+m2 = library("mathsEOC.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 

@@ -65,12 +65,12 @@ declare license "GPLv2.0";
 
 ba = library("basics.lib");
 fi = library("filters.lib");
-f2 = library("filters2.lib");
-ip = library("information.lib");
+f2 = library("filtersEOC.lib");
+ip = library("informationEOC.lib");
 ma = library("maths.lib");
-m2 = library("maths2.lib");
+m2 = library("mathsEOC.lib");
 ro = library("routes.lib");
-st = library("stability.lib");
+st = library("stabilityEOC.lib");
 
 // f2.analytic(x[n]); ----------------------------------------------------------
 //

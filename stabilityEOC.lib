@@ -44,14 +44,14 @@ declare version "1.0.0";
 declare license "GPLv2.0";
 
 ba = library("basics.lib");
-d2 = library("delays2.lib");
-f2 = library("filters2.lib");
-ip = library("information.lib");
+d2 = library("delaysEOC.lib");
+f2 = library("filtersEOC.lib");
+ip = library("informationEOC.lib");
 ma = library("maths.lib");
-m2 = library("maths2.lib");
+m2 = library("mathsEOC.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
-st = library("stability.lib");
+st = library("stabilityEOC.lib");
 
 // st.clip(L[n], H[n], x[n]); --------------------------------------------------
 //

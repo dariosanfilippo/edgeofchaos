@@ -25,9 +25,9 @@ declare version "1.0.0";
 declare license "GPLv2.0";
 
 de = library("delays.lib");
-d2 = library("delays2.lib");
+d2 = library("delaysEOC.lib");
 ma = library("maths.lib");
-m2 = library("maths2.lib");
+m2 = library("mathsEOC.lib");
 
 // d2.del(size, D[n], x[n]); ---------------------------------------------------
 //
