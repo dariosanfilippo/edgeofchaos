@@ -6,9 +6,7 @@
 // content for classic analogue waveforms such as sawtooth, square, 
 // and triangle waves, as well as band-limited pulse-trains with arbitrary
 // duty-cycles. The library includes a quadrature oscillator based on,
-// arguably, the best recursive design available in the literature,
-// self-oscillating systems based on chaotic functions, and iterative
-// systems for complex patterns such as cellular automata.
+// arguably, the best recursive design available in the literature.
 //
 // The environment prefix is "o2".
 //
@@ -17,8 +15,6 @@
 //    blit_bi,
 //    blit_bi_duty,
 //    blit_uni,
-//    eca,
-//    lorenz,
 //    osc_quad,
 //    ph,
 //    pulse_train,
@@ -141,117 +137,6 @@ blit_uni(h, f) = m2.asinc_uni(h1, phase)
            // Add au.dirac to "trigger" if you require the initial value
            // of H[n] to be triggered initially at n = 0.
            phase = os.phasor(1, f);
-      };
-// -----------------------------------------------------------------------------
-
-// o2.eca(L, R, I, rate[n]); ---------------------------------------------------
-//
-// One-dimension, two-state, elementary cellular automata with circular
-// lattice. The function is defined by the length of the lattice, a rule, and 
-// an initial condition. Additionally, the function has a "rate" parameter 
-// that determines the interval between iterations. The rule and the initial
-// condition are positive INTs that are converted into binary numbers and
-// accordingly zero-padded or limited to reach a binary string of 
-// appropriate length.
-//
-// Ref: 
-//    Wolfram, S. (1984). Cellular automata as models of complexity. Nature, 
-//    311(5985), 419-424.
-//
-//    Wolfram, S. (2018). Cellular automata and complexity: collected papers. 
-//    CRC Press.
-//
-// 1 inputs:
-//    rate[n], iteration rate.
-//
-// L outputs:
-//    y1[n];
-//    y2[n];
-//    ...;
-//    yL[n], states of the cells in the lattice.
-//
-// 3 compile-time arguments:
-//    L, (positive INT) size of the lattice (number of cells);
-//    R, (positive INT up to 255) rule applied to the 8 possible cases;
-//    I, (positive INT) initial condition for the cells.
-//
-eca(L, R, I) = (   si.bus(L) , 
-                   init(I) : ro.interleave(L, 2) : 
-                       par(i, L, +) : iterate) 
-               ~ si.bus(L)
-      with {
-           wrap(M, N) = int(ma.frac(N / M) * M);
-           w_num = m2.zeropad_up(int(8 - ceil(ma.log2(R1))), m2.dec2bin(R1))
-               with {
-                   R1 = min(255, R);
-               };
-           init(N) = m2.zeropad_up(int(L - (floor(ma.log2(N1)) + 1)), 
-               m2.dec2bin(N1)) : par(i, L, _ <: _ - mem)
-               with {
-                   N1 = min(N, 2 ^ L - 1);
-               };
-           rule(x1, x2, x3) =
-      ba.if(   c1, w_num : route(8, 1, 1, 1), 
-           ba.if(  c2, w_num : route(8, 1, 2, 1), 
-               ba.if(  c3, w_num : route(8, 1, 3, 1),
-                   ba.if(  c4, w_num : route(8, 1, 4, 1),
-                       ba.if(  c5, w_num : route(8, 1, 5, 1),
-                           ba.if(  c6, w_num : route(8, 1, 6, 1),
-                               ba.if(  c7, w_num : route(8, 1, 7, 1), 
-                                   w_num : route(8, 1, 8, 1))))))))
-                with {
-                    c1 = (x1 == 1) & (x2 == 1) & (x3 == 1);
-                    c2 = (x1 == 1) & (x2 == 1) & (x3 == 0);
-                    c3 = (x1 == 1) & (x2 == 0) & (x3 == 1);
-                    c4 = (x1 == 1) & (x2 == 0) & (x3 == 0);
-                    c5 = (x1 == 0) & (x2 == 1) & (x3 == 1);
-                    c6 = (x1 == 0) & (x2 == 1) & (x3 == 0);
-                    c7 = (x1 == 0) & (x2 == 0) & (x3 == 1);
-                    c8 = (x1 == 0) & (x2 == 0) & (x3 == 0);
-                };
-        iterate = si.bus(L) <: 
-            par(i, L, route(L, 3,   wrap(L, i - 1) + 1, 1,
-                                    i + 1, 2,
-                                    wrap(L, i + 1) + 1, 3) : int(rule));
-      };
-// -----------------------------------------------------------------------------
-
-// o2.lorenz(x0, y0, z0, a[n], b[n], r[n], dt[n]); -----------------------------
-//
-// Lorenz system: chaotic recursive system of differential equations.
-//
-// Ref: https://ijpam.eu/contents/2013-83-1/9/9.pdf.
-//
-// Try process = o2.lorenz(1.2, 1.3, 1.6, 10, 8/3, 28, .005); for a strange
-// attractor (way out of the [-1; 1] range).
-//
-// 7 inputs:
-//    x0, initial condition for the first equation (0 for n != 0);
-//    y0, initial condition for the second equation (0 for n != 0);
-//    z0, initial condition for the third equation (0 for n != 0);
-//    a[n], coefficient in the first equation;
-//    b[n], coefficient in the third equation;
-//    r[n], coefficient in the second equation;
-//    dt[n], discrete time interval.
-//
-// 3 output:
-//    y1[n], first equation;
-//    y2[n], second equation;
-//    y3[n], third equation.
-//
-lorenz(x0, y0, z0, a, b, r, dt) =   iterate
-                                    ~ ( _ ,
-                                        _ ,
-                                        _)
-      with {
-           iterate(x, y, z) =  x1 + a * (y1 - x1) * dt,
-                               y1 + (r * x1 - y1 - x1 * z1) * dt,
-                               z1 + (x1 * y1 - b * z1) * dt
-           with {
-               x1 = x + x0 - x0';
-               y1 = y + y0 - y0';
-               z1 = z + z0 - z0';
-           };
       };
 // -----------------------------------------------------------------------------
 
