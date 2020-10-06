@@ -536,7 +536,7 @@ div(x1, x2) = x1 / m2.if(  x2 < 0,
 //
 // 1 compile-time arguments:
 //    N, positive integer, number to factorialise.
-factorial(0) = 0;
+factorial(0) = 1;
 factorial(1) = 1;
 factorial(N) = N * factorial(N - 1);
 // -----------------------------------------------------------------------------
