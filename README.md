@@ -17,11 +17,7 @@ for the stability of self-oscillating systems.
 Edge of Chaos is being developed and maintained by Dario Sanfilippo, and it 
 is the library through which he creates his music. 
 
-http://dariosanfilippo.tumblr.com
-
-https://scholar.google.com/citations?user=eXSEPWEAAAAJ&hl=en
-
-sanfilippo.dario at gmail dot com
+http://dariosanfilippo.com
 
 ## Overview of the library modules
 
