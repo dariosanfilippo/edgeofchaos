@@ -349,6 +349,46 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
       };
 // -----------------------------------------------------------------------------
 
+// op.nlfdn(N, D, F, s[n], fb[n], x1[n], ..., xN[n]); --------------------------
+//
+// Feedback delay network model with nonlinear processing. The function
+// creates a standard FDN with arbitrary one-input, one-output nonlinear
+// function that is passed as an argument. Furthermore, the function is
+// also given a list of N values representing the delays of the delay
+// lines. Several number sequences are available in mathsEOC.lib. The
+// function also has a 'stretch' parameter to compress or expand the
+// delays, as well as a global feedback coefficient input. For
+// self-oscillating behaviours, bounded nonlinear functions should be used.
+// Otherwise, non-bounded nonlinear (or linear) functions can be combined with 
+// the stability processors in stabilityEOC.lib.
+//
+// 2 + N inputs:
+//    s[n], stretch factor for the delays;
+//    fb[n], global feedback coefficient;
+//    x1[n], ..., xN[n], inputs.
+//
+// N outputs:
+//    y1[n], ..., yN[n], outputs.
+//
+// 3 compile-time arguments:
+//    N, order of the network;
+//    D, list of N values determining the delay lengths in sec;
+//    F, the linear or nonlinear function in the feedback loops.
+//
+nlfdn(N, D, F, s, fb) =    ins
+                           ~ (delays : matrix : nltf)
+    with {
+        ins = ro.interleave(N, 2) : par(i, N, +);
+        nltf = par(i, N, F);
+        delays = par(i, N, de.fdelayltv(4, ba.take(i + 1, S), 
+            ba.take(i + 1, D) * s) * fb * sqrt(1 / N))
+            with {
+                S = par(i, N, ba.take(i + 1, D) : m2.next_pow2);
+            };
+        matrix = ro.hadamard(N);
+    };
+// -----------------------------------------------------------------------------
+
 // op.pitch_shift(S, P[n], size[n], x[n]); -------------------------------------
 //
 // Real-time pitch-shifter using 4th-order Lagrange polynomial fractional 
