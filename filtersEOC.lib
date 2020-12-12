@@ -19,7 +19,9 @@
 //    bpbi, 
 //    bp2blti, 
 //    bsbi, 
-//    cic, 
+//    cic,
+//    diff
+//    diff_trap,
 //    hpbi, 
 //    hpblti, 
 //    hp1p, 
@@ -60,7 +62,7 @@ declare name "Filters Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.0.0";
+declare version "2.1.0";
 declare license "GPLv2.0";
 
 ba = library("basics.lib");
@@ -268,6 +270,30 @@ cic(N, cf, x) = x : seq(i, N, m2.delta(1, .5 / cf) :
     fi.pole(1)) / (.5 / cf * ma.SR) ^ N;
 // -----------------------------------------------------------------------------
 
+// f2.diff(x[n]); --------------------------------------------------------------
+//
+// First difference.
+//
+diff(x) = x - x';
+// -----------------------------------------------------------------------------
+
+// f2.diff_trap(x[n]); ---------------------------------------------------------
+//
+// Trapezoidal differentiator.
+//
+diff_trap(x) = loop 
+               ~ _ :   ! 
+                       , _
+      with {
+           loop(s) =   (v + y) * -1 
+                       , y
+           with {
+               v = x * 2 * ma.SR;
+               y = v + s;
+           };
+      };
+// -----------------------------------------------------------------------------
+
 // f2.hpbi(CF[n], x[n]); -------------------------------------------------------
 //
 // Biquad highpass (design by Robert Bristow-Johnson).
@@ -473,8 +499,17 @@ int_eu_f(cf, x) =  perform
 // 1 outputs:
 //    y[n], integrated x[n].
 //
-int_trap(cf, x) =  + (x * m2.w(cf) / 2 <: _ + _') 
-                   ~ _;
+int_trap(cf, x) =  loop 
+                   ~ _ :   ! 
+                           , _
+      with {
+           loop(s) =   v + y 
+                       , y
+           with {
+               v = x * 2 * ma.PI * cf / (ma.SR * 2);
+               y = v + s;
+           };
+      };
 // -----------------------------------------------------------------------------
 
 // f2.int_trap_clip(L[n], H[n], CF[n], x[n]); ----------------------------------
