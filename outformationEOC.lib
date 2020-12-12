@@ -14,11 +14,14 @@
 // 
 // List of functions:
 //
+//    cheby1N,
+//    cheby2N,
 //    eca,
 //    grains_dl_nhw,
 //    grains_dl_zc,
 //    grains_zc,
 //    lorenz,
+//    nlfdn,
 //    pitch_shift,
 //    pole_mod,
 //    rev_fdn_smo,
@@ -35,7 +38,7 @@ declare name "Outformation Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.0.0";
+declare version "2.1.0";
 declare license "GPLv2.0";
 
 au = library("auxiliaryEOC.lib");
@@ -53,6 +56,40 @@ m2 = library("mathsEOC.lib");
 ro = library("routes.lib");
 si = library("signals.lib");
 st = library("stabilityEOC.lib");
+
+// op.cheby1N(N, x[n]); --------------------------------------------------------
+//
+// Chebyshev polynomials of first type for nonlinear distortion.
+//
+// 1 inputs:
+//    x[n], input signal.
+//
+// 1 outputs:
+//    y[n], output signal.
+//
+// 1 compile-time argument:
+//    N, the order of the polynomial.
+cheby1N(0, x) = 1;
+cheby1N(1, x) = x;
+cheby1N(N, x) = 2 * x * cheby1N(N - 1, x) - cheby1N(N - 2, x);
+// -----------------------------------------------------------------------------
+
+// op.cheby2N(N, x[n]); --------------------------------------------------------
+//
+// Chebyshev polynomials of second type for nonlinear distortion.
+//
+// 1 inputs:
+//    x[n], input signal.
+//
+// 1 outputs:
+//    y[n], output signal.
+//
+// 1 compile-time argument:
+//    N, the order of the polynomial.
+cheby2N(0, x) = 1;
+cheby2N(1, x) = 2 * x;
+cheby2N(N, x) = 2 * x * cheby2N(N - 1, x) - cheby2N(N - 2, x);
+// -----------------------------------------------------------------------------
 
 // op.eca(L, R, I, rate[n]); ---------------------------------------------------
 //
