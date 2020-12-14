@@ -958,6 +958,35 @@ minN(2) = min;
 minN(N) = min(minN(N - 1));
 // -----------------------------------------------------------------------------
 
+// m2.mtx(R, C, coeff1[n], ..., coeffR*C[n], x1[n], ..., xR[n]); ---------------
+//
+// This matrix is the same as m2.matrix, except it follows the
+// convention of having the input signals as last arguments so that
+// coefficients can be given as arguments. m2.matrix is kept in the
+// library for back-compatibility.
+//
+// R-input, C-output matrix:
+//
+// a11 a12 … a1C
+// a21 a22 … a2C
+//  ⋮   ⋮  ⋱  ⋮
+// aR1 aR2 … aRC
+// 
+// R+R*C inputs:
+//    R*C, coefficients as shown in the diagram above;
+//    R, input signals to be distributed through the C outputs.
+//
+// C outputs.
+//
+// 2 compile-time arguments:
+//    R, (integer) number of rows;
+//    C, (integer) number columns.
+//
+mtx(R, C) = ro.interleave(C, R) , si.bus(R) : ro.interleave(R, C + 1) 
+      : par(i, R, si.bus(C) , (_ <: si.bus(C)) 
+           : ro.interleave(C, 2) : par(i, C, *)) :> si.bus(C);
+// -----------------------------------------------------------------------------
+
 // m2.next_pow2(x[n]); ---------------------------------------------------------
 //
 // Next power-of-two equal or greater than the input signal.
