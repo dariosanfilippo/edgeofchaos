@@ -10,6 +10,10 @@
 //
 //    dirac,
 //    inspect,
+//    octaves,
+//    octaves_cf,
+//    octaves_thirds,
+//    octaves_thirds_cf,
 //    step.
 //
 // Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario at gmail dot com>
