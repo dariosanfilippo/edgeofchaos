@@ -386,13 +386,16 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
       };
 // -----------------------------------------------------------------------------
 
-// op.nlfdn(N, D, F, s[n], fb[n], x1[n], ..., xN[n]); --------------------------
+// op.nlfdn(N, D, F, matrix, s[n], fb[n], x1[n], ..., xN[n]); ------------------
 //
 // Feedback delay network model with nonlinear processing. The function
 // creates a standard FDN with arbitrary one-input, one-output nonlinear
-// function that is passed as an argument. Furthermore, the function is
-// also given a list of N values representing the delays of the delay
-// lines. Several number sequences are available in mathsEOC.lib. The
+// function that is passed as an argument, as well as a "matrix" function, 
+// that is an N-inputs, N-outputs function to implement different
+// network topologies and structures. For example: ro.hadamard(N).
+// Other matrices types can be found in mathsEOC.lib. Furthermore, the 
+// function is also given a list of N values representing the delays of the 
+// delay lines. Several number sequences are available in mathsEOC.lib. The
 // function also has a 'stretch' parameter to compress or expand the
 // delays, as well as a global feedback coefficient input. For
 // self-oscillating behaviours, bounded nonlinear functions should be used.
@@ -401,7 +404,9 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
 //
 // 2 + N inputs:
 //    s[n], stretch factor for the delays;
-//    fb[n], global feedback coefficient;
+//    fb[n], global feedback coefficient – note that this should be
+//         scaled down according to the properties of the matrix that 
+//         you choose;
 //    x1[n], ..., xN[n], inputs.
 //
 // N outputs:
@@ -409,20 +414,22 @@ lorenz(x0, y0, z0, a, b, r, dt) =   iterate
 //
 // 3 compile-time arguments:
 //    N, order of the network;
-//    D, list of N values determining the delay lengths in sec;
-//    F, the linear or nonlinear function in the feedback loops.
+//    D, list of N values determining the delay lengths in samples;
+//    F, the linear or nonlinear function in the feedback loops;
+//    matrix, a N-inputs, N-outputs function to implement different
+//         network topologies and structures. For example: ro.hadamard(N).
+//         Other matrices types can be found in mathsEOC.lib.
 //
-nlfdn(N, D, F, s, fb) =    ins
+nlfdn(N, D, F, matrix, s, fb) =    ins
                            ~ (delays : matrix : nltf)
     with {
         ins = ro.interleave(N, 2) : par(i, N, +);
         nltf = par(i, N, F);
         delays = par(i, N, de.fdelayltv(4, ba.take(i + 1, S), 
-            ba.take(i + 1, D) * s) * fb * sqrt(1 / N))
+            ba.take(i + 1, D) * s) * fb)
             with {
                 S = par(i, N, ba.take(i + 1, D) : m2.next_pow2);
             };
-        matrix = ro.hadamard(N);
     };
 // -----------------------------------------------------------------------------
 
