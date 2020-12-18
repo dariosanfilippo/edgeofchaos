@@ -57,6 +57,38 @@ inspect(i, lower, upper) =
            vbargraph("sig_%i [style:numerical]", lower, upper) : attach;
 // -----------------------------------------------------------------------------
 
+// au.octaves(N); --------------------------------------------------------------
+//
+// It generates a list of N octaves lower-bound frequencies starting from 
+// the base 10 ^ (.1 * 12), which is approximately 15.85 Hz.
+//
+octaves(N) = par(i, N, 10 ^ (.1 * (12 + i * 3)));
+// -----------------------------------------------------------------------------
+
+// au.octaves_cf(N); -----------------------------------------------------------
+//
+// It generates a list of N octaves centre frequencies starting from
+// the base 10 ^ (.1 * 12), which is approximately 15.85 Hz.
+//
+octaves_cf(N) = par(i, N, 1.4142135624 * 10 ^ (.1 * (12 + i * 3)));
+// -----------------------------------------------------------------------------
+
+// au.octaves_thirds(N); -------------------------------------------------------
+//
+// It generates a list of N one-third-octave lower-bound frequencies starting 
+// from the base 10 ^ (.1 * 12), which is approximately 15.85 Hz.
+//
+octaves_thirds(N) = par(i, N, 10 ^ (0.1 * (i + 12)));
+// -----------------------------------------------------------------------------
+
+// au.octaves_thirds_cf(N); ----------------------------------------------------
+//
+// It generates a list of N one-third-octave centre frequencies starting 
+// from the base 10 ^ (.1 * 12), which is approximately 15.85 Hz.
+//
+octaves_thirds_cf(N) = par(i, N, 10 ^ 0.05 * 10 ^ (0.1 * (i + 12)));
+// -----------------------------------------------------------------------------
+
 // au.step(M); -----------------------------------------------------------------
 //
 // Step function: full-amplitude, M-sample step.
