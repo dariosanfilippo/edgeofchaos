@@ -52,6 +52,7 @@
 //    matrix, 
 //    maxN, 
 //    minN,
+//    mtx
 //    next_pow2,
 //    ny, 
 //    ph, 
@@ -108,7 +109,7 @@ declare name "Math Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.1.0";
+declare version "2.1.1";
 declare license "GPLv2.0";
 
 ba = library("basics.lib");
@@ -709,7 +710,7 @@ interpolate_mn(m, n, index) =  spat(m, index, 1) ,
 // m2.if(C[n], T[n], E[n]); ----------------------------------------------------
 //
 // If-then-else – unlike Faust's if-then-else, the condition is true for
-// any value != than 0, whereas Faust gives false for |fractions| < 1.
+// any value != than 0.
 //
 // 3 inputs:
 //    C[n], condition;
@@ -962,8 +963,8 @@ minN(N) = min(minN(N - 1));
 //
 // This matrix is the same as m2.matrix, except it follows the
 // convention of having the input signals as last arguments so that
-// coefficients can be given as arguments. m2.matrix is kept in the
-// library for back-compatibility.
+// coefficients can be given as constants at compile-time. 
+// m2.matrix is kept in the library for back-compatibility.
 //
 // R-input, C-output matrix:
 //
@@ -982,8 +983,10 @@ minN(N) = min(minN(N - 1));
 //    R, (integer) number of rows;
 //    C, (integer) number columns.
 //
-mtx(R, C) = ro.interleave(C, R) , si.bus(R) : ro.interleave(R, C + 1) 
-      : par(i, R, si.bus(C) , (_ <: si.bus(C)) 
+mtx(R, C) =    ro.interleave(C, R) 
+               , si.bus(R) : ro.interleave(R, C + 1) 
+      : par(i, R,  si.bus(C) 
+                   , (_ <: si.bus(C)) 
            : ro.interleave(C, 2) : par(i, C, *)) :> si.bus(C);
 // -----------------------------------------------------------------------------
 
