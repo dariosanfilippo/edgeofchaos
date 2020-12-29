@@ -73,6 +73,7 @@
 //    seq_square,
 //    seq_triangular
 //    sd, 
+//    sigmoid,
 //    sp, 
 //    topologies, 
 //    top_anti_diag, 
@@ -109,7 +110,7 @@ declare name "Math Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.1.1";
+declare version "2.2.1";
 declare license "GPLv2.0";
 
 ba = library("basics.lib");
@@ -1365,6 +1366,13 @@ seq_square(N) = par(i, N, (i + 1) ^ 2);
 //    N, the first N numbers in the triangular sequence.
 //
 seq_triangular(N) = par(i, N, (i + 1) * (i + 1 + 1) / 2);
+// -----------------------------------------------------------------------------
+
+// m2.sigmoid; -----------------------------------------------------------------
+//
+// Sigmoid nonlinearity.
+//
+sigmoid(x) = 1 / (1 + exp(-x));
 // -----------------------------------------------------------------------------
 
 // m2.sp; ----------------------------------------------------------------------
