@@ -347,6 +347,29 @@ grains_zc(position, g_size, x) =    grains
       };
 // -----------------------------------------------------------------------------
 
+// op.gru(Wf[n], Wh[n], Uf[n], Uh[n], bf[n], x[n]); ----------------------------
+//
+// Gated recurrent unit as nonlinear distortion.
+//
+// See https://jatinchowdhury18.medium.com/complex-nonlinearities-episode-10-gated-recurrent-distortion-6d60948323cf.
+//
+// 6 inputs:
+//    Wf[n], Wh[n], Uf[n], Uh[n], bf[n], shaping parameters;
+//    x[n], input signal.
+//
+// 1 outputs:
+//    y[n], distorted input.
+//
+gru(Wf, Wh, Uf, Uh, bf, x) =   loop 
+                               ~ _
+    with {
+        loop(s) = f * s + (1 - f) * ma.tanh(Wh * x + Uh * f * s)
+            with {
+                f = m2.sigmoid(Wf * x + Uf * s + bf);
+            };
+    };
+// -----------------------------------------------------------------------------
+
 // op.lorenz(x0, y0, z0, a[n], b[n], r[n], dt[n]); -----------------------------
 //
 // Lorenz system: chaotic recursive system of differential equations.
