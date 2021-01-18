@@ -1227,14 +1227,11 @@ seq_catalan(N) =   1 ,
 //    N, the first N numbers in the Fibonacci sequence.
 //
 seq_fibonacci(1) = 0;
-seq_fibonacci(2) = 0 , 
-                   1;
-seq_fibonacci(3) = 0 ,
-                   1 ,
-                   1;
-seq_fibonacci(N) = seq_fibonacci(N - 1) <: si.bus(N - 1) ,
-                                           (   par(i, N - 3, !) ,
-                                               si.bus(2) :> _);
+seq_fibonacci(N) = iterate(N, (0, 1))
+    with {
+        iterate(2, (A0, A1)) = A0 , A1;
+        iterate(N, (A0, A1)) = A0 , iterate(N - 1, (A1, A0 + A1));
+    };
 // -----------------------------------------------------------------------------
 
 // m2.seq_hexagonal(N); --------------------------------------------------------
