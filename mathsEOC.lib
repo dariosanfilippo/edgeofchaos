@@ -1226,10 +1226,9 @@ seq_catalan(N) =   1 ,
 // 1 compile-time arguments:
 //    N, the first N numbers in the Fibonacci sequence.
 //
-seq_fibonacci(1) = 0;
 seq_fibonacci(N) = iterate(N, (0, 1))
     with {
-        iterate(2, (A0, A1)) = A0 , A1;
+        iterate(1, (A0, A1)) = A0;
         iterate(N, (A0, A1)) = A0 , iterate(N - 1, (A1, A0 + A1));
     };
 // -----------------------------------------------------------------------------
