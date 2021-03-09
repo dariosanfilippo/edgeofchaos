@@ -31,6 +31,7 @@
 //    instant_ph, 
 //    loudness, 
 //    lowest_partial, 
+//    mle,
 //    noisiness, 
 //    peaks, 
 //    peak_env,
@@ -63,7 +64,7 @@ declare name "Information Processing Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.0.0";
+declare version "2.1.0";
 declare license "GPLv2.0";
 
 au = library("auxiliary.EOClib");
@@ -331,6 +332,24 @@ lowest_partial(window, in) =
            lp1p1z2(cf, x) = x : seq(i, 2, f2.lp1p1z(cf));
       };
 // -----------------------------------------------------------------------------
+
+// ip.lyapunov_exp(T[n], x[n]); ------------------------------------------------
+//
+// Lyapunov Exponent as measure of sensitivity to initial conditions
+// and unpredictability.
+//
+// 2 inputs:
+//      T[n], analysis period in seconds;
+//      x[n], input signal.
+//
+// 1 outputs:
+//      y[n], MLE of x[n].
+//
+lyapunov_exp(window, x) = 
+    f2.lp1p(1.0 / max(ma.EPSILON, window), 
+        log(max(ma.EPSILON, abs(m2.diff(x)))));
+// -----------------------------------------------------------------------------
+
 
 // ip.noisiness(R[n], x[n]); ---------------------------------------------------
 //
