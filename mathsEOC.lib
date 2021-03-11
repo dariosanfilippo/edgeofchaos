@@ -58,7 +58,9 @@
 //    ph, 
 //    primes, 
 //    prime_base_pow, 
-//    relay_hysteron, 
+//    relay_hysteron,
+//    rk4,
+//    rk4_solver,
 //    round_pow2, 
 //    rt9, 
 //    rt19, 
@@ -110,7 +112,7 @@ declare name "Math Library";
 declare author "Dario Sanfilippo";
 declare copyright "Copyright (c) 2019-2020, Dario Sanfilippo <sanfilippo.dario
       at gmail dot com>";
-declare version "2.2.1";
+declare version "2.3.1";
 declare license "GPLv2.0";
 
 ba = library("basics.lib");
@@ -1089,6 +1091,67 @@ with {
                                    1, 
                                    fb));
 };
+// -----------------------------------------------------------------------------
+
+// m2.rk4(dydx, h[n], y_0, x[n]); ----------------------------------------------
+//
+// Generalised fourth-order Runge-Kutta finate difference method.
+//
+// 4 inputs:
+//  dydx, the differential equation of the form dy/dx = f(x, y), which should
+//      be defined in a "with" environment as: 
+//          dydx(x, y) = something_with_x_and_y when used with the rk4_solver
+//              function;
+//  h[n], the integration step;
+//  y_0, the initial condition of the system;
+//  x[n], the input signal.
+//
+// 1 outputs:
+//  the approximation of the antiderivative of dy/dx = f(x, y).
+//
+rk4(dydx, h, y_0, x) =  loop 
+                        ~ _
+    with {
+        loop(y) = y + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4) + init
+            with {
+                k1 = dydx(x, y + init);
+                k2 = dydx(x + h / 2, y + h * k1 / 2 + init);
+                k3 = dydx(x + h / 2, y + h * k2 / 2 + init);
+                k4 = dydx(x + h, y + h * k3 + init);
+                init = y_0 - y_0';
+            };
+    };
+// -----------------------------------------------------------------------------
+
+// m2.rk4_solver(h[n], y_0, x[n]); ---------------------------------------------
+//
+// RK4 solver for first-order differential equations of the form:
+//  dy/dx = f(x, y).
+//
+// 3 inputs:
+//  h[n], integration step;
+//  y_0, initial condition of the system;
+//  x[n], input.
+//
+// 1 outputs:
+//  y[n], approximation of the antiderivative of the differential function.
+//
+// Example code:
+//
+//  rk4_solver(h, y_0, x) = rk4(dydx, h, y_0, x)
+//      with {
+//          dydx(x, y) = cos(x) * y; 
+//      };
+//  y(x) = exp(sin(x)); // antiderivative for comparison
+//  h = .001; // integration step
+//  x = fi.pole(1, h)'; // t_n+1 = t_n + h // delay for x(0) = 0
+//  y_0 = 1; // y(0) = 1 (initial condition)
+//  process = y(x), RK4_solver(h, y_0, x);
+//
+rk4_solver(h, y_0, x) = rk4(dydx, h, y_0, x)
+    with {
+        dydx(x, y) = x + y; // replace this with your differential equation.
+    };
 // -----------------------------------------------------------------------------
 
 // m2.round_pow2(x[n]); --------------------------------------------------------
