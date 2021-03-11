@@ -1146,7 +1146,7 @@ rk4(dydx, h, y_0, x) =  loop
 //  h = .001; // integration step
 //  x = fi.pole(1, h)'; // t_n+1 = t_n + h // delay for x(0) = 0
 //  y_0 = 1; // y(0) = 1 (initial condition)
-//  process = y(x), RK4_solver(h, y_0, x);
+//  process = y(x), rk4_solver(h, y_0, x);
 //
 rk4_solver(h, y_0, x) = rk4(dydx, h, y_0, x)
     with {
